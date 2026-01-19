@@ -1,0 +1,450 @@
+.reminder-form {
+  padding: 16px;
+}
+
+.form-card {
+  background: var(--tg-theme-secondary-bg-color, #f8f9fa);
+  border-radius: 20px;
+  padding: 20px;
+  /* Адаптивная тень */
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.3s ease;
+}
+
+.form-card:active {
+  transform: scale(0.98);
+}
+
+.form-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 28px;
+  padding-bottom: 20px;
+  border-bottom: 2px solid var(--tg-theme-secondary-bg-color, #e0e0e0);
+}
+
+.form-icon {
+  font-size: 24px;
+  line-height: 1;
+}
+
+.form-header h2 {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--tg-theme-text-color, #000);
+  margin: 0;
+  flex: 1;
+}
+
+.cancel-edit-button {
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: var(--tg-theme-secondary-bg-color, #f1f1f1);
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  color: var(--tg-theme-text-color, #000);
+  transition: all 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.cancel-edit-button:active {
+  transform: scale(0.9);
+  background: rgba(255, 59, 48, 0.1);
+}
+
+.form-group {
+  margin-bottom: 28px;
+}
+
+.form-group:last-child {
+  margin-bottom: 0;
+}
+
+.form-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--tg-theme-text-color, #000);
+}
+
+.label-icon {
+  font-size: 16px;
+  line-height: 1;
+}
+
+.form-input {
+  width: 100%;
+  padding: 18px 20px;
+  border: 2px solid var(--tg-theme-secondary-bg-color, #e0e0e0);
+  border-radius: 18px;
+  font-size: 16px;
+  background-color: var(--tg-theme-bg-color, #fff);
+  color: var(--tg-theme-text-color, #000);
+  box-sizing: border-box;
+  -webkit-appearance: none;
+  appearance: none;
+  transition: all 0.3s ease;
+  font-family: inherit;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: var(--tg-theme-button-color, #3390ec);
+  /* Адаптивная тень фокуса */
+  box-shadow: 0 0 0 4px rgba(51, 144, 236, 0.15);
+  transform: translateY(-1px);
+}
+
+.form-input::placeholder {
+  color: var(--tg-theme-hint-color, #999);
+  opacity: 0.6;
+}
+
+.date-inputs {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+}
+
+.date-input-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 96px;
+}
+
+.date-input {
+  text-align: center;
+  font-size: 22px;
+  font-weight: 700;
+  padding: 14px 8px;
+  width: 100%;
+  border-width: 3px;
+  -webkit-appearance: textfield;
+  appearance: textfield;
+}
+
+.date-select {
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+  background: var(--tg-theme-bg-color, #fff);
+  padding-right: 12px;
+  text-align-last: center;
+  -moz-text-align-last: center;
+}
+
+.date-input::-webkit-inner-spin-button,
+.date-input::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.date-label {
+  margin-top: 8px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--tg-theme-hint-color, #999);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  text-align: center;
+}
+
+.date-separator {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--tg-theme-text-color, #000);
+  padding-bottom: 18px;
+  line-height: 1;
+  opacity: 0.4;
+}
+
+.time-inputs {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+}
+
+.time-input-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 104px;
+}
+
+.time-input {
+  text-align: center;
+  font-size: 28px;
+  font-weight: 700;
+  padding: 16px 10px;
+  width: 100%;
+  border-width: 3px;
+  border-radius: 12px;
+  background: var(--tg-theme-bg-color, #fff);
+}
+
+.time-select {
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+  background: var(--tg-theme-bg-color, #fff);
+  padding-right: 12px;
+  text-align-last: center;
+  -moz-text-align-last: center;
+}
+
+.time-label {
+  margin-top: 8px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--tg-theme-hint-color, #999);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  text-align: center;
+}
+
+.char-counter {
+  margin-top: 6px;
+  font-size: 11px;
+  color: var(--tg-theme-hint-color, #999);
+  text-align: right;
+}
+
+.time-separator {
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--tg-theme-text-color, #000);
+  padding-bottom: 20px;
+  line-height: 1;
+  opacity: 0.3;
+}
+
+/* Mobile optimizations */
+@media (max-width: 480px) {
+  .reminder-form {
+    padding: 12px;
+  }
+
+  .form-card {
+    padding: 16px;
+    border-radius: 16px;
+  }
+
+  .form-header h2 {
+    font-size: 18px;
+  }
+
+  .time-input {
+    font-size: 26px;
+    padding: 14px 8px;
+  }
+
+  .time-separator {
+    font-size: 28px;
+    padding-bottom: 16px;
+  }
+}
+
+/* Touch-friendly inputs */
+@media (hover: none) and (pointer: coarse) {
+  .form-input {
+    font-size: 16px; /* Prevents zoom on iOS */
+  }
+}
+
+/* Save Button */
+.save-button {
+  width: 100%;
+  padding: 18px 24px;
+  margin-top: 12px;
+  border: none;
+  border-radius: 18px;
+  background: linear-gradient(135deg, 
+    var(--tg-theme-button-color, #3390ec) 0%, 
+    rgba(51, 144, 236, 0.9) 100%);
+  color: var(--tg-theme-button-text-color, #ffffff);
+  font-size: 17px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  transition: all 0.3s ease;
+  -webkit-tap-highlight-color: transparent;
+  font-family: inherit;
+  box-shadow: 0 6px 20px rgba(51, 144, 236, 0.4);
+  letter-spacing: 0.3px;
+}
+
+.save-button:active {
+  transform: scale(0.98);
+  box-shadow: 0 2px 8px rgba(51, 144, 236, 0.2);
+}
+
+.save-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.save-button:disabled:active {
+  transform: none;
+}
+
+.save-button-icon {
+  font-size: 18px;
+  line-height: 1;
+}
+
+.save-button:hover:not(:disabled) {
+  background: var(--tg-theme-link-color, #3390ec);
+  box-shadow: 0 6px 16px rgba(51, 144, 236, 0.4);
+}
+
+/* Calendar Trigger Button - Large and Prominent */
+.calendar-trigger-button {
+  width: 100%;
+  padding: 32px 24px;
+  border: 3px dashed var(--tg-theme-hint-color, #e0e0e0);
+  border-radius: 20px;
+  background: linear-gradient(135deg, 
+    var(--tg-theme-secondary-bg-color, #f8f9fa) 0%, 
+    var(--tg-theme-bg-color, #fff) 100%);
+  color: var(--tg-theme-text-color, #000);
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  transition: all 0.3s ease;
+  -webkit-tap-highlight-color: transparent;
+  font-family: inherit;
+  min-height: 140px;
+  position: relative;
+  overflow: hidden;
+}
+
+.calendar-trigger-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(circle at center, 
+    rgba(51, 144, 236, 0.05) 0%, 
+    transparent 70%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.calendar-trigger-button:active {
+  transform: scale(0.97);
+  border-color: var(--tg-theme-button-color, #3390ec);
+  border-style: solid;
+  background: var(--tg-theme-bg-color, #fff);
+}
+
+.calendar-trigger-button:active::before {
+  opacity: 1;
+}
+
+.calendar-trigger-button.has-date {
+  border-color: var(--tg-theme-button-color, #3390ec);
+  border-style: solid;
+  background: var(--tg-theme-bg-color, #fff);
+  padding: 24px;
+  min-height: auto;
+}
+
+.calendar-icon-large {
+  font-size: 48px;
+  line-height: 1;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+  transition: transform 0.3s ease;
+}
+
+.calendar-trigger-button:active .calendar-icon-large {
+  transform: scale(1.1);
+}
+
+.calendar-trigger-button.has-date .calendar-icon-large {
+  font-size: 32px;
+  margin-bottom: 8px;
+}
+
+.calendar-trigger-text {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--tg-theme-text-color, #000);
+  text-align: center;
+}
+
+.selected-date-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+}
+
+.selected-date-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--tg-theme-hint-color, #999);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.selected-date-value {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--tg-theme-button-color, #3390ec);
+}
+
+.change-date-hint {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--tg-theme-hint-color, #999);
+  margin-top: 4px;
+}
+
+/* Time Picker Section */
+.time-picker-section {
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 2px solid var(--tg-theme-secondary-bg-color, #f1f1f1);
+  animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.time-picker-label {
+  margin-bottom: 16px;
+}
