@@ -1,0 +1,25 @@
+name: Check Reminders
+
+on:
+  schedule:
+    - cron: '* * * * *'
+  workflow_dispatch:
+
+jobs:
+  check-reminders:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Check and Send Due Reminders
+        run: |
+          echo "Checking reminders at $(date)"
+          
+          RESPONSE=$(curl -s -w "\n%{http_code}" \
+            -H "x-api-key: ${{ secrets.SCHEDULER_API_KEY }}" \
+            "https://backend-9asrt4ke5-norayrs-projects-a813a9d8.vercel.app/api/check-reminders")
+          
+          HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
+          BODY=$(echo "$RESPONSE" | sed '$d')
+          
+          echo "Response: $BODY"
+          echo "HTTP Code: $HTTP_CODE"
