@@ -28,7 +28,9 @@ git push -u origin main
 3. Click **New repository secret**
 4. Add the secret:
    - **Name**: `SCHEDULER_API_KEY`
-   - **Value**: `42ccd8eb8e30d9733d7dcc547c9678902447c32ddbe2df635b9f66abb11f7b6b`
+   - **Value**: Generate a secure random key (e.g., using `openssl rand -hex 32`)
+
+> ⚠️ **Important**: Use the SAME key you set in your Vercel environment variables
 
 ### 3. Enable GitHub Actions
 
@@ -47,6 +49,17 @@ git push -u origin main
    Response: {"message":"No reminders due at this time","checked":0,"sent":0}
    HTTP Code: 200
    ```
+
+## Alternative: Using cron-job.org (Recommended for reliable scheduling)
+
+For more reliable minute-by-minute execution, use [cron-job.org](https://cron-job.org):
+
+1. Create a free account at cron-job.org
+2. Create a new cron job:
+   - **URL**: `https://your-backend.vercel.app/api/check-reminders`
+   - **Schedule**: Every 1 minute
+   - **Headers**: Add `x-api-key: YOUR_SCHEDULER_API_KEY`
+3. Enable the job
 
 ## Manual Test
 
@@ -74,7 +87,7 @@ You can manually trigger the workflow:
 
 The workflow calls:
 ```
-POST https://backend-9asrt4ke5-norayrs-projects-a813a9d8.vercel.app/api/check-reminders
+GET https://your-backend.vercel.app/api/check-reminders
 Header: x-api-key: YOUR_SCHEDULER_API_KEY
 ```
 
@@ -83,4 +96,5 @@ Header: x-api-key: YOUR_SCHEDULER_API_KEY
 - **GitHub Actions**: Free for public repos, 2000 minutes/month for private repos
 - **Vercel**: Free tier includes serverless function invocations
 - **Supabase**: Free tier includes database operations
+- **cron-job.org**: Free tier available
 - **Total Cost**: $0/month 🎉
