@@ -2,9 +2,9 @@
 // Bot Token теперь хранится ТОЛЬКО на backend (Vercel) - это безопасно!
 
 export const config = {
-  // Backend URL для API запросов
-  backendUrl: import.meta.env.VITE_BACKEND_URL || 'https://backend-9asrt4ke5-norayrs-projects-a813a9d8.vercel.app',
+  // Backend URL for API requests
+  backendUrl: import.meta.env.VITE_BACKEND_URL || 'https://backend-1qfmh5p6a-norayrs-projects-a813a9d8.vercel.app',
   
-  // Всегда используем backend - никакого bot token на фронтенде!
+  // Always use backend - no bot token on frontend!
   useBackend: true,
 };
