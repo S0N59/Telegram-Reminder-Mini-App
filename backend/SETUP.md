@@ -25,11 +25,11 @@ Add your credentials to `.env.local`:
 SUPABASE_URL=https://your-project-id.supabase.co
 SUPABASE_ANON_KEY=your_anon_key_here
 
-# Telegram Bot Token (use your existing bot token)
-TELEGRAM_BOT_TOKEN=8329415132:AAF1yjg8l3Frjaq0PKv0WfTeeC8qweZ9PyU
+# Telegram Bot Token (get from @BotFather)
+TELEGRAM_BOT_TOKEN=your_bot_token_here
 
 # Optional: API Key for scheduler security
-SCHEDULER_API_KEY=your_optional_secret_key_here
+SCHEDULER_API_KEY=your_random_secret_key
 ```
 
 ### 3. Get Supabase Credentials
@@ -42,149 +42,26 @@ SCHEDULER_API_KEY=your_optional_secret_key_here
 
 ### 4. Create Database Table
 
-In Supabase SQL Editor, run:
+In Supabase SQL Editor, run the SQL from `SUPABASE_SETUP.sql`
 
-```sql
--- Create reminders table
-CREATE TABLE reminders (
-  id TEXT PRIMARY KEY,
-  text TEXT NOT NULL,
-  date TEXT NOT NULL,
-  time TEXT NOT NULL,
-  user_id BIGINT NOT NULL,
-  created_at BIGINT NOT NULL,
-  done BOOLEAN DEFAULT FALSE,
-  sent BOOLEAN DEFAULT FALSE,
-  priority TEXT DEFAULT 'MEDIUM',
-  repeat_type TEXT DEFAULT 'NONE',
-  custom_weekdays INTEGER[],
-  resend_count INTEGER DEFAULT 0,
-  max_resend INTEGER DEFAULT 3,
-  next_run_at BIGINT,
-  snoozed_until BIGINT
-);
-
--- Create indexes for better performance
-CREATE INDEX idx_reminders_user_date ON reminders(user_id, date, time);
-CREATE INDEX idx_reminders_done ON reminders(done) WHERE done = FALSE;
-```
-
-### 5. Test Locally
+### 5. Deploy to Vercel
 
 ```bash
-npm run dev
+cd backend
+npx vercel --prod
 ```
 
-The API will be available at `http://localhost:3000`
-
-Test the health endpoint:
-```bash
-curl http://localhost:3000/api/health
-```
-
-### 6. Deploy to Vercel
-
-```bash
-# Install Vercel CLI (if not already installed)
-npm i -g vercel
-
-# Deploy
-vercel
-
-# Follow the prompts:
-# - Set up and deploy? Yes
-# - Which scope? (your account)
-# - Link to existing project? No (first time)
-# - Project name? telegram-reminders-backend
-# - Directory? ./
-# - Override settings? No
-```
-
-### 7. Set Environment Variables in Vercel
-
-After deployment:
+### 6. Set Environment Variables in Vercel
 
 1. Go to [Vercel Dashboard](https://vercel.com/dashboard)
-2. Select your project
-3. Go to **Settings** → **Environment Variables**
-4. Add these variables:
-   - `SUPABASE_URL` = your Supabase URL
-   - `SUPABASE_ANON_KEY` = your Supabase anon key
-   - `TELEGRAM_BOT_TOKEN` = 8329415132:AAF1yjg8l3Frjaq0PKv0WfTeeC8qweZ9PyU
-   - `SCHEDULER_API_KEY` = (optional, generate a random string)
+2. Select your project → **Settings** → **Environment Variables**
+3. Add all variables from step 2
 
-5. **Redeploy** your project (Vercel will automatically redeploy when you add env vars)
+## API Endpoints
 
-### 8. Get Your Backend URL
-
-After deployment, Vercel will give you a URL like:
-```
-https://telegram-reminders-backend.vercel.app
-```
-
-Your API endpoints will be:
-- `https://your-project.vercel.app/api/reminders`
-- `https://your-project.vercel.app/api/check-reminders`
-- `https://your-project.vercel.app/api/health`
-
-### 9. Update Frontend Configuration
-
-Update your frontend `.env` file:
-
-```env
-# Remove the bot token (security!)
-# VITE_BOT_TOKEN=  # Don't use this anymore!
-
-# Use backend instead
-VITE_BACKEND_URL=https://your-project.vercel.app/api
-VITE_USE_BACKEND=true
-```
-
-## Testing
-
-### Test Health Endpoint
-```bash
-curl https://your-project.vercel.app/api/health
-```
-
-### Test Create Reminder
-```bash
-curl -X POST https://your-project.vercel.app/api/reminders \
-  -H "Content-Type: application/json" \
-  -d '{
-    "text": "Test reminder",
-    "date": "2024-01-20",
-    "time": "15:00",
-    "userId": 123456789
-  }'
-```
-
-### Test Get Reminders
-```bash
-curl "https://your-project.vercel.app/api/reminders?userId=123456789"
-```
-
-## Troubleshooting
-
-### Error: Missing Supabase environment variables
-- Make sure `.env.local` exists in the `backend` folder
-- Check that all variables are set correctly
-
-### Error: Missing TELEGRAM_BOT_TOKEN
-- Verify your bot token is correct
-- Make sure it's set in Vercel environment variables
-
-### Database connection errors
-- Check your Supabase URL and key
-- Verify the `reminders` table exists
-- Check Supabase project is active
-
-### CORS errors
-- The API already has CORS enabled
-- Make sure you're using the correct backend URL in frontend
-
-## Next Steps
-
-1. ✅ Backend is set up
-2. ⏭️ Set up GitHub Actions scheduler (Step 5)
-3. ⏭️ Update frontend to use backend API (Step 6)
+- `GET /api/health` - Health check
+- `GET /api/reminders?userId=123` - Get reminders
+- `POST /api/reminders` - Create reminder
+- `PUT /api/reminders?id=123` - Update reminder
+- `DELETE /api/reminders?id=123` - Delete reminder
+- `GET /api/check-reminders` - Trigger reminder check (called by cron)
