@@ -46,10 +46,32 @@ export default async function handler(
 
     const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN!);
 
+    // Helper function to format beautiful notification
+    function formatNotification(reminder: { text: string; date: string; time: string }): string {
+      const [year, month, day] = reminder.date.split('-');
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const monthName = months[parseInt(month) - 1];
+      const formattedDate = `${monthName} ${parseInt(day)}, ${year}`;
+      
+      return `
+━━━━━━━━━━━━━━━━━━━━━
+⏰ <b>REMINDER</b>
+━━━━━━━━━━━━━━━━━━━━━
+
+📝 <b>${reminder.text}</b>
+
+📅 ${formattedDate}  •  🕐 ${reminder.time}
+
+━━━━━━━━━━━━━━━━━━━━━
+✨ <i>Stay on track!</i>
+━━━━━━━━━━━━━━━━━━━━━`.trim();
+    }
+
     // Helper function to send Telegram notification
-    async function sendTelegramNotification(chatId: number, text: string): Promise<boolean> {
+    async function sendTelegramNotification(chatId: number, reminder: { text: string; date: string; time: string }): Promise<boolean> {
       try {
-        await bot.telegram.sendMessage(chatId, `🔔 Напоминание:\n\n${text}`, {
+        const message = formatNotification(reminder);
+        await bot.telegram.sendMessage(chatId, message, {
           parse_mode: 'HTML',
         });
         return true;
@@ -137,7 +159,7 @@ export default async function handler(
       try {
         const success = await sendTelegramNotification(
           reminder.user_id,
-          reminder.text
+          { text: reminder.text, date: reminder.date, time: reminder.time }
         );
 
         if (success) {
