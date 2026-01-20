@@ -9,45 +9,98 @@ import {
 } from './reminderStorage';
 import { getUserData } from './telegram';
 
-// Convert local date/time to UTC for backend storage
+// Get user's timezone offset in hours (e.g., +4 for Armenia)
+const getTimezoneOffset = (): number => {
+  return -new Date().getTimezoneOffset() / 60;
+};
+
+// Convert local time to UTC for backend storage
 const localToUTC = (dateStr: string, timeStr: string): { date: string; time: string } => {
   const [year, month, day] = dateStr.split('-').map(Number);
   const [hours, minutes] = timeStr.split(':').map(Number);
   
-  // Create date in local timezone
-  const localDate = new Date(year, month - 1, day, hours, minutes);
+  // Calculate UTC time by subtracting timezone offset
+  const offset = getTimezoneOffset();
+  let utcHours = hours - offset;
+  let utcDay = day;
+  let utcMonth = month;
+  let utcYear = year;
   
-  // Get UTC components
-  const utcYear = localDate.getUTCFullYear();
-  const utcMonth = String(localDate.getUTCMonth() + 1).padStart(2, '0');
-  const utcDay = String(localDate.getUTCDate()).padStart(2, '0');
-  const utcHours = String(localDate.getUTCHours()).padStart(2, '0');
-  const utcMinutes = String(localDate.getUTCMinutes()).padStart(2, '0');
+  // Handle day overflow/underflow
+  if (utcHours >= 24) {
+    utcHours -= 24;
+    utcDay += 1;
+    // Handle month overflow
+    const daysInMonth = new Date(year, month, 0).getDate();
+    if (utcDay > daysInMonth) {
+      utcDay = 1;
+      utcMonth += 1;
+      if (utcMonth > 12) {
+        utcMonth = 1;
+        utcYear += 1;
+      }
+    }
+  } else if (utcHours < 0) {
+    utcHours += 24;
+    utcDay -= 1;
+    // Handle month underflow
+    if (utcDay < 1) {
+      utcMonth -= 1;
+      if (utcMonth < 1) {
+        utcMonth = 12;
+        utcYear -= 1;
+      }
+      utcDay = new Date(utcYear, utcMonth, 0).getDate();
+    }
+  }
   
   return {
-    date: `${utcYear}-${utcMonth}-${utcDay}`,
-    time: `${utcHours}:${utcMinutes}`
+    date: `${utcYear}-${String(utcMonth).padStart(2, '0')}-${String(utcDay).padStart(2, '0')}`,
+    time: `${String(utcHours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`
   };
 };
 
-// Convert UTC date/time back to local for display
-export const utcToLocal = (dateStr: string, timeStr: string): { date: string; time: string } => {
+// Convert UTC time back to local for display
+const utcToLocal = (dateStr: string, timeStr: string): { date: string; time: string } => {
   const [year, month, day] = dateStr.split('-').map(Number);
   const [hours, minutes] = timeStr.split(':').map(Number);
   
-  // Create date in UTC
-  const utcDate = new Date(Date.UTC(year, month - 1, day, hours, minutes));
+  // Calculate local time by adding timezone offset
+  const offset = getTimezoneOffset();
+  let localHours = hours + offset;
+  let localDay = day;
+  let localMonth = month;
+  let localYear = year;
   
-  // Get local components
-  const localYear = utcDate.getFullYear();
-  const localMonth = String(utcDate.getMonth() + 1).padStart(2, '0');
-  const localDay = String(utcDate.getDate()).padStart(2, '0');
-  const localHours = String(utcDate.getHours()).padStart(2, '0');
-  const localMinutes = String(utcDate.getMinutes()).padStart(2, '0');
+  // Handle day overflow/underflow
+  if (localHours >= 24) {
+    localHours -= 24;
+    localDay += 1;
+    const daysInMonth = new Date(year, month, 0).getDate();
+    if (localDay > daysInMonth) {
+      localDay = 1;
+      localMonth += 1;
+      if (localMonth > 12) {
+        localMonth = 1;
+        localYear += 1;
+      }
+    }
+  } else if (localHours < 0) {
+    localHours += 24;
+    localDay -= 1;
+    if (localDay < 1) {
+      localMonth -= 1;
+      if (localMonth < 1) {
+        localMonth = 12;
+        localYear -= 1;
+      }
+      localDay = new Date(localYear, localMonth, 0).getDate();
+    }
+  }
   
   return {
-    date: `${localYear}-${localMonth}-${localDay}`,
-    time: `${localHours}:${localMinutes}`
+    date: `${localYear}-${String(localMonth).padStart(2, '0')}-${String(localDay).padStart(2, '0')}`,
+    time: `${String(localHours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`
   };
 };
 
@@ -57,7 +110,7 @@ export const saveReminder = async (reminder: Reminder): Promise<string> => {
   return reminder.id;
 };
 
-// Get all user reminders (via Backend API) - converts UTC to local for display
+// Get all user reminders - converts UTC to local for display
 export const getReminders = async (): Promise<Reminder[]> => {
   const user = getUserData();
   if (!user?.id) {
@@ -106,12 +159,12 @@ export const subscribeToReminders = (
   return () => clearInterval(interval);
 };
 
-// Update reminder (via Backend API)
+// Update reminder
 export const updateReminder = async (id: string, updates: Partial<Reminder>): Promise<void> => {
   await updateReminderAPI(id, updates);
 };
 
-// Delete reminder (via Backend API)
+// Delete reminder
 export const deleteReminder = async (id: string): Promise<void> => {
   await deleteReminderAPI(id);
 };
@@ -140,7 +193,7 @@ export const createReminderPayload = (
   const dateStr = formData.date || `${formData.year}-${formData.month.padStart(2, '0')}-${formData.day.padStart(2, '0')}`;
   const timeStr = formatTime(formData.hours, formData.minutes);
   
-  // Convert to UTC for backend storage
+  // Convert local time to UTC for backend
   const utc = localToUTC(dateStr, timeStr);
   
   return {
@@ -152,7 +205,7 @@ export const createReminderPayload = (
   };
 };
 
-// Create reminder with UTC conversion for backend
+// Create reminder with UTC conversion
 export const createReminder = (
   formData: ReminderFormData,
   userId?: number
@@ -162,6 +215,8 @@ export const createReminder = (
   
   // Convert local time to UTC for storage
   const utc = localToUTC(dateStr, timeStr);
+  
+  console.log(`[Reminder] Local: ${dateStr} ${timeStr} → UTC: ${utc.date} ${utc.time} (offset: ${getTimezoneOffset()}h)`);
   
   return {
     id: Date.now().toString(),
