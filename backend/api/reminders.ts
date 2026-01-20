@@ -68,6 +68,10 @@ export default async function handler(
         customWeekdays: r.custom_weekdays,
         resendCount: r.resend_count || 0,
         maxResend: r.max_resend || 3,
+        confirmRequired: r.confirm_required || false,
+        reRemindInterval: r.re_remind_interval || 5,
+        confirmed: r.confirmed || false,
+        lastSentAt: r.last_sent_at,
       })) || [];
 
       return res.status(200).json(reminders);
@@ -84,6 +88,8 @@ export default async function handler(
         priority = 'MEDIUM',
         repeat = 'NONE',
         customWeekdays,
+        confirmRequired = false,
+        reRemindInterval = 5,
       } = req.body;
 
       if (!text || !date || !time || !userId) {
@@ -106,6 +112,10 @@ export default async function handler(
         custom_weekdays: customWeekdays,
         resend_count: 0,
         max_resend: 3,
+        confirm_required: confirmRequired,
+        re_remind_interval: reRemindInterval,
+        confirmed: false,
+        last_sent_at: null,
       };
 
       const { data, error } = await supabase

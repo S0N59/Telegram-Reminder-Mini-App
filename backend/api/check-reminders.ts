@@ -4,8 +4,9 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
  * This endpoint is called by cron-job.org every minute
  * to check for due reminders and send notifications
  * 
- * IMPORTANT: Reminders are stored in USER'S LOCAL TIME (e.g., Armenia UTC+4)
- * The cron runs in UTC, so we convert to user's local time before checking
+ * Two types of reminders:
+ * 1. SIMPLE - Send once with Delete button
+ * 2. CONFIRM - Send with Confirm button, re-send at intervals until confirmed
  */
 export default async function handler(
   req: VercelRequest,
@@ -46,54 +47,77 @@ export default async function handler(
 
     const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN!);
 
-    // Helper function to format beautiful notification
-    function formatNotification(reminder: { text: string; date: string; time: string }): string {
+    // Helper function to format notification
+    function formatNotification(reminder: { text: string; date: string; time: string }, isReRemind: boolean = false): string {
       const [year, month, day] = reminder.date.split('-');
       const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
       const monthName = months[parseInt(month) - 1];
       const formattedDate = `${monthName} ${parseInt(day)}, ${year}`;
       
-      return `
-━━━━━━━━━━━━━━━━━━━━━
-⏰ <b>REMINDER</b>
-━━━━━━━━━━━━━━━━━━━━━
+      const header = isReRemind ? '🔔 <b>REMINDER (Please Confirm!)</b>' : '🔔 <b>REMINDER</b>';
+      
+      return `${header}
 
-📝 <b>${reminder.text}</b>
+▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬
 
-📅 ${formattedDate}  •  🕐 ${reminder.time}
+${reminder.text.toUpperCase()}
 
-━━━━━━━━━━━━━━━━━━━━━
-✨ <i>Stay on track!</i>
-━━━━━━━━━━━━━━━━━━━━━`.trim();
+▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬
+
+📅 ${formattedDate}   🕐 ${reminder.time}`;
     }
 
-    // Helper function to send Telegram notification
-    async function sendTelegramNotification(chatId: number, reminder: { text: string; date: string; time: string }): Promise<boolean> {
+    // Send SIMPLE reminder (Delete button only)
+    async function sendSimpleNotification(chatId: number, reminder: { id: string; text: string; date: string; time: string }): Promise<boolean> {
       try {
         const message = formatNotification(reminder);
         await bot.telegram.sendMessage(chatId, message, {
           parse_mode: 'HTML',
+          reply_markup: {
+            inline_keyboard: [
+              [{ text: '🗑️ Delete', callback_data: `delete_${reminder.id}` }]
+            ]
+          }
         });
         return true;
       } catch (error) {
-        console.error('Error sending Telegram notification:', error);
+        console.error('Error sending simple notification:', error);
         return false;
       }
     }
 
-    // Get current time in UTC
+    // Send CONFIRM reminder (Confirm button only until confirmed)
+    async function sendConfirmNotification(chatId: number, reminder: { id: string; text: string; date: string; time: string }, isReRemind: boolean = false): Promise<boolean> {
+      try {
+        const message = formatNotification(reminder, isReRemind);
+        await bot.telegram.sendMessage(chatId, message, {
+          parse_mode: 'HTML',
+          reply_markup: {
+            inline_keyboard: [
+              [{ text: '✅ Confirm', callback_data: `confirm_${reminder.id}` }]
+            ]
+          }
+        });
+        return true;
+      } catch (error) {
+        console.error('Error sending confirm notification:', error);
+        return false;
+      }
+    }
+
+    // Get current time
     const nowUTC = new Date();
+    const nowTimestamp = nowUTC.getTime();
     
     // Convert to Armenia time (UTC+4)
-    // TODO: In future, store user timezone and use per-user conversion
-    const USER_TIMEZONE_OFFSET = 4; // Armenia is UTC+4
+    const USER_TIMEZONE_OFFSET = 4;
     const userLocalTime = new Date(nowUTC.getTime() + (USER_TIMEZONE_OFFSET * 60 * 60 * 1000));
     
     const currentHour = userLocalTime.getUTCHours();
     const currentMinute = userLocalTime.getUTCMinutes();
     const currentDate = `${userLocalTime.getUTCFullYear()}-${String(userLocalTime.getUTCMonth() + 1).padStart(2, '0')}-${String(userLocalTime.getUTCDate()).padStart(2, '0')}`;
     
-    // Check current minute and previous minute to account for cron delays
+    // Check current minute and previous minute
     const minutesToCheck = [currentMinute];
     if (currentMinute === 0) {
       minutesToCheck.push(59);
@@ -101,10 +125,12 @@ export default async function handler(
       minutesToCheck.push(currentMinute - 1);
     }
 
-    const remindersToSend = [];
+    let sentCount = 0;
+    let reRemindCount = 0;
+    let failedCount = 0;
 
+    // 1. Check for NEW reminders that need to be sent
     for (const minute of minutesToCheck) {
-      // Handle hour adjustment for previous minute check
       let checkHour = currentHour;
       if (minute === 59 && currentMinute === 0) {
         checkHour = currentHour === 0 ? 23 : currentHour - 1;
@@ -121,74 +147,105 @@ export default async function handler(
         .eq('sent', false);
 
       if (error) {
-        console.error('[CHECK-REMINDERS] Supabase error:', error);
-        return res.status(500).json({ 
-          error: 'Failed to fetch reminders',
-          details: error.message 
-        });
+        console.error('[CHECK-REMINDERS] Error fetching new reminders:', error);
+        continue;
       }
       
       if (reminders && reminders.length > 0) {
-        remindersToSend.push(...reminders);
+        for (const reminder of reminders) {
+          try {
+            const isConfirmRequired = reminder.confirm_required === true;
+            let success = false;
+            
+            if (isConfirmRequired) {
+              // Send with Confirm button
+              success = await sendConfirmNotification(
+                reminder.user_id,
+                { id: reminder.id, text: reminder.text, date: reminder.date, time: reminder.time }
+              );
+            } else {
+              // Send with Delete button only
+              success = await sendSimpleNotification(
+                reminder.user_id,
+                { id: reminder.id, text: reminder.text, date: reminder.date, time: reminder.time }
+              );
+            }
+
+            if (success) {
+              // Mark as sent and record last_sent_at
+              await supabase
+                .from('reminders')
+                .update({ 
+                  sent: true,
+                  last_sent_at: nowTimestamp
+                })
+                .eq('id', reminder.id);
+
+              sentCount++;
+            } else {
+              failedCount++;
+            }
+
+            await new Promise(resolve => setTimeout(resolve, 100));
+          } catch (err) {
+            console.error(`[CHECK-REMINDERS] Error processing reminder ${reminder.id}:`, err);
+            failedCount++;
+          }
+        }
       }
     }
 
-    // Debug info
-    const debugInfo = {
-      utcTime: nowUTC.toISOString(),
-      userLocalTime: `${currentDate} ${String(currentHour).padStart(2, '0')}:${String(currentMinute).padStart(2, '0')}`,
-      timezoneOffset: `UTC+${USER_TIMEZONE_OFFSET}`,
-      checkedMinutes: minutesToCheck.map(m => `${String(currentHour).padStart(2, '0')}:${String(m).padStart(2, '0')}`),
-    };
+    // 2. Check for CONFIRM reminders that need RE-SENDING
+    const { data: confirmReminders, error: confirmError } = await supabase
+      .from('reminders')
+      .select('*')
+      .eq('confirm_required', true)
+      .eq('confirmed', false)
+      .eq('done', false)
+      .eq('sent', true);
 
-    if (remindersToSend.length === 0) {
-      return res.status(200).json({ 
-        message: 'No reminders due at this time',
-        checked: 0,
-        sent: 0,
-        timestamp: new Date().toISOString(),
-        debug: debugInfo
-      });
-    }
+    if (!confirmError && confirmReminders && confirmReminders.length > 0) {
+      for (const reminder of confirmReminders) {
+        try {
+          const lastSentAt = reminder.last_sent_at || 0;
+          const reRemindInterval = (reminder.re_remind_interval || 5) * 60 * 1000; // Convert to ms
+          const timeSinceLastSend = nowTimestamp - lastSentAt;
 
-    let sentCount = 0;
-    let failedCount = 0;
+          // Check if it's time to re-send
+          if (timeSinceLastSend >= reRemindInterval) {
+            const success = await sendConfirmNotification(
+              reminder.user_id,
+              { id: reminder.id, text: reminder.text, date: reminder.date, time: reminder.time },
+              true // isReRemind
+            );
 
-    // Send notifications for each reminder
-    for (const reminder of remindersToSend) {
-      try {
-        const success = await sendTelegramNotification(
-          reminder.user_id,
-          { text: reminder.text, date: reminder.date, time: reminder.time }
-        );
+            if (success) {
+              // Update last_sent_at
+              await supabase
+                .from('reminders')
+                .update({ last_sent_at: nowTimestamp })
+                .eq('id', reminder.id);
 
-        if (success) {
-          // Mark as sent
-          await supabase
-            .from('reminders')
-            .update({ sent: true })
-            .eq('id', reminder.id);
+              reRemindCount++;
+            } else {
+              failedCount++;
+            }
 
-          sentCount++;
-        } else {
+            await new Promise(resolve => setTimeout(resolve, 100));
+          }
+        } catch (err) {
+          console.error(`[CHECK-REMINDERS] Error re-sending reminder ${reminder.id}:`, err);
           failedCount++;
         }
-
-        // Small delay to avoid rate limiting
-        await new Promise(resolve => setTimeout(resolve, 100));
-      } catch (err) {
-        console.error(`[CHECK-REMINDERS] Error processing reminder ${reminder.id}:`, err);
-        failedCount++;
       }
     }
 
     return res.status(200).json({
       message: 'Reminder check completed',
-      checked: remindersToSend.length,
-      sent: sentCount,
+      newSent: sentCount,
+      reReminded: reRemindCount,
       failed: failedCount,
-      timestamp: new Date().toISOString(),
-      debug: debugInfo
+      timestamp: new Date().toISOString()
     });
   } catch (error) {
     console.error('[CHECK-REMINDERS] Error:', error);

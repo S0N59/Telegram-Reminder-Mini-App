@@ -5,13 +5,17 @@ import './ReminderList.css';
 interface ReminderListProps {
   reminders: Reminder[];
   onDelete: (id: string) => void;
+  onEdit: (reminder: Reminder) => void;
+  onClearPassed: () => void;
   language: Language;
   strings: {
     nextReminderTitle: string;
     allRemindersTitle: string;
     emptyTitle: string;
     emptyHint: string;
+    editAria: string;
     deleteAria: string;
+    clearPassedButton: string;
     todayLabel: string;
     tomorrowLabel: string;
     daysShort: string[];
@@ -23,10 +27,24 @@ interface ReminderListProps {
   };
 }
 
-export const ReminderList = ({ reminders, onDelete, strings }: ReminderListProps) => {
-  // Find next reminder from the list
+export const ReminderList = ({ reminders, onDelete, onEdit, onClearPassed, strings }: ReminderListProps) => {
+  // Find next UPCOMING reminder (must be in the future)
+  const now = new Date().getTime();
+  
+  // Count passed reminders
+  const passedReminders = reminders.filter(r => {
+    const reminderTime = new Date(r.date + 'T' + r.time + ':00').getTime();
+    return reminderTime <= now && !r.done;
+  });
+  const hasPassedReminders = passedReminders.length > 0;
+  
   const nextReminder = reminders
     .filter(r => !r.done)
+    .filter(r => {
+      // Only include reminders that are in the future
+      const reminderTime = new Date(r.date + 'T' + r.time + ':00').getTime();
+      return reminderTime > now;
+    })
     .sort((a, b) => {
       const dateA = new Date(a.date + 'T' + a.time + ':00').getTime();
       const dateB = new Date(b.date + 'T' + b.time + ':00').getTime();
@@ -100,6 +118,14 @@ export const ReminderList = ({ reminders, onDelete, strings }: ReminderListProps
 
       <div className="reminders-header">
         <h3>{strings.allRemindersTitle} ({reminders.length})</h3>
+        {hasPassedReminders && (
+          <button 
+            className="clear-passed-button"
+            onClick={onClearPassed}
+          >
+            🧹 {strings.clearPassedButton} ({passedReminders.length})
+          </button>
+        )}
       </div>
 
       <div className="reminders-grid">
@@ -125,21 +151,21 @@ export const ReminderList = ({ reminders, onDelete, strings }: ReminderListProps
                 </div>
               </div>
             </div>
-            {(reminder.priority || reminder.repeat) && (
+            {reminder.repeat && reminder.repeat !== 'NONE' && (
               <div className="reminder-meta">
-                {reminder.priority && (
-                  <span className={`reminder-priority priority-${reminder.priority.toLowerCase()}`}>
-                    {reminder.priority === 'HIGH' ? '🚨' : reminder.priority === 'LOW' ? '🔕' : '🔔'} {reminder.priority}
-                  </span>
-                )}
-                {reminder.repeat && reminder.repeat !== 'NONE' && (
-                  <span className="reminder-repeat">
-                    🔁 {reminder.repeat}
-                  </span>
-                )}
+                <span className="reminder-repeat">
+                  🔁 {reminder.repeat}
+                </span>
               </div>
             )}
             <div className="reminder-actions">
+              <button
+                className="reminder-edit"
+                onClick={() => onEdit(reminder)}
+                aria-label={strings.editAria}
+              >
+                <span className="edit-icon">✏️</span>
+              </button>
               <button
                 className="reminder-delete"
                 onClick={() => onDelete(reminder.id)}

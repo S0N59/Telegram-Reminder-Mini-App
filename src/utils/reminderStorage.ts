@@ -21,6 +21,8 @@ export const saveReminderAPI = async (reminder: Reminder): Promise<Reminder> => 
         priority: reminder.priority || 'MEDIUM',
         repeat: reminder.repeat || 'NONE',
         customWeekdays: reminder.customWeekdays,
+        confirmRequired: reminder.confirmRequired || false,
+        reRemindInterval: reminder.reRemindInterval || 5,
       }),
     });
 

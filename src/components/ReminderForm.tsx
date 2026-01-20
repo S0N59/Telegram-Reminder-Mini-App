@@ -1,13 +1,17 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import type { ChangeEvent } from 'react';
-import type { ReminderFormData } from '../types/reminder';
+import type { ReminderFormData, Reminder } from '../types/reminder';
 import { getTelegramWebApp } from '../utils/telegram';
 import './ReminderForm.css';
 
 interface ReminderFormProps {
   onSave: (reminder: ReminderFormData) => void;
+  onUpdate?: (id: string, reminder: ReminderFormData) => void;
+  onCancelEdit?: () => void;
+  editingReminder?: Reminder | null;
   strings: {
     newReminderTitle: string;
+    editReminderTitle: string;
     reminderTextLabel: string;
     reminderTextPlaceholder: string;
     dateLabel: string;
@@ -18,12 +22,18 @@ interface ReminderFormProps {
     hoursLabel: string;
     minutesLabel: string;
     createReminderButton: string;
+    updateReminderButton: string;
+    cancelEditButton: string;
+    confirmRequiredLabel: string;
+    confirmRequiredHint: string;
+    reRemindIntervalLabel: string;
+    intervalMinutes: (min: number) => string;
     invalidPastDate: string;
     monthsShort: string[];
   };
 }
 
-export const ReminderForm = ({ onSave, strings }: ReminderFormProps) => {
+export const ReminderForm = ({ onSave, onUpdate, onCancelEdit, editingReminder, strings }: ReminderFormProps) => {
   // Initialize with current date
   const getCurrentDate = () => {
     const now = new Date();
@@ -47,11 +57,40 @@ export const ReminderForm = ({ onSave, strings }: ReminderFormProps) => {
       month: currentDate.month,
       day: currentDate.day,
       hours: currentDate.hours,
-      minutes: currentDate.minutes
+      minutes: currentDate.minutes,
+      confirmRequired: false,
+      reRemindInterval: 5
     };
   };
 
   const [formData, setFormData] = useState<ReminderFormData>(getInitialFormData());
+  
+  // Re-remind interval options (in minutes)
+  const intervalOptions = [5, 10, 15, 30, 60];
+  
+  // When editingReminder changes, populate the form
+  useEffect(() => {
+    if (editingReminder) {
+      const [year, month, day] = editingReminder.date.split('-');
+      const [hours, minutes] = editingReminder.time.split(':');
+      setFormData({
+        text: editingReminder.text,
+        date: editingReminder.date,
+        year,
+        month,
+        day,
+        hours,
+        minutes,
+        priority: editingReminder.priority,
+        repeat: editingReminder.repeat,
+        customWeekdays: editingReminder.customWeekdays,
+        confirmRequired: editingReminder.confirmRequired || false,
+        reRemindInterval: editingReminder.reRemindInterval || 5
+      });
+    } else {
+      setFormData(getInitialFormData());
+    }
+  }, [editingReminder]);
 
   const webApp = getTelegramWebApp();
 
@@ -67,10 +106,19 @@ export const ReminderForm = ({ onSave, strings }: ReminderFormProps) => {
     }
     
     if (formData.text.trim() && formData.year && formData.month && formData.day && formData.hours && formData.minutes) {
-      onSave({
+      const reminderData = {
         ...formData,
         date: dateStr
-      });
+      };
+      
+      if (editingReminder && onUpdate) {
+        // Update existing reminder
+        onUpdate(editingReminder.id, reminderData);
+      } else {
+        // Create new reminder
+        onSave(reminderData);
+      }
+      
       // Reset form but keep current date
       const today = getCurrentDate();
       setFormData({
@@ -80,10 +128,30 @@ export const ReminderForm = ({ onSave, strings }: ReminderFormProps) => {
         month: today.month,
         day: today.day,
         hours: today.hours,
-        minutes: today.minutes
+        minutes: today.minutes,
+        confirmRequired: false,
+        reRemindInterval: 5
       });
     }
-  }, [formData, onSave]);
+  }, [formData, onSave, onUpdate, editingReminder]);
+  
+  const handleCancel = useCallback(() => {
+    if (onCancelEdit) {
+      onCancelEdit();
+    }
+    const today = getCurrentDate();
+    setFormData({
+      text: '',
+      date: '',
+      year: today.year,
+      month: today.month,
+      day: today.day,
+      hours: today.hours,
+      minutes: today.minutes,
+      confirmRequired: false,
+      reRemindInterval: 5
+    });
+  }, [onCancelEdit]);
 
   const isDateValid = (year: string, month: string, day: string): boolean => {
     if (!year || !month || !day) return true; // Allow empty during typing
@@ -140,8 +208,15 @@ export const ReminderForm = ({ onSave, strings }: ReminderFormProps) => {
     }
   }, [webApp]);
 
-  const handleTextChange = (e: ChangeEvent<HTMLInputElement>) => {
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const handleTextChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
     setFormData(prev => ({ ...prev, text: e.target.value }));
+    // Auto-resize textarea
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+      textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
+    }
   };
 
   const handleHoursChange = (e: ChangeEvent<HTMLSelectElement>) => {
@@ -194,8 +269,8 @@ export const ReminderForm = ({ onSave, strings }: ReminderFormProps) => {
     <div className="reminder-form">
       <div className="form-card">
         <div className="form-header">
-          <span className="form-icon">➕</span>
-          <h2>{strings.newReminderTitle}</h2>
+          <span className="form-icon">{editingReminder ? '✏️' : '➕'}</span>
+          <h2>{editingReminder ? strings.editReminderTitle : strings.newReminderTitle}</h2>
         </div>
 
         <div className="form-group">
@@ -203,14 +278,15 @@ export const ReminderForm = ({ onSave, strings }: ReminderFormProps) => {
             <span className="label-icon">📝</span>
             {strings.reminderTextLabel}
           </label>
-          <input
+          <textarea
+            ref={textareaRef}
             id="reminder-text"
-            type="text"
             value={formData.text}
             onChange={handleTextChange}
             placeholder={strings.reminderTextPlaceholder}
-            className="form-input"
+            className="form-input form-textarea"
             maxLength={200}
+            rows={1}
           />
           <div className="char-counter">
             {formData.text.length}/200
@@ -300,15 +376,65 @@ export const ReminderForm = ({ onSave, strings }: ReminderFormProps) => {
           </div>
         </div>
 
-        <button
-          type="button"
-          className="save-button"
-          onClick={handleSave}
-          disabled={!formData.text.trim() || !formData.year || !formData.month || !formData.day || !formData.hours || !formData.minutes}
-        >
-          <span className="save-button-icon">💾</span>
-          <span>{strings.createReminderButton}</span>
-        </button>
+        {/* Confirmation Required Toggle */}
+        <div className="form-group">
+          <div className="confirm-toggle-row">
+            <div className="confirm-toggle-info">
+              <span className="label-icon">🔔</span>
+              <div className="confirm-toggle-text">
+                <span className="confirm-toggle-label">{strings.confirmRequiredLabel}</span>
+                <span className="confirm-toggle-hint">{strings.confirmRequiredHint}</span>
+              </div>
+            </div>
+            <label className="toggle-switch">
+              <input
+                type="checkbox"
+                checked={formData.confirmRequired || false}
+                onChange={(e) => setFormData(prev => ({ ...prev, confirmRequired: e.target.checked }))}
+              />
+              <span className="toggle-slider"></span>
+            </label>
+          </div>
+          
+          {formData.confirmRequired && (
+            <div className="interval-selector">
+              <label className="interval-label">{strings.reRemindIntervalLabel}</label>
+              <div className="interval-options">
+                {intervalOptions.map((min) => (
+                  <button
+                    key={min}
+                    type="button"
+                    className={`interval-option ${formData.reRemindInterval === min ? 'active' : ''}`}
+                    onClick={() => setFormData(prev => ({ ...prev, reRemindInterval: min }))}
+                  >
+                    {strings.intervalMinutes(min)}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="form-buttons">
+          {editingReminder && (
+            <button
+              type="button"
+              className="cancel-button"
+              onClick={handleCancel}
+            >
+              <span>{strings.cancelEditButton}</span>
+            </button>
+          )}
+          <button
+            type="button"
+            className="save-button"
+            onClick={handleSave}
+            disabled={!formData.text.trim() || !formData.year || !formData.month || !formData.day || !formData.hours || !formData.minutes}
+          >
+            <span className="save-button-icon">{editingReminder ? '✅' : '💾'}</span>
+            <span>{editingReminder ? strings.updateReminderButton : strings.createReminderButton}</span>
+          </button>
+        </div>
 
       </div>
     </div>

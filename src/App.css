@@ -12,6 +12,8 @@
   --tg-theme-button-text-color: #ffffff;
   --tg-theme-secondary-bg-color: #f1f1f1;
   --tg-theme-destructive-text-color: #ff3b30;
+  --accent-color: #3390ec;
+  --accent-color-light: rgba(51, 144, 236, 0.1);
 }
 
 html {
@@ -50,9 +52,9 @@ body {
 
 .app-header {
   padding: 20px 16px;
-  display: grid;
-  grid-template-columns: 44px 1fr 44px;
+  display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 12px;
   background: var(--tg-theme-bg-color, #fff);
   border-bottom: 1px solid var(--tg-theme-secondary-bg-color, #e0e0e0);
@@ -61,26 +63,17 @@ body {
   z-index: 100;
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-  /* Адаптивная тень для светлой и тёмной темы */
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
   transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
 .app-header h1 {
-  grid-column: 2;
-  text-align: center;
   margin: 0;
   font-size: 24px;
   font-weight: 800;
   letter-spacing: -0.5px;
-  /* Градиент адаптируется под тему */
-  background: linear-gradient(135deg, 
-    var(--tg-theme-button-color, #3390ec) 0%,
-    var(--tg-theme-link-color, var(--tg-theme-text-color, #000)) 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  transition: background 0.3s ease;
+  color: var(--accent-color, #3390ec);
+  transition: color 0.3s ease;
 }
 
 .app-content {
@@ -131,7 +124,7 @@ button {
 
 /* Focus visible for accessibility */
 button:focus-visible {
-  outline: 2px solid var(--tg-theme-button-color, #3390ec);
+  outline: 2px solid var(--accent-color, #3390ec);
   outline-offset: 2px;
 }
 

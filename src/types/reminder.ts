@@ -1,6 +1,7 @@
 // Типы для напоминаний
 export type RepeatType = 'NONE' | 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'CUSTOM';
 export type PriorityType = 'HIGH' | 'MEDIUM' | 'LOW';
+export type ReminderType = 'SIMPLE' | 'CONFIRM';
 
 export interface Reminder {
   id: string;
@@ -19,6 +20,12 @@ export interface Reminder {
   maxResend?: number;
   nextRunAt?: number; // timestamp следующего выполнения
   snoozedUntil?: number; // timestamp до которого отложено
+  // Confirmation required fields
+  reminderType?: ReminderType; // SIMPLE or CONFIRM
+  confirmRequired?: boolean;
+  reRemindInterval?: number; // minutes until next reminder if not confirmed
+  confirmed?: boolean;
+  lastSentAt?: number; // timestamp of last notification sent
 }
 
 export interface ReminderFormData {
@@ -32,6 +39,10 @@ export interface ReminderFormData {
   priority?: PriorityType;
   repeat?: RepeatType;
   customWeekdays?: number[];
+  // Confirmation required fields
+  reminderType?: ReminderType;
+  confirmRequired?: boolean;
+  reRemindInterval?: number;
 }
 
 export interface ReminderPayload {

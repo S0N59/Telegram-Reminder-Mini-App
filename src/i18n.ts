@@ -2,7 +2,12 @@ export type Language = 'en' | 'ru';
 
 interface Translation {
   appTitle: string;
+  settingsTitle: string;
+  languageLabel: string;
+  accentColorLabel: string;
+  closeButton: string;
   newReminderTitle: string;
+  editReminderTitle: string;
   reminderTextLabel: string;
   reminderTextPlaceholder: string;
   dateLabel: string;
@@ -13,6 +18,12 @@ interface Translation {
   hoursLabel: string;
   minutesLabel: string;
   createReminderButton: string;
+  updateReminderButton: string;
+  cancelEditButton: string;
+  confirmRequiredLabel: string;
+  confirmRequiredHint: string;
+  reRemindIntervalLabel: string;
+  intervalMinutes: (min: number) => string;
   invalidPastDate: string;
   languageButtonLabel: string;
   languageButtonAria: string;
@@ -20,7 +31,9 @@ interface Translation {
   allRemindersTitle: string;
   emptyTitle: string;
   emptyHint: string;
+  editAria: string;
   deleteAria: string;
+  clearPassedButton: string;
   todayLabel: string;
   tomorrowLabel: string;
   daysShort: string[];
@@ -34,7 +47,12 @@ interface Translation {
 export const translations: Record<Language, Translation> = {
   en: {
     appTitle: 'Reminders',
+    settingsTitle: 'Settings',
+    languageLabel: 'Language',
+    accentColorLabel: 'Accent Color',
+    closeButton: 'Close',
     newReminderTitle: 'New reminder',
+    editReminderTitle: 'Edit reminder',
     reminderTextLabel: 'Reminder text',
     reminderTextPlaceholder: 'E.g. Call mom',
     dateLabel: 'Date (YYYY MM DD)',
@@ -45,6 +63,12 @@ export const translations: Record<Language, Translation> = {
     hoursLabel: 'Hours',
     minutesLabel: 'Minutes',
     createReminderButton: 'Create reminder',
+    updateReminderButton: 'Update reminder',
+    cancelEditButton: 'Cancel',
+    confirmRequiredLabel: 'Confirmation required',
+    confirmRequiredHint: 'Will re-remind until confirmed',
+    reRemindIntervalLabel: 'Re-remind every',
+    intervalMinutes: (min) => `${min} min`,
     invalidPastDate: 'You cannot pick a past date. Please choose today or a future date.',
     languageButtonLabel: 'Language',
     languageButtonAria: 'Toggle language',
@@ -52,7 +76,9 @@ export const translations: Record<Language, Translation> = {
     allRemindersTitle: 'All reminders',
     emptyTitle: 'No reminders',
     emptyHint: 'Create your first reminder above',
+    editAria: 'Edit',
     deleteAria: 'Delete',
+    clearPassedButton: 'Clear passed',
     todayLabel: 'Today',
     tomorrowLabel: 'Tomorrow',
     daysShort: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
@@ -64,7 +90,12 @@ export const translations: Record<Language, Translation> = {
   },
   ru: {
     appTitle: 'Напоминания',
+    settingsTitle: 'Настройки',
+    languageLabel: 'Язык',
+    accentColorLabel: 'Цвет акцента',
+    closeButton: 'Закрыть',
     newReminderTitle: 'Новое напоминание',
+    editReminderTitle: 'Редактировать',
     reminderTextLabel: 'Текст напоминания',
     reminderTextPlaceholder: 'Например: Позвонить маме',
     dateLabel: 'Дата (ГГГГ ММ ДД)',
@@ -75,6 +106,12 @@ export const translations: Record<Language, Translation> = {
     hoursLabel: 'Часы',
     minutesLabel: 'Минуты',
     createReminderButton: 'Создать напоминание',
+    updateReminderButton: 'Сохранить',
+    cancelEditButton: 'Отмена',
+    confirmRequiredLabel: 'Требуется подтверждение',
+    confirmRequiredHint: 'Будет напоминать пока не подтвердите',
+    reRemindIntervalLabel: 'Повторять каждые',
+    intervalMinutes: (min) => `${min} мин`,
     invalidPastDate: 'Нельзя выбрать прошедшую дату. Пожалуйста, выберите сегодняшнюю или будущую дату.',
     languageButtonLabel: 'Язык',
     languageButtonAria: 'Переключить язык',
@@ -82,7 +119,9 @@ export const translations: Record<Language, Translation> = {
     allRemindersTitle: 'Все напоминания',
     emptyTitle: 'Нет напоминаний',
     emptyHint: 'Создайте первое напоминание выше',
+    editAria: 'Редактировать',
     deleteAria: 'Удалить',
+    clearPassedButton: 'Очистить прошедшие',
     todayLabel: 'Сегодня',
     tomorrowLabel: 'Завтра',
     daysShort: ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'],

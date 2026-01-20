@@ -24,6 +24,10 @@
       "dest": "/api/check-reminders.ts"
     },
     {
+      "src": "/api/webhook",
+      "dest": "/api/webhook.ts"
+    },
+    {
       "src": "/api/(.*)",
       "dest": "/api/$1.ts"
     }
