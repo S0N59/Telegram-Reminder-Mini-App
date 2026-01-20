@@ -1,19 +1,18 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
 /**
- * Scheduler endpoint - called by cron-job.org every minute
- * Checks for due reminders and sends Telegram notifications
+ * This endpoint is called by cron-job.org every minute
+ * to check for due reminders and send notifications
  * 
- * Improved: Checks a 2-minute window to handle timing delays
+ * IMPORTANT: Reminders are stored in USER'S LOCAL TIME (e.g., Armenia UTC+4)
+ * The cron runs in UTC, so we convert to user's local time before checking
  */
 export default async function handler(
   req: VercelRequest,
   res: VercelResponse
 ) {
-  const startTime = Date.now();
-  
   try {
-    // API key authentication
+    // Optional: Add API key authentication for security
     const apiKey = req.headers['x-api-key'];
     const expectedKey = process.env.SCHEDULER_API_KEY;
 
@@ -21,16 +20,22 @@ export default async function handler(
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    // Validate environment
+    // Check if required env vars are set
     if (!process.env.SUPABASE_URL || !process.env.SUPABASE_ANON_KEY) {
-      return res.status(503).json({ error: 'Database not configured' });
+      return res.status(503).json({ 
+        error: 'Database not configured',
+        message: 'Missing Supabase environment variables' 
+      });
     }
 
     if (!process.env.TELEGRAM_BOT_TOKEN) {
-      return res.status(503).json({ error: 'Telegram bot not configured' });
+      return res.status(503).json({ 
+        error: 'Telegram bot not configured',
+        message: 'Missing TELEGRAM_BOT_TOKEN environment variable' 
+      });
     }
 
-    // Dynamic imports
+    // Dynamic imports to avoid module initialization issues
     const { createClient } = await import('@supabase/supabase-js');
     const { Telegraf } = await import('telegraf');
 
@@ -41,116 +46,133 @@ export default async function handler(
 
     const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN!);
 
-    // Get current time in UTC
-    const now = new Date();
-    const currentDate = now.toISOString().split('T')[0];
-    const currentHour = now.getUTCHours();
-    const currentMinute = now.getUTCMinutes();
-    
-    // Build time strings for current minute and previous minute (2-minute window)
-    const currentTime = `${String(currentHour).padStart(2, '0')}:${String(currentMinute).padStart(2, '0')}`;
-    
-    // Also check previous minute to catch any that were missed
-    const prevMinute = currentMinute === 0 ? 59 : currentMinute - 1;
-    const prevHour = currentMinute === 0 ? (currentHour === 0 ? 23 : currentHour - 1) : currentHour;
-    const prevTime = `${String(prevHour).padStart(2, '0')}:${String(prevMinute).padStart(2, '0')}`;
-    
-    // Also handle date change for previous minute
-    let prevDate = currentDate;
-    if (currentHour === 0 && currentMinute === 0) {
-      const yesterday = new Date(now);
-      yesterday.setUTCDate(yesterday.getUTCDate() - 1);
-      prevDate = yesterday.toISOString().split('T')[0];
-    }
-
-    console.log(`[CHECK] UTC: ${currentDate} ${currentTime}, also checking: ${prevDate} ${prevTime}`);
-
-    // Fetch reminders for current minute
-    const { data: currentReminders, error: err1 } = await supabase
-      .from('reminders')
-      .select('*')
-      .eq('date', currentDate)
-      .eq('time', currentTime)
-      .eq('done', false)
-      .eq('sent', false);
-
-    // Fetch reminders for previous minute (in case cron was delayed)
-    const { data: prevReminders, error: err2 } = await supabase
-      .from('reminders')
-      .select('*')
-      .eq('date', prevDate)
-      .eq('time', prevTime)
-      .eq('done', false)
-      .eq('sent', false);
-
-    if (err1 || err2) {
-      return res.status(500).json({ 
-        error: 'Database error',
-        details: err1?.message || err2?.message 
-      });
-    }
-
-    // Combine and deduplicate reminders
-    const allReminders = [...(currentReminders || []), ...(prevReminders || [])];
-    const uniqueReminders = allReminders.filter((r, i, arr) => 
-      arr.findIndex(x => x.id === r.id) === i
-    );
-
-    if (uniqueReminders.length === 0) {
-      return res.status(200).json({ 
-        message: 'No reminders due',
-        checked: { current: currentTime, previous: prevTime },
-        timestamp: now.toISOString(),
-        duration: `${Date.now() - startTime}ms`
-      });
-    }
-
-    console.log(`[CHECK] Found ${uniqueReminders.length} reminders to send`);
-
-    let sent = 0;
-    let failed = 0;
-    const results: string[] = [];
-
-    // Send notifications
-    for (const reminder of uniqueReminders) {
+    // Helper function to send Telegram notification
+    async function sendTelegramNotification(chatId: number, text: string): Promise<boolean> {
       try {
-        await bot.telegram.sendMessage(
-          reminder.user_id, 
-          `🔔 Напоминание:\n\n${reminder.text}`,
-          { parse_mode: 'HTML' }
+        await bot.telegram.sendMessage(chatId, `🔔 Напоминание:\n\n${text}`, {
+          parse_mode: 'HTML',
+        });
+        return true;
+      } catch (error) {
+        console.error('Error sending Telegram notification:', error);
+        return false;
+      }
+    }
+
+    // Get current time in UTC
+    const nowUTC = new Date();
+    
+    // Convert to Armenia time (UTC+4)
+    // TODO: In future, store user timezone and use per-user conversion
+    const USER_TIMEZONE_OFFSET = 4; // Armenia is UTC+4
+    const userLocalTime = new Date(nowUTC.getTime() + (USER_TIMEZONE_OFFSET * 60 * 60 * 1000));
+    
+    const currentHour = userLocalTime.getUTCHours();
+    const currentMinute = userLocalTime.getUTCMinutes();
+    const currentDate = `${userLocalTime.getUTCFullYear()}-${String(userLocalTime.getUTCMonth() + 1).padStart(2, '0')}-${String(userLocalTime.getUTCDate()).padStart(2, '0')}`;
+    
+    // Check current minute and previous minute to account for cron delays
+    const minutesToCheck = [currentMinute];
+    if (currentMinute === 0) {
+      minutesToCheck.push(59);
+    } else {
+      minutesToCheck.push(currentMinute - 1);
+    }
+
+    const remindersToSend = [];
+
+    for (const minute of minutesToCheck) {
+      // Handle hour adjustment for previous minute check
+      let checkHour = currentHour;
+      if (minute === 59 && currentMinute === 0) {
+        checkHour = currentHour === 0 ? 23 : currentHour - 1;
+      }
+      
+      const checkTime = `${String(checkHour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+
+      const { data: reminders, error } = await supabase
+        .from('reminders')
+        .select('*')
+        .eq('date', currentDate)
+        .eq('time', checkTime)
+        .eq('done', false)
+        .eq('sent', false);
+
+      if (error) {
+        console.error('[CHECK-REMINDERS] Supabase error:', error);
+        return res.status(500).json({ 
+          error: 'Failed to fetch reminders',
+          details: error.message 
+        });
+      }
+      
+      if (reminders && reminders.length > 0) {
+        remindersToSend.push(...reminders);
+      }
+    }
+
+    // Debug info
+    const debugInfo = {
+      utcTime: nowUTC.toISOString(),
+      userLocalTime: `${currentDate} ${String(currentHour).padStart(2, '0')}:${String(currentMinute).padStart(2, '0')}`,
+      timezoneOffset: `UTC+${USER_TIMEZONE_OFFSET}`,
+      checkedMinutes: minutesToCheck.map(m => `${String(currentHour).padStart(2, '0')}:${String(m).padStart(2, '0')}`),
+    };
+
+    if (remindersToSend.length === 0) {
+      return res.status(200).json({ 
+        message: 'No reminders due at this time',
+        checked: 0,
+        sent: 0,
+        timestamp: new Date().toISOString(),
+        debug: debugInfo
+      });
+    }
+
+    let sentCount = 0;
+    let failedCount = 0;
+
+    // Send notifications for each reminder
+    for (const reminder of remindersToSend) {
+      try {
+        const success = await sendTelegramNotification(
+          reminder.user_id,
+          reminder.text
         );
 
-        // Mark as sent
-        await supabase
-          .from('reminders')
-          .update({ sent: true })
-          .eq('id', reminder.id);
+        if (success) {
+          // Mark as sent
+          await supabase
+            .from('reminders')
+            .update({ sent: true })
+            .eq('id', reminder.id);
 
-        sent++;
-        results.push(`✅ ${reminder.id}: sent to ${reminder.user_id}`);
+          sentCount++;
+        } else {
+          failedCount++;
+        }
+
+        // Small delay to avoid rate limiting
+        await new Promise(resolve => setTimeout(resolve, 100));
       } catch (err) {
-        failed++;
-        results.push(`❌ ${reminder.id}: ${err instanceof Error ? err.message : 'failed'}`);
+        console.error(`[CHECK-REMINDERS] Error processing reminder ${reminder.id}:`, err);
+        failedCount++;
       }
-
-      // Rate limit protection
-      await new Promise(resolve => setTimeout(resolve, 50));
     }
 
     return res.status(200).json({
-      checked: uniqueReminders.length,
-      sent,
-      failed,
-      times: { current: currentTime, previous: prevTime },
-      results,
-      timestamp: now.toISOString(),
-      duration: `${Date.now() - startTime}ms`
+      message: 'Reminder check completed',
+      checked: remindersToSend.length,
+      sent: sentCount,
+      failed: failedCount,
+      timestamp: new Date().toISOString(),
+      debug: debugInfo
     });
   } catch (error) {
+    console.error('[CHECK-REMINDERS] Error:', error);
     return res.status(500).json({ 
       error: 'Internal server error',
-      message: error instanceof Error ? error.message : 'Unknown error',
-      duration: `${Date.now() - startTime}ms`
+      message: error instanceof Error ? error.message : 'Unknown error'
     });
   }
 }
