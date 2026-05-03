@@ -59,7 +59,10 @@ export const ReminderForm = ({ onSave, onUpdate, onCancelEdit, editingReminder, 
       hours: currentDate.hours,
       minutes: currentDate.minutes,
       confirmRequired: false,
-      reRemindInterval: 5
+      reRemindInterval: 5,
+      priority: 'MEDIUM',
+      category: '',
+      assignedTo: ''
     };
   };
 
@@ -85,7 +88,9 @@ export const ReminderForm = ({ onSave, onUpdate, onCancelEdit, editingReminder, 
         repeat: editingReminder.repeat,
         customWeekdays: editingReminder.customWeekdays,
         confirmRequired: editingReminder.confirmRequired || false,
-        reRemindInterval: editingReminder.reRemindInterval || 5
+        reRemindInterval: editingReminder.reRemindInterval || 5,
+        category: editingReminder.category || '',
+        assignedTo: editingReminder.assignedTo || ''
       });
     } else {
       setFormData(getInitialFormData());
@@ -130,7 +135,10 @@ export const ReminderForm = ({ onSave, onUpdate, onCancelEdit, editingReminder, 
         hours: today.hours,
         minutes: today.minutes,
         confirmRequired: false,
-        reRemindInterval: 5
+        reRemindInterval: 5,
+        priority: 'MEDIUM',
+        category: '',
+        assignedTo: ''
       });
     }
   }, [formData, onSave, onUpdate, editingReminder]);
@@ -149,7 +157,10 @@ export const ReminderForm = ({ onSave, onUpdate, onCancelEdit, editingReminder, 
       hours: today.hours,
       minutes: today.minutes,
       confirmRequired: false,
-      reRemindInterval: 5
+      reRemindInterval: 5,
+      priority: 'MEDIUM',
+      category: '',
+      assignedTo: ''
     });
   }, [onCancelEdit]);
 
@@ -376,43 +387,85 @@ export const ReminderForm = ({ onSave, onUpdate, onCancelEdit, editingReminder, 
           </div>
         </div>
 
-        {/* Confirmation Required Toggle */}
+        <div className="form-group">
+          <label className="form-label">
+            <span className="label-icon">⭐</span>
+            Priority
+          </label>
+          <div className="priority-options">
+            {(['LOW', 'MEDIUM', 'HIGH'] as const).map(p => (
+              <button
+                key={p}
+                type="button"
+                className={`priority-option ${formData.priority === p ? 'active' : ''}`}
+                onClick={() => setFormData(prev => ({ ...prev, priority: p }))}
+              >
+                {p.charAt(0) + p.slice(1).toLowerCase()}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="category" className="form-label">
+            <span className="label-icon">📋</span>
+            Category
+          </label>
+          <div className="priority-options">
+            {['Work', 'Personal', 'Shopping', 'Health', 'Finance', 'Other'].map(cat => (
+              <button
+                key={cat}
+                type="button"
+                className={`priority-option ${formData.category === cat ? 'active' : ''}`}
+                onClick={() => setFormData(prev => ({ ...prev, category: prev.category === cat ? '' : cat }))}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="assignedTo" className="form-label">
+            <span className="label-icon">👤</span>
+            Assigned To
+          </label>
+          <input
+            id="assignedTo"
+            type="text"
+            value={formData.assignedTo}
+            onChange={(e) => setFormData(prev => ({ ...prev, assignedTo: e.target.value }))}
+            placeholder="Person name"
+            className="form-input"
+          />
+        </div>
+
+        {/* Re-remind interval — always active */}
         <div className="form-group">
           <div className="confirm-toggle-row">
             <div className="confirm-toggle-info">
               <span className="label-icon">🔔</span>
               <div className="confirm-toggle-text">
-                <span className="confirm-toggle-label">{strings.confirmRequiredLabel}</span>
-                <span className="confirm-toggle-hint">{strings.confirmRequiredHint}</span>
+                <span className="confirm-toggle-label">{strings.reRemindIntervalLabel}</span>
+                <span className="confirm-toggle-hint">Will keep notifying until you press "In Progress"</span>
               </div>
             </div>
-            <label className="toggle-switch">
-              <input
-                type="checkbox"
-                checked={formData.confirmRequired || false}
-                onChange={(e) => setFormData(prev => ({ ...prev, confirmRequired: e.target.checked }))}
-              />
-              <span className="toggle-slider"></span>
-            </label>
           </div>
           
-          {formData.confirmRequired && (
-            <div className="interval-selector">
-              <label className="interval-label">{strings.reRemindIntervalLabel}</label>
-              <div className="interval-options">
-                {intervalOptions.map((min) => (
-                  <button
-                    key={min}
-                    type="button"
-                    className={`interval-option ${formData.reRemindInterval === min ? 'active' : ''}`}
-                    onClick={() => setFormData(prev => ({ ...prev, reRemindInterval: min }))}
-                  >
-                    {strings.intervalMinutes(min)}
-                  </button>
-                ))}
-              </div>
+          <div className="interval-selector">
+            <div className="interval-options">
+              {intervalOptions.map((min) => (
+                <button
+                  key={min}
+                  type="button"
+                  className={`interval-option ${formData.reRemindInterval === min ? 'active' : ''}`}
+                  onClick={() => setFormData(prev => ({ ...prev, reRemindInterval: min }))}
+                >
+                  {strings.intervalMinutes(min)}
+                </button>
+              ))}
             </div>
-          )}
+          </div>
         </div>
 
         <div className="form-buttons">

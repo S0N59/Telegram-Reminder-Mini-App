@@ -26,6 +26,8 @@ export interface Reminder {
   reRemindInterval?: number; // minutes until next reminder if not confirmed
   confirmed?: boolean;
   lastSentAt?: number; // timestamp of last notification sent
+  category?: string;
+  assignedTo?: string;
 }
 
 export interface ReminderFormData {
@@ -39,6 +41,8 @@ export interface ReminderFormData {
   priority?: PriorityType;
   repeat?: RepeatType;
   customWeekdays?: number[];
+  category?: string;
+  assignedTo?: string;
   // Confirmation required fields
   reminderType?: ReminderType;
   confirmRequired?: boolean;

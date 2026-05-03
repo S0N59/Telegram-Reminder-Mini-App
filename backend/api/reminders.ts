@@ -1,4 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { createNotionTask, updateNotionTask, updateNotionStatus } from '../services/notion.js';
 
 export default async function handler(
   req: VercelRequest,
@@ -72,6 +73,8 @@ export default async function handler(
         reRemindInterval: r.re_remind_interval || 5,
         confirmed: r.confirmed || false,
         lastSentAt: r.last_sent_at,
+        category: r.category,
+        assignedTo: r.assigned_to,
       })) || [];
 
       return res.status(200).json(reminders);
@@ -90,6 +93,8 @@ export default async function handler(
         customWeekdays,
         confirmRequired = false,
         reRemindInterval = 5,
+        category,
+        assignedTo,
       } = req.body;
 
       if (!text || !date || !time || !userId) {
@@ -116,6 +121,8 @@ export default async function handler(
         re_remind_interval: reRemindInterval,
         confirmed: false,
         last_sent_at: null,
+        category,
+        assigned_to: assignedTo,
       };
 
       const { data, error } = await supabase
@@ -129,6 +136,16 @@ export default async function handler(
           error: 'Failed to create reminder',
           details: error.message,
         });
+      }
+
+      // Create Notion task in background
+      const notionPageId = await createNotionTask(data);
+      if (notionPageId) {
+        // Save the ID silently
+        await supabase
+          .from('reminders')
+          .update({ notion_page_id: notionPageId })
+          .eq('id', data.id);
       }
 
       return res.status(201).json({
@@ -145,6 +162,8 @@ export default async function handler(
         customWeekdays: data.custom_weekdays,
         resendCount: data.resend_count || 0,
         maxResend: data.max_resend || 3,
+        category: data.category,
+        assignedTo: data.assigned_to,
       });
     }
 
@@ -165,6 +184,8 @@ export default async function handler(
       if (req.body.customWeekdays !== undefined) {
         updates.custom_weekdays = req.body.customWeekdays;
       }
+      if (req.body.category !== undefined) updates.category = req.body.category;
+      if (req.body.assignedTo !== undefined) updates.assigned_to = req.body.assignedTo;
 
       const { data, error } = await supabase
         .from('reminders')
@@ -184,6 +205,10 @@ export default async function handler(
         return res.status(404).json({ error: 'Reminder not found' });
       }
 
+      if (data.notion_page_id) {
+        await updateNotionTask(data);
+      }
+
       return res.status(200).json({
         id: data.id,
         text: data.text,
@@ -198,6 +223,8 @@ export default async function handler(
         customWeekdays: data.custom_weekdays,
         resendCount: data.resend_count || 0,
         maxResend: data.max_resend || 3,
+        category: data.category,
+        assignedTo: data.assigned_to,
       });
     }
 
@@ -207,6 +234,23 @@ export default async function handler(
         return res.status(400).json({ error: 'Reminder id is required' });
       }
 
+      // 1. Get reminder to find notion_page_id before deleting
+      const { data: reminder } = await supabase
+        .from('reminders')
+        .select('notion_page_id')
+        .eq('id', id)
+        .single();
+
+      // 2. Sync 'Archive' status to Notion
+      if (reminder?.notion_page_id) {
+        try {
+          await updateNotionStatus(reminder.notion_page_id, 'Archive');
+        } catch (e) {
+          console.error('Failed to sync Archive to Notion:', e);
+        }
+      }
+
+      // 3. Delete from Supabase
       const { error } = await supabase
         .from('reminders')
         .delete()

@@ -23,6 +23,8 @@ export const saveReminderAPI = async (reminder: Reminder): Promise<Reminder> => 
         customWeekdays: reminder.customWeekdays,
         confirmRequired: reminder.confirmRequired || false,
         reRemindInterval: reminder.reRemindInterval || 5,
+        category: reminder.category,
+        assignedTo: reminder.assignedTo,
       }),
     });
 

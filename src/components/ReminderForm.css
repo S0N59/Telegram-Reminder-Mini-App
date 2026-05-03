@@ -12,7 +12,6 @@
 }
 
 .form-card:active {
-  transform: scale(0.98);
 }
 
 .form-header {
@@ -54,7 +53,6 @@
 }
 
 .cancel-edit-button:active {
-  transform: scale(0.9);
   background: rgba(255, 59, 48, 0.1);
 }
 
@@ -304,7 +302,6 @@
 }
 
 .cancel-button:active {
-  transform: scale(0.98);
   background: var(--tg-theme-secondary-bg-color, #f1f1f1);
 }
 
@@ -331,7 +328,6 @@
 }
 
 .save-button:active {
-  transform: scale(0.98);
   box-shadow: 0 2px 8px rgba(51, 144, 236, 0.2);
 }
 
@@ -396,7 +392,6 @@
 }
 
 .calendar-trigger-button:active {
-  transform: scale(0.97);
   border-color: var(--tg-theme-button-color, #3390ec);
   border-style: solid;
   background: var(--tg-theme-bg-color, #fff);
@@ -608,11 +603,42 @@
 }
 
 .interval-option:active {
-  transform: scale(0.95);
 }
 
 .interval-option.active {
   border-color: var(--accent-color, #3390ec);
   background: var(--accent-color, #3390ec);
   color: white;
+}
+
+/* Priority / Category Options */
+.priority-options {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+  flex-wrap: wrap;
+}
+
+.priority-option {
+  flex: 1;
+  padding: 14px 10px;
+  border: 2px solid var(--tg-theme-secondary-bg-color, #e0e0e0);
+  background: var(--tg-theme-bg-color, #fff);
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--tg-theme-text-color, #000);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+  text-align: center;
+}
+
+.priority-option:active {
+}
+
+.priority-option.active {
+  border-color: var(--accent-color, #3390ec);
+  background: var(--accent-color-light, rgba(51, 144, 236, 0.1));
+  color: var(--accent-color, #3390ec);
 }

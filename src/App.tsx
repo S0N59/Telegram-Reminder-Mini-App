@@ -113,7 +113,9 @@ function App() {
         maxResend: 3,
         confirmRequired: formData.confirmRequired || false,
         reRemindInterval: formData.reRemindInterval || 5,
-        confirmed: false
+        confirmed: false,
+        category: formData.category,
+        assignedTo: formData.assignedTo
       });
       
       // Обновление списка произойдет автоматически через подписку
@@ -147,6 +149,8 @@ function App() {
         priority: formData.priority,
         repeat: formData.repeat,
         customWeekdays: formData.customWeekdays,
+        category: formData.category,
+        assignedTo: formData.assignedTo,
       });
       setEditingReminder(null);
     } catch (error) {

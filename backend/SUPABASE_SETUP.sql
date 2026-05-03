@@ -17,8 +17,16 @@ CREATE TABLE IF NOT EXISTS reminders (
   resend_count INTEGER DEFAULT 0,
   max_resend INTEGER DEFAULT 3,
   next_run_at BIGINT,
-  snoozed_until BIGINT
+  snoozed_until BIGINT,
+  notion_page_id TEXT,
+  category TEXT,
+  assigned_to TEXT
 );
+
+-- Note: If you already have the reminders table created, run these:
+-- ALTER TABLE reminders ADD COLUMN notion_page_id TEXT;
+-- ALTER TABLE reminders ADD COLUMN category TEXT;
+-- ALTER TABLE reminders ADD COLUMN assigned_to TEXT;
 
 -- 2. Create index for faster queries
 CREATE INDEX IF NOT EXISTS idx_reminders_user_id ON reminders(user_id);

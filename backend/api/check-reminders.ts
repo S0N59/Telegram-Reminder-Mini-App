@@ -48,59 +48,80 @@ export default async function handler(
     const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN!);
 
     // Helper function to format notification
-    function formatNotification(reminder: { text: string; date: string; time: string }, isReRemind: boolean = false): string {
-      const [year, month, day] = reminder.date.split('-');
-      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-      const monthName = months[parseInt(month) - 1];
-      const formattedDate = `${monthName} ${parseInt(day)}, ${year}`;
+    // Smart time formatter
+    function getSmartTime(dateStr: string, timeStr: string): string {
+      const [year, month, day] = dateStr.split('-').map(Number);
+      const [hour, minute] = timeStr.split(':').map(Number);
       
-      const header = isReRemind ? '🔔 <b>REMINDER (Please Confirm!)</b>' : '🔔 <b>REMINDER</b>';
+      const now = new Date(new Date().getTime() + (4 * 60 * 60 * 1000)); // UTC+4
+      const target = new Date(year, month - 1, day, hour, minute);
       
-      return `${header}
-
-▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬
-
-${reminder.text.toUpperCase()}
-
-▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬
-
-📅 ${formattedDate}   🕐 ${reminder.time}`;
+      const diffMs = target.getTime() - now.getTime();
+      const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+      
+      const isToday = now.getUTCFullYear() === year && now.getUTCMonth() === month - 1 && now.getUTCDate() === day;
+      const tomorrow = new Date(now);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      const isTomorrow = tomorrow.getUTCFullYear() === year && tomorrow.getUTCMonth() === month - 1 && tomorrow.getUTCDate() === day;
+      
+      if (diffMs > 0 && diffMs < 12 * 60 * 60 * 1000) {
+        const hours = Math.floor(diffMs / (1000 * 60 * 60));
+        if (hours > 0) return `In ${hours} hour${hours > 1 ? 's' : ''}`;
+        const mins = Math.floor(diffMs / (1000 * 60));
+        return `In ${mins} minute${mins > 1 ? 's' : ''}`;
+      }
+      
+      const timeFormatted = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+      
+      if (isToday) return `Today at ${timeFormatted}`;
+      if (isTomorrow) return `Tomorrow at ${timeFormatted}`;
+      
+      return `${day}/${month}/${year} at ${timeFormatted}`;
     }
 
-    // Send SIMPLE reminder (Delete button only)
-    async function sendSimpleNotification(chatId: number, reminder: { id: string; text: string; date: string; time: string }): Promise<boolean> {
+    // Helper function to format notification
+    function formatNotification(reminder: any): string {
+      if (reminder.status === 'done') {
+        return `✅ <b>TASK COMPLETED</b>\n\n` +
+               `📝 ${reminder.text}\n` +
+               `⏰ Was: ${reminder.time}`;
+      }
+
+      const statusMap: any = {
+        'todo': { label: 'To Do', emoji: '⚪' },
+        'in_progress': { label: 'In Progress', emoji: '🟡' },
+        'done': { label: 'Done', emoji: '🟢' }
+      };
+      
+      const status = statusMap[reminder.status || 'todo'] || statusMap['todo'];
+      const smartTime = getSmartTime(reminder.date, reminder.time);
+      
+      return `🔔 <b>REMINDER</b>\n\n` +
+             `📝 <b>${reminder.text}</b>\n\n` +
+             `📌 Status: ${status.emoji} ${status.label}\n` +
+             `⏰ ${smartTime}\n` +
+             `⚡ Priority: ${reminder.priority || 'MEDIUM'}\n\n` +
+             `━━━━━━━━━━━━━━━`;
+    }
+
+    // Send notification with new status controls
+    async function sendNotification(chatId: number, reminder: any): Promise<boolean> {
       try {
         const message = formatNotification(reminder);
         await bot.telegram.sendMessage(chatId, message, {
           parse_mode: 'HTML',
           reply_markup: {
             inline_keyboard: [
-              [{ text: '🗑️ Delete', callback_data: `delete_${reminder.id}` }]
+              [
+                { text: '🟡 In Progress', callback_data: `status_progress_${reminder.id}` },
+                { text: '❌ Delete', callback_data: `delete_${reminder.id}` }
+              ]
             ]
           }
         });
         return true;
       } catch (error) {
-        console.error('Error sending simple notification:', error);
-        return false;
-      }
-    }
-
-    // Send CONFIRM reminder (Confirm button only until confirmed)
-    async function sendConfirmNotification(chatId: number, reminder: { id: string; text: string; date: string; time: string }, isReRemind: boolean = false): Promise<boolean> {
-      try {
-        const message = formatNotification(reminder, isReRemind);
-        await bot.telegram.sendMessage(chatId, message, {
-          parse_mode: 'HTML',
-          reply_markup: {
-            inline_keyboard: [
-              [{ text: '✅ Confirm', callback_data: `confirm_${reminder.id}` }]
-            ]
-          }
-        });
-        return true;
-      } catch (error) {
-        console.error('Error sending confirm notification:', error);
+        console.error('Error sending notification:', error);
         return false;
       }
     }
@@ -154,22 +175,10 @@ ${reminder.text.toUpperCase()}
       if (reminders && reminders.length > 0) {
         for (const reminder of reminders) {
           try {
-            const isConfirmRequired = reminder.confirm_required === true;
-            let success = false;
-            
-            if (isConfirmRequired) {
-              // Send with Confirm button
-              success = await sendConfirmNotification(
-                reminder.user_id,
-                { id: reminder.id, text: reminder.text, date: reminder.date, time: reminder.time }
-              );
-            } else {
-              // Send with Delete button only
-              success = await sendSimpleNotification(
-                reminder.user_id,
-                { id: reminder.id, text: reminder.text, date: reminder.date, time: reminder.time }
-              );
-            }
+            const success = await sendNotification(
+              reminder.user_id,
+              { id: reminder.id, text: reminder.text, date: reminder.date, time: reminder.time }
+            );
 
             if (success) {
               // Mark as sent and record last_sent_at
@@ -177,6 +186,7 @@ ${reminder.text.toUpperCase()}
                 .from('reminders')
                 .update({ 
                   sent: true,
+                  confirm_required: true,
                   last_sent_at: nowTimestamp
                 })
                 .eq('id', reminder.id);
@@ -213,7 +223,7 @@ ${reminder.text.toUpperCase()}
 
           // Check if it's time to re-send
           if (timeSinceLastSend >= reRemindInterval) {
-            const success = await sendConfirmNotification(
+            const success = await sendNotification(
               reminder.user_id,
               { id: reminder.id, text: reminder.text, date: reminder.date, time: reminder.time },
               true // isReRemind
