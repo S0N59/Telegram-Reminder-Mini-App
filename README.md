@@ -41,21 +41,21 @@ A powerful, beautiful reminder application built as a Telegram Mini App. Create 
 
 ```
 ┌────────────────────────────────────────────────────────────────────┐
-│                         USER INTERACTION                            │
+│                         USER INTERACTION                           │
 └────────────────────────────────────────────────────────────────────┘
                                    │
                                    ▼
 ┌────────────────────────────────────────────────────────────────────┐
-│                      TELEGRAM MINI APP                              │
+│                      TELEGRAM MINI APP                             │
 │  ┌──────────────────────────────────────────────────────────────┐  │
-│  │                    Frontend (React + Vite)                    │  │
-│  │                    Hosted on Firebase                         │  │
+│  │                    Frontend (React + Vite)                   │  │
+│  │                    Hosted on Firebase                        │  │
 │  └──────────────────────────────────────────────────────────────┘  │
 └────────────────────────────────────────────────────────────────────┘
                                    │
                                    ▼ HTTPS API Calls
 ┌────────────────────────────────────────────────────────────────────┐
-│                      BACKEND (Vercel Serverless)                    │
+│                      BACKEND (Vercel Serverless)                   │
 │  ┌───────────────────────────┐      ┌───────────────────────────┐  │
 │  │      API Endpoints        │      │      Services             │  │
 │  │ - /api/reminders (CRUD)   │      │ - Notion Service          │  │
