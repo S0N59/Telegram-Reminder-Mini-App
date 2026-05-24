@@ -55,7 +55,7 @@ A powerful, beautiful reminder application built as a Telegram Mini App. Create 
                                    │
                                    ▼ HTTPS API Calls
 ┌────────────────────────────────────────────────────────────────────┐
-│                      BACKEND (Vercel Serverless)                    │
+│                      BACKEND (Vercel Serverless)                   │
 │  ┌───────────────────────────┐      ┌───────────────────────────┐  │
 │  │      API Endpoints        │      │      Services             │  │
 │  │ - /api/reminders (CRUD)   │      │ - Notion Service          │  │
