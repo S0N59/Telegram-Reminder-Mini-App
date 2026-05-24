@@ -39,13 +39,18 @@ export default async function handler(
         return res.status(400).json({ error: 'userId is required' });
       }
 
+      const parsedUserId = parseInt(userId as string);
+      console.log(`[API] Fetching reminders for userId: ${userId} (parsed: ${parsedUserId})`);
       const { data, error } = await supabase
         .from('reminders')
         .select('*')
-        .eq('user_id', parseInt(userId as string))
-        .eq('done', false)
+        .or(`user_id.eq.${parsedUserId},assigned_to_chat_id.eq.${parsedUserId}`)
         .order('date', { ascending: true })
         .order('time', { ascending: true });
+
+      if (!error) {
+        console.log(`[API] Found ${data?.length || 0} active reminders for user ${userId}`);
+      }
 
       if (error) {
         return res.status(500).json({
@@ -61,9 +66,10 @@ export default async function handler(
         date: r.date,
         time: r.time,
         createdAt: r.created_at,
-        userId: r.user_id,
+        userId: Number(r.user_id),
         done: r.done || false,
         sent: r.sent || false,
+        status: r.status || 'todo',
         priority: r.priority || 'MEDIUM',
         repeat: r.repeat_type || 'NONE',
         customWeekdays: r.custom_weekdays,
@@ -75,6 +81,9 @@ export default async function handler(
         lastSentAt: r.last_sent_at,
         category: r.category,
         assignedTo: r.assigned_to,
+        assignedToChatId: r.assigned_to_chat_id ? Number(r.assigned_to_chat_id) : undefined,
+        creatorName: r.creator_name,
+        isSentToMe: r.assigned_to_chat_id ? Number(r.assigned_to_chat_id) === parsedUserId : false,
       })) || [];
 
       return res.status(200).json(reminders);
@@ -95,6 +104,8 @@ export default async function handler(
         reRemindInterval = 5,
         category,
         assignedTo,
+        assignedToChatId,
+        creatorName,
       } = req.body;
 
       if (!text || !date || !time || !userId) {
@@ -112,6 +123,7 @@ export default async function handler(
         created_at: Date.now(),
         done: false,
         sent: false,
+        status: 'todo',
         priority,
         repeat_type: repeat,
         custom_weekdays: customWeekdays,
@@ -123,6 +135,8 @@ export default async function handler(
         last_sent_at: null,
         category,
         assigned_to: assignedTo,
+        assigned_to_chat_id: assignedToChatId || null,
+        creator_name: creatorName || null,
       };
 
       const { data, error } = await supabase
@@ -138,14 +152,39 @@ export default async function handler(
         });
       }
 
+      // Fetch user's settings and increment total_created
+      const { data: userSettings } = await supabase
+        .from('user_settings')
+        .select('notion_token, notion_database_id, total_created')
+        .eq('user_id', data.user_id)
+        .single();
+        
+      const currentCreated = userSettings?.total_created || 0;
+      await supabase
+        .from('user_settings')
+        .upsert({
+          user_id: data.user_id,
+          total_created: currentCreated + 1,
+          updated_at: Date.now()
+        }, { onConflict: 'user_id' });
+
+      const creds = userSettings ? {
+        notionToken: userSettings.notion_token,
+        notionDatabaseId: userSettings.notion_database_id
+      } : null;
+
       // Create Notion task in background
-      const notionPageId = await createNotionTask(data);
+      const notionPageId = await createNotionTask(data, creds);
       if (notionPageId) {
         // Save the ID silently
-        await supabase
+        const { error: updateError } = await supabase
           .from('reminders')
           .update({ notion_page_id: notionPageId })
           .eq('id', data.id);
+          
+        if (updateError) {
+           console.error('Failed to save notion_page_id to Supabase:', updateError);
+        }
       }
 
       return res.status(201).json({
@@ -154,9 +193,10 @@ export default async function handler(
         date: data.date,
         time: data.time,
         createdAt: data.created_at,
-        userId: data.user_id,
+        userId: Number(data.user_id),
         done: data.done || false,
         sent: data.sent || false,
+        status: data.status || 'todo',
         priority: data.priority || 'MEDIUM',
         repeat: data.repeat_type || 'NONE',
         customWeekdays: data.custom_weekdays,
@@ -164,6 +204,8 @@ export default async function handler(
         maxResend: data.max_resend || 3,
         category: data.category,
         assignedTo: data.assigned_to,
+        assignedToChatId: data.assigned_to_chat_id ? Number(data.assigned_to_chat_id) : undefined,
+        creatorName: data.creator_name,
       });
     }
 
@@ -174,11 +216,14 @@ export default async function handler(
       }
 
       const updates: Record<string, any> = {};
+      const timeChanged = req.body.date !== undefined || req.body.time !== undefined;
+
       if (req.body.text !== undefined) updates.text = req.body.text;
       if (req.body.date !== undefined) updates.date = req.body.date;
       if (req.body.time !== undefined) updates.time = req.body.time;
       if (req.body.done !== undefined) updates.done = req.body.done;
       if (req.body.sent !== undefined) updates.sent = req.body.sent;
+      if (req.body.status !== undefined) updates.status = req.body.status;
       if (req.body.priority !== undefined) updates.priority = req.body.priority;
       if (req.body.repeat !== undefined) updates.repeat_type = req.body.repeat;
       if (req.body.customWeekdays !== undefined) {
@@ -186,6 +231,24 @@ export default async function handler(
       }
       if (req.body.category !== undefined) updates.category = req.body.category;
       if (req.body.assignedTo !== undefined) updates.assigned_to = req.body.assignedTo;
+      if (req.body.assignedToChatId !== undefined) updates.assigned_to_chat_id = req.body.assignedToChatId;
+      if (req.body.creatorName !== undefined) updates.creator_name = req.body.creatorName;
+      if (req.body.confirmRequired !== undefined) {
+        updates.confirm_required = req.body.confirmRequired;
+      }
+      if (req.body.reRemindInterval !== undefined) {
+        updates.re_remind_interval = req.body.reRemindInterval;
+      }
+
+      // If date or time changed, reset notification status
+      if (timeChanged) {
+        updates.sent = false;
+        updates.done = false;
+        updates.status = 'todo';
+        updates.confirmed = false;
+        updates.last_sent_at = null;
+        updates.resend_count = 0;
+      }
 
       const { data, error } = await supabase
         .from('reminders')
@@ -206,7 +269,18 @@ export default async function handler(
       }
 
       if (data.notion_page_id) {
-        await updateNotionTask(data);
+        const { data: userSettings } = await supabase
+          .from('user_settings')
+          .select('notion_token, notion_database_id')
+          .eq('user_id', data.user_id)
+          .single();
+
+        const creds = userSettings ? {
+          notionToken: userSettings.notion_token,
+          notionDatabaseId: userSettings.notion_database_id
+        } : null;
+
+        await updateNotionTask(data, creds);
       }
 
       return res.status(200).json({
@@ -215,9 +289,10 @@ export default async function handler(
         date: data.date,
         time: data.time,
         createdAt: data.created_at,
-        userId: data.user_id,
+        userId: Number(data.user_id),
         done: data.done || false,
         sent: data.sent || false,
+        status: data.status || 'todo',
         priority: data.priority || 'MEDIUM',
         repeat: data.repeat_type || 'NONE',
         customWeekdays: data.custom_weekdays,
@@ -225,6 +300,8 @@ export default async function handler(
         maxResend: data.max_resend || 3,
         category: data.category,
         assignedTo: data.assigned_to,
+        assignedToChatId: data.assigned_to_chat_id ? Number(data.assigned_to_chat_id) : undefined,
+        creatorName: data.creator_name,
       });
     }
 
@@ -237,16 +314,38 @@ export default async function handler(
       // 1. Get reminder to find notion_page_id before deleting
       const { data: reminder } = await supabase
         .from('reminders')
-        .select('notion_page_id')
+        .select('notion_page_id, user_id')
         .eq('id', id)
         .single();
 
-      // 2. Sync 'Archive' status to Notion
-      if (reminder?.notion_page_id) {
+      // 2. Sync 'Archive' status to Notion and increment total_deleted
+      if (reminder) {
         try {
-          await updateNotionStatus(reminder.notion_page_id, 'Archive');
+          const { data: userSettings } = await supabase
+            .from('user_settings')
+            .select('notion_token, notion_database_id, total_deleted')
+            .eq('user_id', reminder.user_id)
+            .single();
+
+          const currentDeleted = userSettings?.total_deleted || 0;
+          await supabase
+            .from('user_settings')
+            .upsert({
+              user_id: reminder.user_id,
+              total_deleted: currentDeleted + 1,
+              updated_at: Date.now()
+            }, { onConflict: 'user_id' });
+
+          const creds = userSettings ? {
+            notionToken: userSettings.notion_token,
+            notionDatabaseId: userSettings.notion_database_id
+          } : null;
+
+          if (reminder.notion_page_id) {
+            await updateNotionStatus(reminder.notion_page_id, 'Archive', creds);
+          }
         } catch (e) {
-          console.error('Failed to sync Archive to Notion:', e);
+          console.error('Failed to sync Archive to Notion or update stats:', e);
         }
       }
 

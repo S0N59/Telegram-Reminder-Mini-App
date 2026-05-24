@@ -5,10 +5,15 @@
 
 const NOTION_API_URL = 'https://api.notion.com/v1';
 
+export interface NotionCredentials {
+  notionToken: string;
+  notionDatabaseId: string;
+}
+
 // Helper to get headers
-function getHeaders() {
+function getHeaders(token: string) {
   return {
-    'Authorization': `Bearer ${process.env.NOTION_TOKEN}`,
+    'Authorization': `Bearer ${token}`,
     'Notion-Version': '2022-06-28',
     'Content-Type': 'application/json'
   };
@@ -18,7 +23,6 @@ function getHeaders() {
 function formatDeadline(date: string, time: string): string {
   try {
     if (date && time) {
-      // Create a datetime string. Assuming +04:00 timezone as seen in check-reminders.ts
       return `${date}T${time}:00.000+04:00`;
     }
     return new Date().toISOString();
@@ -73,7 +77,6 @@ function buildProperties(reminder: any) {
     }
   };
 
-  // Only send Status if the task is done to avoid "Not started" naming conflicts.
   if (done) {
     props["Status"] = {
       "status": {
@@ -82,7 +85,6 @@ function buildProperties(reminder: any) {
     };
   }
 
-  // Optional fields
   if (category) {
     props["Category"] = {
       "select": {
@@ -102,18 +104,17 @@ function buildProperties(reminder: any) {
   return props;
 }
 
-export async function createNotionTask(reminder: any): Promise<string | null> {
-  if (!process.env.NOTION_TOKEN || !process.env.NOTION_DATABASE_ID) {
-    console.warn('Notion credentials missing. Skipping creation.');
+export async function createNotionTask(reminder: any, creds?: NotionCredentials | null): Promise<string | null> {
+  if (!creds?.notionToken || !creds?.notionDatabaseId) {
     return null;
   }
 
   try {
     const response = await fetch(`${NOTION_API_URL}/pages`, {
       method: 'POST',
-      headers: getHeaders(),
+      headers: getHeaders(creds.notionToken),
       body: JSON.stringify({
-        parent: { database_id: process.env.NOTION_DATABASE_ID },
+        parent: { database_id: creds.notionDatabaseId },
         properties: buildProperties(reminder)
       })
     });
@@ -128,19 +129,19 @@ export async function createNotionTask(reminder: any): Promise<string | null> {
     return data.id; // Return the notion_page_id
   } catch (error) {
     console.error('Error creating Notion task:', error);
-    return null; // Fail gracefully
+    return null; 
   }
 }
 
-export async function updateNotionTask(reminder: any): Promise<boolean> {
-  if (!process.env.NOTION_TOKEN || !reminder.notion_page_id) {
+export async function updateNotionTask(reminder: any, creds?: NotionCredentials | null): Promise<boolean> {
+  if (!creds?.notionToken || !reminder.notion_page_id) {
     return false;
   }
 
   try {
     const response = await fetch(`${NOTION_API_URL}/pages/${reminder.notion_page_id}`, {
       method: 'PATCH',
-      headers: getHeaders(),
+      headers: getHeaders(creds.notionToken),
       body: JSON.stringify({
         properties: buildProperties(reminder)
       })
@@ -159,15 +160,15 @@ export async function updateNotionTask(reminder: any): Promise<boolean> {
   }
 }
 
-export async function archiveNotionTask(notionPageId: string): Promise<boolean> {
-  if (!process.env.NOTION_TOKEN || !notionPageId) {
+export async function archiveNotionTask(notionPageId: string, creds?: NotionCredentials | null): Promise<boolean> {
+  if (!creds?.notionToken || !notionPageId) {
     return false;
   }
 
   try {
     const response = await fetch(`${NOTION_API_URL}/pages/${notionPageId}`, {
       method: 'PATCH',
-      headers: getHeaders(),
+      headers: getHeaders(creds.notionToken),
       body: JSON.stringify({
         archived: true
       })
@@ -186,16 +187,16 @@ export async function archiveNotionTask(notionPageId: string): Promise<boolean> 
   }
 }
 
-// Update ONLY the Status property on a Notion page (used for In Progress / Done transitions)
-export async function updateNotionStatus(notionPageId: string, statusName: string): Promise<boolean> {
-  if (!process.env.NOTION_TOKEN || !notionPageId) {
-    return false;
+// Update ONLY the Status property on a Notion page
+export async function updateNotionStatus(notionPageId: string, statusName: string, creds?: NotionCredentials | null): Promise<{ success: boolean, error?: string }> {
+  if (!creds?.notionToken || !notionPageId) {
+    return { success: false, error: 'Missing token or notion_page_id' };
   }
 
   try {
     const response = await fetch(`${NOTION_API_URL}/pages/${notionPageId}`, {
       method: 'PATCH',
-      headers: getHeaders(),
+      headers: getHeaders(creds.notionToken),
       body: JSON.stringify({
         properties: {
           "Status": {
@@ -210,13 +211,12 @@ export async function updateNotionStatus(notionPageId: string, statusName: strin
     if (!response.ok) {
       const errorText = await response.text();
       console.error(`Notion API Error (Status Update): ${response.status} ${errorText}`);
-      return false;
+      return { success: false, error: `${response.status} ${errorText}` };
     }
 
-    return true;
-  } catch (error) {
+    return { success: true };
+  } catch (error: any) {
     console.error('Error updating Notion status:', error);
-    return false;
+    return { success: false, error: error.message };
   }
 }
-

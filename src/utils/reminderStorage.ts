@@ -25,6 +25,8 @@ export const saveReminderAPI = async (reminder: Reminder): Promise<Reminder> => 
         reRemindInterval: reminder.reRemindInterval || 5,
         category: reminder.category,
         assignedTo: reminder.assignedTo,
+        assignedToChatId: reminder.assignedToChatId,
+        creatorName: reminder.creatorName,
       }),
     });
 
@@ -43,24 +45,19 @@ export const saveReminderAPI = async (reminder: Reminder): Promise<Reminder> => 
 };
 
 export const getRemindersAPI = async (userId: number): Promise<Reminder[]> => {
-  try {
-    const response = await fetch(`${API_URL}/api/reminders?userId=${userId}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
+  const response = await fetch(`${API_URL}/api/reminders?userId=${userId}`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
 
-    if (!response.ok) {
-      throw new Error('Failed to fetch reminders');
-    }
-
-    return await response.json();
-  } catch (error) {
-    console.error('Error fetching reminders from API:', error);
-    // Fallback to localStorage if API fails
-    return getRemindersLocal().filter(r => r.userId === userId);
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || `API Error: ${response.status}`);
   }
+
+  return await response.json();
 };
 
 export const deleteReminderAPI = async (id: string): Promise<void> => {
@@ -142,3 +139,32 @@ export const updateReminderLocal = (id: string, updates: Partial<Reminder>): voi
     localStorage.setItem(STORAGE_KEY, JSON.stringify(reminders));
   }
 };
+
+// Contact picker API
+export interface BotContact {
+  userId: number;
+  username: string | null;
+  firstName: string | null;
+  lastName: string | null;
+}
+
+export const fetchContactsAPI = async (userId: number): Promise<BotContact[]> => {
+  try {
+    const response = await fetch(`${API_URL}/api/contacts?userId=${userId}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch contacts');
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching contacts:', error);
+    return [];
+  }
+};
+

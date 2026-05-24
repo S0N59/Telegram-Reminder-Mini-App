@@ -3,7 +3,7 @@ import { getTelegramWebApp } from './telegram';
 
 export const applyTelegramTheme = () => {
   const webApp = getTelegramWebApp();
-  
+
   if (!webApp) {
     // Fallback: определяем тему по системным настройкам
     applySystemTheme();
@@ -21,32 +21,32 @@ export const applyTelegramTheme = () => {
     '--tg-theme-bg-color',
     theme.bg_color || (colorScheme === 'dark' ? '#212121' : '#ffffff')
   );
-  
+
   root.style.setProperty(
     '--tg-theme-text-color',
     theme.text_color || (colorScheme === 'dark' ? '#ffffff' : '#000000')
   );
-  
+
   root.style.setProperty(
     '--tg-theme-hint-color',
     theme.hint_color || (colorScheme === 'dark' ? '#707579' : '#999999')
   );
-  
+
   root.style.setProperty(
     '--tg-theme-link-color',
     theme.link_color || (colorScheme === 'dark' ? '#6ab7ff' : '#3390ec')
   );
-  
+
   root.style.setProperty(
     '--tg-theme-button-color',
     theme.button_color || '#3390ec'
   );
-  
+
   root.style.setProperty(
     '--tg-theme-button-text-color',
     theme.button_text_color || '#ffffff'
   );
-  
+
   root.style.setProperty(
     '--tg-theme-secondary-bg-color',
     theme.secondary_bg_color || (colorScheme === 'dark' ? '#181818' : '#f1f1f1')
@@ -110,7 +110,7 @@ const applySystemTheme = () => {
 // Слушатель изменений темы (если Telegram поддерживает)
 export const setupThemeListener = () => {
   const webApp = getTelegramWebApp();
-  
+
   if (webApp) {
     // Применяем тему при изменении
     const handleThemeChange = () => {
@@ -136,7 +136,7 @@ export const setupThemeListener = () => {
   } else {
     // Если не в Telegram, используем системную тему
     applySystemTheme();
-    
+
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
     mediaQuery.addEventListener('change', applySystemTheme);
   }

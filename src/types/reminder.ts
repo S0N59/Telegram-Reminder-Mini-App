@@ -11,6 +11,7 @@ export interface Reminder {
   createdAt: number; // timestamp
   userId?: number; // ID пользователя из Telegram
   sent?: boolean; // Отправлено ли напоминание
+  status?: 'todo' | 'in_progress' | 'done';
   // Новые поля
   priority?: PriorityType;
   repeat?: RepeatType;
@@ -28,6 +29,9 @@ export interface Reminder {
   lastSentAt?: number; // timestamp of last notification sent
   category?: string;
   assignedTo?: string;
+  assignedToChatId?: number;
+  creatorName?: string;
+  isSentToMe?: boolean;
 }
 
 export interface ReminderFormData {
@@ -43,6 +47,8 @@ export interface ReminderFormData {
   customWeekdays?: number[];
   category?: string;
   assignedTo?: string;
+  assignedToChatId?: number;
+  creatorName?: string;
   // Confirmation required fields
   reminderType?: ReminderType;
   confirmRequired?: boolean;
@@ -55,4 +61,13 @@ export interface ReminderPayload {
   time: string;
   userId: number;
   initData: string;
+}
+
+export interface Stats {
+  totalCreated: number;
+  totalDeleted: number;
+  inProgress: number;
+  todo: number;
+  done: number;
+  overdue: number;
 }

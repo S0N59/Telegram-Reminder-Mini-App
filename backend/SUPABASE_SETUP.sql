@@ -20,7 +20,8 @@ CREATE TABLE IF NOT EXISTS reminders (
   snoozed_until BIGINT,
   notion_page_id TEXT,
   category TEXT,
-  assigned_to TEXT
+  assigned_to TEXT,
+  status TEXT DEFAULT 'todo'
 );
 
 -- Note: If you already have the reminders table created, run these:
@@ -45,3 +46,15 @@ ALTER TABLE reminders DISABLE ROW LEVEL SECURITY;
 --   TO anon
 --   USING (true)
 --   WITH CHECK (true);
+
+-- 4. Create user_settings table for Notion integration
+CREATE TABLE IF NOT EXISTS user_settings (
+  user_id BIGINT PRIMARY KEY,
+  notion_token TEXT,
+  notion_database_id TEXT,
+  updated_at BIGINT,
+  total_created INTEGER DEFAULT 0,
+  total_deleted INTEGER DEFAULT 0
+);
+
+ALTER TABLE user_settings DISABLE ROW LEVEL SECURITY;

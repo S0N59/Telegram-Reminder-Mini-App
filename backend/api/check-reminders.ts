@@ -23,16 +23,16 @@ export default async function handler(
 
     // Check if required env vars are set
     if (!process.env.SUPABASE_URL || !process.env.SUPABASE_ANON_KEY) {
-      return res.status(503).json({ 
+      return res.status(503).json({
         error: 'Database not configured',
-        message: 'Missing Supabase environment variables' 
+        message: 'Missing Supabase environment variables'
       });
     }
 
     if (!process.env.TELEGRAM_BOT_TOKEN) {
-      return res.status(503).json({ 
+      return res.status(503).json({
         error: 'Telegram bot not configured',
-        message: 'Missing TELEGRAM_BOT_TOKEN environment variable' 
+        message: 'Missing TELEGRAM_BOT_TOKEN environment variable'
       });
     }
 
@@ -52,30 +52,30 @@ export default async function handler(
     function getSmartTime(dateStr: string, timeStr: string): string {
       const [year, month, day] = dateStr.split('-').map(Number);
       const [hour, minute] = timeStr.split(':').map(Number);
-      
+
       const now = new Date(new Date().getTime() + (4 * 60 * 60 * 1000)); // UTC+4
       const target = new Date(year, month - 1, day, hour, minute);
-      
+
       const diffMs = target.getTime() - now.getTime();
       const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-      
+
       const isToday = now.getUTCFullYear() === year && now.getUTCMonth() === month - 1 && now.getUTCDate() === day;
       const tomorrow = new Date(now);
       tomorrow.setDate(tomorrow.getDate() + 1);
       const isTomorrow = tomorrow.getUTCFullYear() === year && tomorrow.getUTCMonth() === month - 1 && tomorrow.getUTCDate() === day;
-      
+
       if (diffMs > 0 && diffMs < 12 * 60 * 60 * 1000) {
         const hours = Math.floor(diffMs / (1000 * 60 * 60));
         if (hours > 0) return `In ${hours} hour${hours > 1 ? 's' : ''}`;
         const mins = Math.floor(diffMs / (1000 * 60));
         return `In ${mins} minute${mins > 1 ? 's' : ''}`;
       }
-      
+
       const timeFormatted = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
-      
+
       if (isToday) return `Today at ${timeFormatted}`;
       if (isTomorrow) return `Tomorrow at ${timeFormatted}`;
-      
+
       return `${day}/${month}/${year} at ${timeFormatted}`;
     }
 
@@ -83,8 +83,8 @@ export default async function handler(
     function formatNotification(reminder: any): string {
       if (reminder.status === 'done') {
         return `✅ <b>TASK COMPLETED</b>\n\n` +
-               `📝 ${reminder.text}\n` +
-               `⏰ Was: ${reminder.time}`;
+          `📝 ${reminder.text}\n` +
+          `⏰ Was: ${reminder.time}`;
       }
 
       const statusMap: any = {
@@ -92,16 +92,19 @@ export default async function handler(
         'in_progress': { label: 'In Progress', emoji: '🟡' },
         'done': { label: 'Done', emoji: '🟢' }
       };
-      
+
       const status = statusMap[reminder.status || 'todo'] || statusMap['todo'];
       const smartTime = getSmartTime(reminder.date, reminder.time);
-      
+
       return `🔔 <b>REMINDER</b>\n\n` +
-             `📝 <b>${reminder.text}</b>\n\n` +
-             `📌 Status: ${status.emoji} ${status.label}\n` +
-             `⏰ ${smartTime}\n` +
-             `⚡ Priority: ${reminder.priority || 'MEDIUM'}\n\n` +
-             `━━━━━━━━━━━━━━━`;
+        `📝 <b>${reminder.text}</b>\n\n` +
+        `📌 Status: ${status.emoji} ${status.label}\n` +
+        `⏰ ${smartTime}\n` +
+        `⚡ Priority: ${reminder.priority || 'MEDIUM'}\n` +
+        (reminder.assigned_to_chat_id && reminder.creator_name
+          ? `\n📨 From: ${reminder.creator_name}\n`
+          : '') +
+        `\n━━━━━━━━━━━━━━━`;
     }
 
     // Send notification with new status controls
@@ -113,6 +116,7 @@ export default async function handler(
           reply_markup: {
             inline_keyboard: [
               [
+                { text: '📝 Edit', callback_data: `edit_${reminder.id}` },
                 { text: '🟡 In Progress', callback_data: `status_progress_${reminder.id}` },
                 { text: '❌ Delete', callback_data: `delete_${reminder.id}` }
               ]
@@ -129,15 +133,15 @@ export default async function handler(
     // Get current time
     const nowUTC = new Date();
     const nowTimestamp = nowUTC.getTime();
-    
+
     // Convert to Armenia time (UTC+4)
     const USER_TIMEZONE_OFFSET = 4;
     const userLocalTime = new Date(nowUTC.getTime() + (USER_TIMEZONE_OFFSET * 60 * 60 * 1000));
-    
+
     const currentHour = userLocalTime.getUTCHours();
     const currentMinute = userLocalTime.getUTCMinutes();
     const currentDate = `${userLocalTime.getUTCFullYear()}-${String(userLocalTime.getUTCMonth() + 1).padStart(2, '0')}-${String(userLocalTime.getUTCDate()).padStart(2, '0')}`;
-    
+
     // Check current minute and previous minute
     const minutesToCheck = [currentMinute];
     if (currentMinute === 0) {
@@ -156,7 +160,7 @@ export default async function handler(
       if (minute === 59 && currentMinute === 0) {
         checkHour = currentHour === 0 ? 23 : currentHour - 1;
       }
-      
+
       const checkTime = `${String(checkHour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
 
       const { data: reminders, error } = await supabase
@@ -171,22 +175,22 @@ export default async function handler(
         console.error('[CHECK-REMINDERS] Error fetching new reminders:', error);
         continue;
       }
-      
+
       if (reminders && reminders.length > 0) {
         for (const reminder of reminders) {
           try {
+            const targetChatId = reminder.assigned_to_chat_id || reminder.user_id;
             const success = await sendNotification(
-              reminder.user_id,
-              { id: reminder.id, text: reminder.text, date: reminder.date, time: reminder.time }
+              targetChatId,
+              reminder
             );
 
             if (success) {
               // Mark as sent and record last_sent_at
               await supabase
                 .from('reminders')
-                .update({ 
+                .update({
                   sent: true,
-                  confirm_required: true,
                   last_sent_at: nowTimestamp
                 })
                 .eq('id', reminder.id);
@@ -223,10 +227,10 @@ export default async function handler(
 
           // Check if it's time to re-send
           if (timeSinceLastSend >= reRemindInterval) {
+            const targetChatId = reminder.assigned_to_chat_id || reminder.user_id;
             const success = await sendNotification(
-              reminder.user_id,
-              { id: reminder.id, text: reminder.text, date: reminder.date, time: reminder.time },
-              true // isReRemind
+              targetChatId,
+              reminder
             );
 
             if (success) {
@@ -250,16 +254,57 @@ export default async function handler(
       }
     }
 
+    // 3. Auto-delete reminders older than 7 days (Run daily at 03:00 AM - 03:02 AM to optimize load and handle cron delays)
+    let deletedCount = 0;
+    if (currentHour === 3 && currentMinute <= 2) {
+      const sevenDaysAgo = new Date(userLocalTime);
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      const cutoffDate = `${sevenDaysAgo.getUTCFullYear()}-${String(sevenDaysAgo.getUTCMonth() + 1).padStart(2, '0')}-${String(sevenDaysAgo.getUTCDate()).padStart(2, '0')}`;
+
+      const { data: oldReminders, error: oldError } = await supabase
+        .from('reminders')
+        .select('id, notion_page_id, user_id')
+        .lt('date', cutoffDate);
+
+      if (!oldError && oldReminders && oldReminders.length > 0) {
+        for (const old of oldReminders) {
+          // Optional: Update Notion to Archive
+          if (old.notion_page_id) {
+             try {
+               const { data: userSettings } = await supabase
+                 .from('user_settings')
+                 .select('notion_token, notion_database_id')
+                 .eq('user_id', old.user_id)
+                 .single();
+
+               const creds = userSettings ? {
+                 notionToken: userSettings.notion_token,
+                 notionDatabaseId: userSettings.notion_database_id
+               } : null;
+
+               const { updateNotionStatus } = await import('../services/notion.js');
+               await updateNotionStatus(old.notion_page_id, 'Archive', creds);
+             } catch (e) {
+               console.error('[CHECK-REMINDERS] Failed to archive old Notion task:', e);
+             }
+          }
+          await supabase.from('reminders').delete().eq('id', old.id);
+          deletedCount++;
+        }
+      }
+    }
+
     return res.status(200).json({
       message: 'Reminder check completed',
       newSent: sentCount,
       reReminded: reRemindCount,
+      autoDeleted: deletedCount,
       failed: failedCount,
       timestamp: new Date().toISOString()
     });
   } catch (error) {
     console.error('[CHECK-REMINDERS] Error:', error);
-    return res.status(500).json({ 
+    return res.status(500).json({
       error: 'Internal server error',
       message: error instanceof Error ? error.message : 'Unknown error'
     });

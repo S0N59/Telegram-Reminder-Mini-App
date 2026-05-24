@@ -36,9 +36,9 @@ export const subscribeToReminders = (
   const updateReminders = async () => {
     try {
       const reminders = await getRemindersAPI(userId);
-      // Filter active reminders for this user - NO conversion
-      const userReminders = reminders.filter(r => r.userId === userId && !r.done);
-      callback(userReminders);
+      console.log('[subscribe] Got', reminders.length, 'reminders from API');
+      // API already filters by userId and done=false — pass through directly
+      callback(reminders);
     } catch (error) {
       console.error('Error fetching reminders:', error);
       const localReminders = getRemindersLocal().filter(r => r.userId === userId && !r.done);
@@ -109,6 +109,15 @@ export const createReminder = (
     date: dateStr,
     time: timeStr,
     createdAt: Date.now(),
-    userId
+    userId,
+    priority: formData.priority || 'MEDIUM',
+    repeat: formData.repeat || 'NONE',
+    customWeekdays: formData.customWeekdays,
+    confirmRequired: formData.confirmRequired || false,
+    reRemindInterval: formData.reRemindInterval || 5,
+    category: formData.category,
+    assignedTo: formData.assignedTo,
+    assignedToChatId: formData.assignedToChatId,
+    creatorName: formData.creatorName,
   };
 };
