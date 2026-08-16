@@ -1,4 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { getDb } from './db.js';
 
 // Direct Telegram API calls (more reliable than Telegraf in serverless)
 async function answerCallback(token: string, callbackId: string, text: string, showAlert: boolean = false): Promise<void> {
@@ -133,30 +134,26 @@ export default async function handler(
 
   try {
     const update = req.body;
-
-    // --- Register user in bot_users on ANY interaction ---
-    const { createClient: createSupaClient } = await import('@supabase/supabase-js');
-    const supa = (process.env.SUPABASE_URL && process.env.SUPABASE_ANON_KEY)
-      ? createSupaClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY)
-      : null;
+    let db: any = null;
+    try {
+      db = getDb();
+    } catch (e) {
+      console.error('[WEBHOOK] DB init failed:', e);
+    }
 
     const fromUser = update.message?.from || update.callback_query?.from;
     let registerPromise: Promise<void> | null = null;
-    if (supa && fromUser?.id) {
+    
+    if (db && fromUser?.id) {
       registerPromise = (async () => {
         try {
-          const { error } = await supa.from('bot_users').upsert({
-            user_id: fromUser.id,
-            username: fromUser.username || null,
-            first_name: fromUser.first_name || null,
-            last_name: fromUser.last_name || null,
-            registered_at: Date.now()
-          }, { onConflict: 'user_id' });
-          if (error) {
-            console.error('[WEBHOOK] bot_users upsert error:', error);
-          } else {
-            console.log(`[WEBHOOK] Registered/updated bot_user ${fromUser.id} (@${fromUser.username})`);
-          }
+          await db.query(`
+            INSERT INTO bot_users (user_id, username, first_name, last_name, registered_at)
+            VALUES ($1, $2, $3, $4, $5)
+            ON CONFLICT (user_id) DO UPDATE SET
+              username = $2, first_name = $3, last_name = $4
+          `, [fromUser.id, fromUser.username || null, fromUser.first_name || null, fromUser.last_name || null, Date.now()]);
+          console.log(`[WEBHOOK] Registered/updated bot_user ${fromUser.id}`);
         } catch (e: any) {
           console.error('[WEBHOOK] bot_users upsert exception:', e);
         }
@@ -170,7 +167,7 @@ export default async function handler(
       const firstName = update.message.from?.first_name || 'there';
       const fromUserObj = update.message.from;
       
-      const startParam = text.split(' ')[1] || ''; // e.g. "add_12345"
+      const startParam = text.split(' ')[1] || '';
       
       if (startParam.startsWith('add_')) {
         const inviterIdStr = startParam.substring(4);
@@ -178,68 +175,46 @@ export default async function handler(
         const inviteeId = fromUserObj?.id;
         
         if (inviteeId && !isNaN(inviterId) && inviterId !== inviteeId) {
-          // Wait for the invitee to be registered in bot_users first (to avoid foreign key reference errors)
-          if (registerPromise) {
-            await registerPromise;
-          }
+          if (registerPromise) await registerPromise;
           
-          if (supa) {
+          if (db) {
             try {
-              // 1. Fetch inviter information to send messages to both and construct the notification
-              const { data: inviterUser } = await supa
-                .from('bot_users')
-                .select('username, first_name, last_name')
-                .eq('user_id', inviterId)
-                .single();
+              const { rows: inviterRows } = await db.query(`SELECT username, first_name, last_name FROM bot_users WHERE user_id = $1`, [inviterId]);
+              const inviterUser = inviterRows[0];
               
-              // 2. Insert bidirectional connections
               const timestamp = Date.now();
-              const { error: connError } = await supa.from('user_connections').upsert([
-                { user_id_1: inviterId, user_id_2: inviteeId, created_at: timestamp },
-                { user_id_1: inviteeId, user_id_2: inviterId, created_at: timestamp }
-              ], { onConflict: 'user_id_1,user_id_2' });
+              await db.query(`
+                INSERT INTO user_connections (user_id_1, user_id_2, created_at)
+                VALUES ($1, $2, $3), ($2, $1, $3)
+                ON CONFLICT DO NOTHING
+              `, [inviterId, inviteeId, timestamp]);
               
-              if (connError) {
-                console.error('[WEBHOOK] Connection upsert error:', connError);
-              } else {
-                // 3. Inform the Invitee (current user)
-                const inviterName = inviterUser
-                  ? (inviterUser.username ? `@${inviterUser.username}` : `${inviterUser.first_name || 'Friend'}`)
-                  : 'Friend';
-                
-                const inviteeName = fromUserObj.username
-                  ? `@${fromUserObj.username}`
-                  : `${fromUserObj.first_name || 'Friend'}`;
-                
-                // Send connection success to Invitee
-                const inviteeAPI = `https://api.telegram.org/bot${token}/sendMessage`;
-                await fetch(inviteeAPI, {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({
-                    chat_id: inviteeId,
-                    text: `🎉 <b>Connected!</b> You are now connected with ${inviterName}.\n\n` +
-                          `You can now select each other in the Contact Picker and send reminders!`,
-                    parse_mode: 'HTML'
-                  })
-                });
-                
-                // 4. Inform the Inviter (the one who sent the link)
-                // Send connection success to Inviter
-                const inviterAPI = `https://api.telegram.org/bot${token}/sendMessage`;
-                await fetch(inviterAPI, {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({
-                    chat_id: inviterId,
-                    text: `🎉 <b>New Contact!</b> ${inviteeName} has accepted your invite and is now in your contacts.\n\n` +
-                          `You can now send them reminders using the Mini App!`,
-                    parse_mode: 'HTML'
-                  })
-                });
-                
-                return res.status(200).json({ ok: true });
-              }
+              const inviterName = inviterUser ? (inviterUser.username ? `@${inviterUser.username}` : `${inviterUser.first_name || 'Friend'}`) : 'Friend';
+              const inviteeName = fromUserObj.username ? `@${fromUserObj.username}` : `${fromUserObj.first_name || 'Friend'}`;
+              
+              // Inform Invitee
+              await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  chat_id: inviteeId,
+                  text: `🎉 <b>Connected!</b> You are now connected with ${inviterName}.\n\nYou can now select each other in the Contact Picker and send reminders!`,
+                  parse_mode: 'HTML'
+                })
+              });
+              
+              // Inform Inviter
+              await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  chat_id: inviterId,
+                  text: `🎉 <b>New Contact!</b> ${inviteeName} has accepted your invite and is now in your contacts.\n\nYou can now send them reminders using the Mini App!`,
+                  parse_mode: 'HTML'
+                })
+              });
+              
+              return res.status(200).json({ ok: true });
             } catch (err) {
               console.error('[WEBHOOK] Error creating connection:', err);
             }
@@ -247,16 +222,12 @@ export default async function handler(
         }
       }
       
-      // Default /start message if not deep linking or if it failed
-      const API = `https://api.telegram.org/bot${token}/sendMessage`;
-      await fetch(API, {
+      await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           chat_id: chatId,
-          text: `👋 Hey ${firstName}! Welcome to Reminder Bot.\n\n` +
-                `You can now receive reminders from other users.\n` +
-                `Open the Mini App to create and manage your reminders.`,
+          text: `👋 Hey ${firstName}! Welcome to Reminder Bot.\n\nYou can now receive reminders from other users.\nOpen the Mini App to create and manage your reminders.`,
           parse_mode: 'HTML'
         })
       });
@@ -278,9 +249,6 @@ export default async function handler(
       return res.status(200).json({ ok: true });
     }
 
-    const { createClient } = await import('@supabase/supabase-js');
-    const supabase = createClient(process.env.SUPABASE_URL || '', process.env.SUPABASE_ANON_KEY || '');
-
     const parts = data.split('_');
     const action = parts[0]; 
     let reminderId = '';
@@ -295,105 +263,73 @@ export default async function handler(
     }
 
     if (action === 'status') {
-      const updateData: any = { 
-        confirmed: statusValue !== 'todo',
-        done: statusValue === 'done',
-        status: statusValue
-      };
+      const confirmed = statusValue !== 'todo';
+      const done = statusValue === 'done';
 
-      const { data: updatedReminder, error } = await supabase
-        .from('reminders')
-        .update(updateData)
-        .eq('id', reminderId)
-        .select()
-        .single();
+      try {
+        const { rows } = await db.query(`
+          UPDATE reminders SET confirmed = $1, done = $2, status = $3
+          WHERE id = $4 RETURNING *
+        `, [confirmed, done, statusValue, reminderId]);
+        const updatedReminder = rows[0];
 
-      if (error) {
-        console.error('[WEBHOOK] Supabase update error:', error);
-        await answerCallback(token, callbackId, '❌ DB Error');
-        return res.status(200).json({ ok: true });
-      }
+        if (updatedReminder) {
+          await answerCallback(token, callbackId, statusValue === 'in_progress' ? '🟡 In Progress' : '🟢 Done');
+          await editMessage(token, chatId, messageId, formatNotification(updatedReminder), getKeyboard(updatedReminder));
 
-      if (updatedReminder) {
-        await answerCallback(token, callbackId, statusValue === 'in_progress' ? '🟡 In Progress' : '🟢 Done');
-        await editMessage(token, chatId, messageId, formatNotification(updatedReminder), getKeyboard(updatedReminder));
-
-        // Background Notion update
-        if (updatedReminder.notion_page_id) {
-          const { data: userSettings } = await supabase
-            .from('user_settings')
-            .select('notion_token, notion_database_id')
-            .eq('user_id', updatedReminder.user_id)
-            .single();
-
-          const creds = userSettings ? {
-            notionToken: userSettings.notion_token,
-            notionDatabaseId: userSettings.notion_database_id
-          } : null;
-
-          const { updateNotionStatus } = await import('../services/notion.js');
-          const notionStatus = statusValue === 'in_progress' ? 'In Progress' : (statusValue === 'done' ? 'Done' : 'To Do');
-          updateNotionStatus(updatedReminder.notion_page_id, notionStatus, creds).catch(e => console.error('Notion error:', e));
+          if (updatedReminder.notion_page_id) {
+            const { rows: usRows } = await db.query(`SELECT notion_token, notion_database_id FROM user_settings WHERE user_id = $1`, [updatedReminder.user_id]);
+            const userSettings = usRows[0];
+            const creds = userSettings ? { notionToken: userSettings.notion_token, notionDatabaseId: userSettings.notion_database_id } : null;
+            const { updateNotionStatus } = await import('../services/notion.js');
+            const notionStatus = statusValue === 'in_progress' ? 'In Progress' : (statusValue === 'done' ? 'Done' : 'To Do');
+            updateNotionStatus(updatedReminder.notion_page_id, notionStatus, creds).catch(e => console.error('Notion error:', e));
+          }
         }
+      } catch (error) {
+        console.error('[WEBHOOK] Postgres update error:', error);
+        await answerCallback(token, callbackId, '❌ DB Error');
       }
 
     } else if (action === 'delete') {
-      // 1. Get notion ID before delete
-      const { data: reminder } = await supabase.from('reminders').select('notion_page_id, user_id').eq('id', reminderId).single();
+      try {
+        const { rows: reminderRows } = await db.query(`SELECT notion_page_id, user_id FROM reminders WHERE id = $1`, [reminderId]);
+        const reminder = reminderRows[0];
 
-      if (reminder?.notion_page_id) {
-        const { data: userSettings } = await supabase
-          .from('user_settings')
-          .select('notion_token, notion_database_id')
-          .eq('user_id', reminder.user_id)
-          .single();
-
-        const creds = userSettings ? {
-          notionToken: userSettings.notion_token,
-          notionDatabaseId: userSettings.notion_database_id
-        } : null;
-
-        const { updateNotionStatus } = await import('../services/notion.js');
-        updateNotionStatus(reminder.notion_page_id, 'Archive', creds).catch(e => console.error('Notion delete error:', e));
-      }
-
-      // 2. Increment total_deleted and Delete from DB
-      if (reminder) {
-        try {
-          const { data: userSettings } = await supabase
-            .from('user_settings')
-            .select('total_deleted')
-            .eq('user_id', reminder.user_id)
-            .single();
-
-          const currentDeleted = userSettings?.total_deleted || 0;
-          await supabase
-            .from('user_settings')
-            .upsert({
-              user_id: reminder.user_id,
-              total_deleted: currentDeleted + 1,
-              updated_at: Date.now()
-            }, { onConflict: 'user_id' });
-        } catch (e) {
-          console.error('Failed to increment total_deleted in webhook:', e);
+        if (reminder?.notion_page_id) {
+          const { rows: usRows } = await db.query(`SELECT notion_token, notion_database_id FROM user_settings WHERE user_id = $1`, [reminder.user_id]);
+          const userSettings = usRows[0];
+          const creds = userSettings ? { notionToken: userSettings.notion_token, notionDatabaseId: userSettings.notion_database_id } : null;
+          const { updateNotionStatus } = await import('../services/notion.js');
+          updateNotionStatus(reminder.notion_page_id, 'Archive', creds).catch(e => console.error('Notion delete error:', e));
         }
-      }
 
-      const { error } = await supabase.from('reminders').delete().eq('id', reminderId);
-      
-      if (error) {
-        console.error('[WEBHOOK] Delete error:', error);
-        await answerCallback(token, callbackId, '❌ Failed to delete');
-      } else {
+        if (reminder) {
+          try {
+            const { rows: statRows } = await db.query(`SELECT total_deleted FROM user_settings WHERE user_id = $1`, [reminder.user_id]);
+            const currentDeleted = statRows[0]?.total_deleted || 0;
+            await db.query(`
+              INSERT INTO user_settings (user_id, total_deleted, updated_at) 
+              VALUES ($1, $2, $3)
+              ON CONFLICT (user_id) DO UPDATE SET total_deleted = $2, updated_at = $3
+            `, [reminder.user_id, currentDeleted + 1, Date.now()]);
+          } catch (e) {
+            console.error('Failed to increment total_deleted in webhook:', e);
+          }
+        }
+
+        await db.query(`DELETE FROM reminders WHERE id = $1`, [reminderId]);
         await answerCallback(token, callbackId, '🗑️ Deleted');
         const deleted = await deleteMessage(token, chatId, messageId);
         if (!deleted) {
           await editMessage(token, chatId, messageId, '🗑️ <b>Deleted</b>');
         }
+      } catch (error) {
+        console.error('[WEBHOOK] Delete error:', error);
+        await answerCallback(token, callbackId, '❌ Failed to delete');
       }
     } else if (action === 'edit') {
-        // Handle edit action if ever added
-        await answerCallback(token, callbackId, '💡 Use the Mini App to edit text', true);
+      await answerCallback(token, callbackId, '💡 Use the Mini App to edit text', true);
     }
 
     return res.status(200).json({ ok: true });
@@ -402,6 +338,3 @@ export default async function handler(
     return res.status(200).json({ ok: true });
   }
 }
-
-
-

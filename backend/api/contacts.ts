@@ -1,93 +1,132 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { getDb } from './db.js';
 
 export default async function handler(
   req: VercelRequest,
   res: VercelResponse
 ) {
-  // CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
 
-  if (req.method !== 'GET') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
+  const db = getDb();
 
-  try {
-    if (!process.env.SUPABASE_URL || !process.env.SUPABASE_ANON_KEY) {
-      return res.status(503).json({ error: 'Database not configured' });
-    }
+  // GET /api/contacts?userId=123
+  if (req.method === 'GET') {
+    try {
+      const { userId } = req.query;
 
-    const { createClient } = await import('@supabase/supabase-js');
-    const supabase = createClient(
-      process.env.SUPABASE_URL!,
-      process.env.SUPABASE_ANON_KEY!
-    );
+      if (!userId) {
+        return res.status(400).json({ error: 'userId is required' });
+      }
 
-    const { userId } = req.query;
+      const parsedUserId = parseInt(userId as string);
 
-    if (!userId) {
-      return res.status(400).json({ error: 'userId is required' });
-    }
+      // Fetch friend user IDs and their details using a JOIN
+      const result = await db.query(`
+        SELECT c.user_id_2 as user_id, b.username, b.first_name, b.last_name
+        FROM user_connections c
+        LEFT JOIN bot_users b ON c.user_id_2 = b.user_id
+        WHERE c.user_id_1 = $1
+        ORDER BY b.first_name ASC
+      `, [parsedUserId]);
 
-    const parsedUserId = parseInt(userId as string);
+      const contacts = result.rows.map((u: any) => ({
+        userId: u.user_id,
+        username: u.username,
+        firstName: u.first_name || 'Friend',
+        lastName: u.last_name,
+      }));
 
-    // 1. Fetch friend user IDs from user_connections
-    const { data: connections, error: connError } = await supabase
-      .from('user_connections')
-      .select('user_id_2')
-      .eq('user_id_1', parsedUserId);
-
-    if (connError) {
-      console.error('[CONTACTS] Error fetching connections:', connError);
+      return res.status(200).json(contacts);
+    } catch (error) {
+      console.error('[CONTACTS] GET Error:', error);
       return res.status(500).json({
-        error: 'Failed to fetch connections',
-        details: connError.message,
+        error: 'Internal server error',
+        message: error instanceof Error ? error.message : 'Unknown error',
       });
     }
+  }
 
-    const friendIds = (connections || []).map((c: any) => c.user_id_2);
+  // POST /api/contacts - Add contact by username or connect users
+  if (req.method === 'POST') {
+    try {
+      const { userId, targetUsername, targetUserId } = req.body;
 
-    let data: any[] = [];
-    let error: any = null;
+      if (!userId || (!targetUsername && !targetUserId)) {
+        return res.status(400).json({ error: 'userId and targetUsername/targetUserId are required' });
+      }
 
-    if (friendIds.length > 0) {
-      // 2. Fetch the bot_users details for those IDs
-      const { data: fetchedData, error: fetchError } = await supabase
-        .from('bot_users')
-        .select('user_id, username, first_name, last_name')
-        .in('user_id', friendIds)
-        .order('first_name', { ascending: true });
-      data = fetchedData || [];
-      error = fetchError;
-    }
+      const currentUserId = parseInt(userId);
+      let targetId = targetUserId ? parseInt(targetUserId) : null;
+      let targetUser: any = null;
 
-    if (error) {
-      console.error('[CONTACTS] Error fetching contacts:', error);
+      // Look up target by username if not provided targetId
+      if (!targetId && targetUsername) {
+        const cleanUsername = targetUsername.replace(/^@/, '').trim();
+        const { rows } = await db.query(
+          `SELECT user_id, username, first_name, last_name FROM bot_users WHERE LOWER(username) = LOWER($1)`,
+          [cleanUsername]
+        );
+        if (rows.length > 0) {
+          targetUser = rows[0];
+          targetId = targetUser.user_id;
+        }
+      } else if (targetId) {
+        const { rows } = await db.query(
+          `SELECT user_id, username, first_name, last_name FROM bot_users WHERE user_id = $1`,
+          [targetId]
+        );
+        if (rows.length > 0) {
+          targetUser = rows[0];
+        }
+      }
+
+      const timestamp = Date.now();
+
+      // If user found in bot_users, create two-way connection
+      if (targetId && targetId !== currentUserId) {
+        await db.query(`
+          INSERT INTO user_connections (user_id_1, user_id_2, created_at)
+          VALUES ($1, $2, $3), ($2, $1, $3)
+          ON CONFLICT DO NOTHING
+        `, [currentUserId, targetId, timestamp]);
+
+        return res.status(200).json({
+          success: true,
+          connected: true,
+          contact: {
+            userId: targetId,
+            username: targetUser?.username || targetUsername?.replace(/^@/, ''),
+            firstName: targetUser?.first_name || 'Friend',
+            lastName: targetUser?.last_name || null,
+          }
+        });
+      }
+
+      // If user not registered yet in bot_users, return pending contact
+      return res.status(200).json({
+        success: true,
+        connected: false,
+        contact: {
+          userId: targetId || Date.now(),
+          username: targetUsername ? targetUsername.replace(/^@/, '') : null,
+          firstName: targetUsername || 'Friend',
+          lastName: null,
+        }
+      });
+    } catch (error) {
+      console.error('[CONTACTS] POST Error:', error);
       return res.status(500).json({
-        error: 'Failed to fetch contacts',
-        details: error.message,
+        error: 'Internal server error',
+        message: error instanceof Error ? error.message : 'Unknown error',
       });
     }
-
-    // Transform to camelCase for frontend
-    const contacts = (data || []).map((u: any) => ({
-      userId: u.user_id,
-      username: u.username,
-      firstName: u.first_name,
-      lastName: u.last_name,
-    }));
-
-    return res.status(200).json(contacts);
-  } catch (error) {
-    console.error('[CONTACTS] Error:', error);
-    return res.status(500).json({
-      error: 'Internal server error',
-      message: error instanceof Error ? error.message : 'Unknown error',
-    });
   }
+
+  return res.status(405).json({ error: 'Method not allowed' });
 }

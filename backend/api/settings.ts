@@ -1,10 +1,10 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { getDb } from './db.js';
 
 export default async function handler(
   req: VercelRequest,
   res: VercelResponse
 ) {
-  // CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
@@ -14,69 +14,40 @@ export default async function handler(
   }
 
   try {
-    if (!process.env.SUPABASE_URL || !process.env.SUPABASE_ANON_KEY) {
-      return res.status(503).json({ error: 'Database not configured' });
-    }
-
-    const { createClient } = await import('@supabase/supabase-js');
-    const supabase = createClient(
-      process.env.SUPABASE_URL,
-      process.env.SUPABASE_ANON_KEY
-    );
-
+    const db = getDb();
     const { method } = req;
     const { userId } = req.query;
 
     if (method === 'GET') {
-      if (!userId) {
-        return res.status(400).json({ error: 'userId is required' });
-      }
-
-      const { data, error } = await supabase
-        .from('user_settings')
-        .select('*')
-        .eq('user_id', parseInt(userId as string))
-        .single();
-
-      if (error && error.code !== 'PGRST116') { // PGRST116 is "no rows returned"
-        return res.status(500).json({ error: 'Failed to fetch settings', details: error.message });
-      }
-
-      return res.status(200).json(data || {});
+      if (!userId) return res.status(400).json({ error: 'userId is required' });
+      
+      const { rows } = await db.query(`SELECT * FROM user_settings WHERE user_id = $1`, [parseInt(userId as string)]);
+      return res.status(200).json(rows[0] || {});
     }
 
     if (method === 'POST') {
       const { userId: bodyUserId, notionToken, notionDatabaseId } = req.body;
       const idToUse = userId || bodyUserId;
+      if (!idToUse) return res.status(400).json({ error: 'userId is required' });
 
-      if (!idToUse) {
-        return res.status(400).json({ error: 'userId is required' });
-      }
+      const parsedId = parseInt(idToUse as string);
+      
+      const { rows } = await db.query(`
+        INSERT INTO user_settings (user_id, notion_token, notion_database_id, updated_at)
+        VALUES ($1, $2, $3, $4)
+        ON CONFLICT (user_id) DO UPDATE SET 
+          notion_token = $2, 
+          notion_database_id = $3, 
+          updated_at = $4
+        RETURNING *
+      `, [parsedId, notionToken || null, notionDatabaseId || null, Date.now()]);
 
-      const { data, error } = await supabase
-        .from('user_settings')
-        .upsert({
-          user_id: parseInt(idToUse as string),
-          notion_token: notionToken || null,
-          notion_database_id: notionDatabaseId || null,
-          updated_at: Date.now()
-        }, { onConflict: 'user_id' })
-        .select()
-        .single();
-
-      if (error) {
-        return res.status(500).json({ error: 'Failed to save settings', details: error.message });
-      }
-
-      return res.status(200).json(data);
+      return res.status(200).json(rows[0]);
     }
 
     return res.status(405).json({ error: 'Method not allowed' });
   } catch (error) {
     console.error('Settings API Error:', error);
-    return res.status(500).json({
-      error: 'Internal server error',
-      message: error instanceof Error ? error.message : 'Unknown error',
-    });
+    return res.status(500).json({ error: 'Internal server error', message: error instanceof Error ? error.message : 'Unknown error' });
   }
 }

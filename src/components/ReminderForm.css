@@ -1,721 +1,770 @@
-.reminder-form {
-  padding: 16px;
-}
+/* =========================================================
+   CREATE REMINDER FORM - REFINED LIQUID GLASS DESIGN
+   ========================================================= */
 
-.form-card {
-  background: transparent;
-  padding: 0;
-  box-shadow: none;
-}
-
-.form-header {
+.reminder-form-container {
   display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 20px;
-  padding: 12px 16px;
-  background: #1c1c1e;
-  border-radius: 12px;
+  flex-direction: column;
+  gap: 14px;
+  padding-bottom: 32px;
+  animation: formFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.form-icon {
-  font-size: 24px;
-  line-height: 1;
+@keyframes formFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
-.form-header h2 {
-  font-size: 18px;
-  font-weight: 600;
-  color: #ffffff;
-  margin: 0;
+.animate-slide-down {
+  animation: slideDown 0.22s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.back-button {
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-up {
+  animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+/* 1. Top Mode Switch (For me / For friend) */
+.form-mode-switch {
   display: flex;
-  align-items: center;
-  gap: 12px;
-  cursor: pointer;
+  background: rgba(22, 22, 26, 0.65);
+  backdrop-filter: blur(28px) saturate(180%);
+  -webkit-backdrop-filter: blur(28px) saturate(180%);
+  border: 0.5px solid var(--border-subtle);
+  border-radius: 22px;
+  padding: 4px;
+  gap: 4px;
+  position: relative;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25), inset 0 0.5px 0 rgba(255, 255, 255, 0.12);
 }
 
-.back-icon {
-  font-size: 20px;
-  color: #ffffff;
-}
-
-.cancel-edit-button {
-  width: 32px;
-  height: 32px;
-  border: none;
-  background: rgba(255, 255, 255, 0.08);
-  border-radius: 8px;
-  cursor: pointer;
+.mode-switch-btn {
+  flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 18px;
+  padding: 10px 14px;
+  border: none;
+  background: transparent;
+  border-radius: 18px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  position: relative;
+  transition: color 0.2s ease;
+  font-family: var(--font-family);
+  text-align: center;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.mode-switch-active-pill {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.48);
+  border-radius: 18px;
+  box-shadow: inset 0 0.5px 1px rgba(255, 255, 255, 0.1), 0 2px 8px rgba(0, 0, 0, 0.35);
+  border: 0.5px solid rgba(255, 255, 255, 0.08);
+  z-index: 1;
+  pointer-events: none;
+}
+
+.mode-btn-content {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.mode-switch-btn.active {
   color: #ffffff;
+  font-weight: 600;
+}
+
+/* 2. Form Cards Group */
+.form-card-group {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.form-card-row {
+  background: rgba(22, 22, 26, 0.65);
+  backdrop-filter: blur(28px) saturate(180%);
+  -webkit-backdrop-filter: blur(28px) saturate(180%);
+  border: 0.5px solid var(--border-subtle);
+  border-radius: 24px;
+  padding: 16px 18px;
+  position: relative;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25), inset 0 0.5px 0 rgba(255, 255, 255, 0.1);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.form-card-row:focus-within {
+  border-color: rgba(255, 255, 255, 0.22);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35), inset 0 0.5px 0 rgba(255, 255, 255, 0.18);
+}
+
+.form-row-label {
+  display: block;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+
+.form-row-label.no-margin {
+  margin-bottom: 0;
+}
+
+/* What Textarea */
+.form-row-textarea {
+  width: 100%;
+  background: transparent;
+  border: none;
+  color: #ffffff;
+  font-size: 15.5px;
+  font-weight: 500;
+  font-family: var(--font-family);
+  resize: none;
+  outline: none;
+  min-height: 48px;
+  line-height: 1.45;
+}
+
+.form-row-textarea::placeholder {
+  color: var(--text-muted);
+}
+
+/* Recipient Card */
+.form-recipient-card {
+  cursor: pointer;
+}
+
+.form-row-interactive {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 2px 0;
+}
+
+.selected-friend-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 14px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 0.5px solid rgba(255, 255, 255, 0.12);
+  border-radius: 14px;
+  color: #ffffff;
+  font-size: 13.5px;
+  font-weight: 600;
+}
+
+.placeholder-text {
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+.row-icon {
+  color: var(--text-secondary);
+  transition: transform 0.2s ease;
+}
+
+.row-icon.rotated {
+  transform: rotate(180deg);
+}
+
+/* 3. When Selector Card */
+.when-top-switch {
+  display: flex;
+  background: rgba(0, 0, 0, 0.32);
+  border: 0.5px solid rgba(255, 255, 255, 0.06);
+  border-radius: 20px;
+  padding: 4px;
+  gap: 4px;
+  position: relative;
+}
+
+.when-toggle-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 12px;
+  background: transparent;
+  border: none;
+  border-radius: 16px;
+  color: var(--text-secondary);
+  font-size: 13.5px;
+  font-weight: 500;
+  cursor: pointer;
+  position: relative;
+  transition: color 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.when-active-pill {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: 16px;
+  box-shadow: inset 0 0.5px 1px rgba(255, 255, 255, 0.1), 0 2px 8px rgba(0, 0, 0, 0.35);
+  border: 0.5px solid rgba(255, 255, 255, 0.1);
+  z-index: 1;
+  pointer-events: none;
+}
+
+.when-btn-content {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.when-toggle-btn.active {
+  color: var(--accent-color);
+  font-weight: 600;
+}
+
+.when-toggle-btn svg {
+  stroke: currentColor;
+}
+
+/* Calendar Box */
+.visual-calendar-box {
+  margin-top: 14px;
+  background: rgba(0, 0, 0, 0.38);
+  border: 0.5px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  padding: 16px 14px;
+}
+
+.cal-header-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.cal-title-text {
+  font-size: 14px;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.cal-nav-buttons {
+  display: flex;
+  gap: 4px;
+}
+
+.cal-nav-arrow {
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.06);
+  border: 0.5px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  color: #ffffff;
+  cursor: pointer;
+}
+
+.cal-weekdays-row {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  text-align: center;
+  margin-bottom: 8px;
+}
+
+.cal-weekday-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.cal-days-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+
+.cal-day-item {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  border: none;
+  background: transparent;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.cal-day-item.today {
+  border: 1px solid var(--accent-color);
+  color: var(--accent-color);
+}
+
+.cal-day-item.selected {
+  background: var(--accent-color) !important;
+  color: var(--accent-text-color, #ffffff) !important;
+  font-weight: 700;
+  box-shadow: 0 2px 10px var(--accent-color);
+}
+
+.cal-day-item.past {
+  opacity: 0.25;
+  cursor: not-allowed;
+}
+
+.cal-day-item.empty {
+  cursor: default;
+}
+
+/* Time Drum Box */
+.visual-time-box {
+  margin-top: 14px;
+  background: rgba(0, 0, 0, 0.38);
+  border: 0.5px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  padding: 16px;
+}
+
+/* 4. Priority Segmented Control */
+.priority-card-row {
+  display: flex;
+  flex-direction: column;
+}
+
+.priority-segmented-bar {
+  display: flex;
+  background: rgba(0, 0, 0, 0.45);
+  border: 0.5px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  padding: 4px;
+  gap: 4px;
+  position: relative;
+}
+
+.priority-segment-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 6px;
+  background: transparent;
+  border: none;
+  border-radius: 16px;
+  color: rgba(255, 255, 255, 0.45);
+  font-size: 13.5px;
+  font-weight: 500;
+  cursor: pointer;
+  position: relative;
   transition: all 0.2s ease;
   -webkit-tap-highlight-color: transparent;
 }
 
-.cancel-edit-button:active {
-  background: rgba(255, 59, 48, 0.1);
+.priority-active-pill {
+  position: absolute;
+  inset: 0;
+  border-radius: 16px;
+  z-index: 1;
+  pointer-events: none;
 }
 
-.form-group {
-  margin-bottom: 16px;
-  background: #1c1c1e;
-  border-radius: 12px;
-  padding: 16px;
+/* Priority Specific High Contrast Active Pills */
+.priority-segment-btn.low .priority-active-pill {
+  background: rgba(52, 199, 89, 0.2);
+  border: 1px solid rgba(52, 199, 89, 0.6);
+  box-shadow: 0 0 16px rgba(52, 199, 89, 0.3), inset 0 0.5px 1px rgba(255, 255, 255, 0.25);
 }
 
-.form-group:last-child {
-  margin-bottom: 80px;
+.priority-segment-btn.medium .priority-active-pill {
+  background: rgba(255, 204, 0, 0.2);
+  border: 1px solid rgba(255, 204, 0, 0.6);
+  box-shadow: 0 0 16px rgba(255, 204, 0, 0.3), inset 0 0.5px 1px rgba(255, 255, 255, 0.25);
 }
 
-.form-label {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 8px;
-  font-size: 14px;
-  font-weight: 500;
-  color: #8e8e93;
+.priority-segment-btn.high .priority-active-pill {
+  background: rgba(255, 59, 48, 0.24);
+  border: 1px solid rgba(255, 59, 48, 0.65);
+  box-shadow: 0 0 16px rgba(255, 59, 48, 0.35), inset 0 0.5px 1px rgba(255, 255, 255, 0.25);
 }
 
-.label-icon {
-  font-size: 16px;
-  line-height: 1;
-}
-
-.form-input {
-  width: 100%;
-  padding: 12px;
-  border: none;
-  border-radius: 8px;
-  font-size: 16px;
-  background-color: rgba(255, 255, 255, 0.08);
-  color: #ffffff;
-  box-sizing: border-box;
-  -webkit-appearance: none;
-  appearance: none;
-  transition: background-color 0.15s ease;
-  font-family: inherit;
-}
-
-.form-input:focus {
-  outline: none;
-  background-color: #1c1c1e;
-  box-shadow: inset 0 0 0 1px var(--accent-color, #3390ec);
-}
-
-.form-input::placeholder {
-  color: #8e8e93;
-  opacity: 0.6;
-}
-
-/* Date/Time Block Layouts */
-.block-inputs {
-  display: flex;
-  gap: 12px;
-  width: 100%;
-  /* Allow absolute-positioned dropdowns to overflow */
-  overflow: visible;
+.priority-btn-content {
   position: relative;
-}
-
-.block-item {
-  flex: 1;
+  z-index: 2;
   display: flex;
-  flex-direction: column;
   align-items: center;
   gap: 6px;
-  /* Critical: allow dropdown to overflow this flex item */
-  overflow: visible;
-  position: relative;
-  z-index: auto;
 }
 
-.block-sub-label {
-  font-size: 10px;
-  color: #8e8e93;
-  font-weight: 500;
-  text-transform: capitalize;
+.priority-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  opacity: 0.35;
+  transition: transform 0.2s ease, opacity 0.2s ease, box-shadow 0.2s ease;
 }
 
-.block-select {
-  width: 100%;
-  background: rgba(255, 255, 255, 0.05);
-  border: 2px solid rgba(255, 255, 255, 0.1);
-  border-radius: 14px;
-  padding: 16px;
-  color: #ffffff;
-  font-size: 18px;
+.priority-dot.low { background: #34c759; }
+.priority-dot.medium { background: #ffcc00; }
+.priority-dot.high { background: #ff3b30; }
+
+.priority-check-icon {
+  margin-left: 2px;
+  stroke: currentColor;
+}
+
+.priority-segment-btn.active.low {
+  color: #4cd964;
   font-weight: 700;
-  text-align: center;
-  -webkit-appearance: none;
-  appearance: none;
-  cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.priority-segment-btn.active.low .priority-dot {
+  opacity: 1;
+  transform: scale(1.3);
+  box-shadow: 0 0 10px #34c759;
 }
 
-.block-select:focus {
-  border-color: var(--accent-color, #3390ec);
-  background: rgba(255, 255, 255, 0.08);
-  outline: none;
+.priority-segment-btn.active.medium {
+  color: #ffd60a;
+  font-weight: 700;
+}
+.priority-segment-btn.active.medium .priority-dot {
+  opacity: 1;
+  transform: scale(1.3);
+  box-shadow: 0 0 10px #ffcc00;
 }
 
-.form-textarea {
-  resize: none;
-  overflow: hidden;
-  min-height: 80px;
-  max-height: 200px;
-  line-height: 1.5;
-  background-color: #1c1c1e;
-  border: none;
-  border-radius: 12px;
-  padding: 16px;
-  color: #ffffff;
-  font-size: 16px;
-  width: 100%;
-}
-
-.form-textarea:focus {
-  outline: none;
-  background-color: #1c1c1e;
-}
-
-.char-counter {
-  margin-top: 6px;
-  font-size: 11px;
-  color: #8e8e93;
-  text-align: right;
-}
-
-/* Form Buttons Container */
-.form-buttons {
-  margin-top: 32px;
-  margin-bottom: 100px;
-  display: flex;
-  gap: 12px;
-  z-index: 10;
-}
-
-/* Cancel Button */
-.cancel-button {
-  flex: 0 0 auto;
-  padding: 14px;
-  border: none;
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.08);
+.priority-segment-btn.active.high {
   color: #ff453a;
-  font-size: 16px;
-  font-weight: 500;
-  cursor: pointer;
+  font-weight: 700;
+}
+.priority-segment-btn.active.high .priority-dot {
+  opacity: 1;
+  transform: scale(1.3);
+  box-shadow: 0 0 10px #ff3b30;
+}
+
+/* 5. Grouped Options Card (Repeat, Category) */
+.grouped-options-card {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.form-sub-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-sub-divider {
+  height: 0.5px;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.row-val-wrap {
   display: flex;
   align-items: center;
-  justify-content: center;
-  font-family: inherit;
+  gap: 6px;
 }
 
-.cancel-button:active {
-  background: rgba(255, 255, 255, 0.12);
-}
-
-/* Save Button */
-.save-button {
-  flex: 1;
-  padding: 14px;
-  border: none;
-  border-radius: 12px;
-  background: var(--accent-color, #3390ec);
-  color: var(--tg-theme-button-text-color, #ffffff);
-  font-size: 16px;
+.selected-contact-text {
+  font-size: 13.5px;
   font-weight: 600;
+  color: #ffffff;
+}
+
+/* Dropdown Inline Menu */
+.dropdown-inline-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  background: rgba(0, 0, 0, 0.4);
+  border: 0.5px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 6px;
+  margin-top: 6px;
+}
+
+.menu-option {
+  padding: 9px 12px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
   cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.menu-option:active,
+.menu-option.active {
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+  font-weight: 600;
+}
+
+/* 6. Main Action Button */
+.form-submit-container {
+  margin-top: 4px;
+}
+
+.create-reminder-neon-btn {
+  width: 100%;
+  height: 52px;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  font-family: inherit;
-}
-
-.save-button:hover {
-  filter: brightness(1.1);
-}
-
-.save-button:active {
-  opacity: 0.8;
-}
-
-.save-button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-/* Block styles */
-.block-group {
-  background: transparent !important;
-  padding: 0 !important;
-  margin-bottom: 24px !important;
-}
-
-.block-label {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  font-size: 16px;
-  font-weight: 600;
-  color: #ffffff;
-  margin-bottom: 14px;
-}
-
-.block-label svg {
-  color: var(--accent-color, #3390ec);
-}
-
-.block-textarea {
-  background: rgba(255, 255, 255, 0.05) !important;
-  border: 2px solid rgba(255, 255, 255, 0.1) !important;
-  border-radius: 14px !important;
-  padding: 18px !important;
-  min-height: 60px !important;
-  font-size: 17px !important;
-  color: #ffffff !important;
-  transition: all 0.2s ease !important;
-  line-height: 1.5 !important;
-}
-
-.block-textarea:focus {
-  border-color: var(--accent-color, #3390ec) !important;
-  background: rgba(255, 255, 255, 0.08) !important;
-  outline: none !important;
-}
-
-.block-chips {
-  display: flex;
-  gap: 10px;
-}
-
-.block-chip {
-  flex: 1;
-  background: rgba(255, 255, 255, 0.03);
-  border: 2px solid rgba(255, 255, 255, 0.08);
-  border-radius: 12px;
-  padding: 12px;
-  color: #ffffff;
-  font-size: 14px;
-  font-weight: 600;
-  transition: all 0.2s ease;
-  cursor: pointer;
-  text-align: center;
-}
-
-.block-chip:hover {
-  background: rgba(255, 255, 255, 0.08);
-}
-
-.block-chip.active {
-  border-color: var(--accent-color, #3390ec);
-  background: var(--accent-color-light, rgba(51, 144, 236, 0.1));
-  color: var(--accent-color, #3390ec);
-}
-
-.priority-option.active[data-priority="LOW"] {
-  border-color: #30d158;
-  background: rgba(48, 209, 88, 0.1);
-  color: #30d158;
-}
-
-.priority-option.active[data-priority="MEDIUM"] {
-  border-color: #ff9f0a;
-  background: rgba(255, 159, 10, 0.1);
-  color: #ff9f0a;
-}
-
-.priority-option.active[data-priority="HIGH"] {
-  border-color: #ff453a;
-  background: rgba(255, 69, 58, 0.1);
-  color: #ff453a;
-}
-
-.priority-option.active.priority-mono {
-  border-color: var(--accent-color, #3390ec) !important;
-  background: var(--accent-color-light, rgba(51, 144, 236, 0.1)) !important;
-  color: var(--accent-color, #3390ec) !important;
-}
-
-/* Category Dropdown Styling */
-.block-input-select {
-  width: 100%;
-  background: rgba(255, 255, 255, 0.05);
-  border: 2px solid rgba(255, 255, 255, 0.1);
-  border-radius: 14px;
-  padding: 16px;
-  color: #ffffff;
-  font-size: 17px;
-  font-weight: 600;
-  -webkit-appearance: none;
-  appearance: none;
-  transition: all 0.2s ease;
-}
-
-.block-input-text {
-  width: 100%;
-  background: rgba(255, 255, 255, 0.05);
-  border: 2px solid rgba(255, 255, 255, 0.1);
-  border-radius: 14px;
-  padding: 16px;
-  color: #ffffff;
-  font-size: 17px;
-  font-weight: 600;
-  transition: all 0.2s ease;
-}
-
-.block-input-text:focus {
-  border-color: var(--accent-color, #3390ec);
-  background: rgba(255, 255, 255, 0.08);
-  outline: none;
-}
-
-.block-input-text::placeholder {
-  color: #8e8e93;
-  opacity: 0.5;
-}
-
-/* Toxic Yellow Overrides */
-.theme-toxic-yellow .save-button {
-  color: #000000 !important;
-}
-
-.theme-toxic-yellow .save-button svg {
-  color: #000000 !important;
-}
-
-/* Contact Picker & Modal Styles */
-.contact-picker-btn {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  width: 100%;
-  background: rgba(255, 255, 255, 0.05);
-  border: 2px solid rgba(255, 255, 255, 0.1);
-  border-radius: 14px;
-  padding: 16px;
-  color: #ffffff;
-  font-size: 16px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  text-align: left;
-}
-
-.contact-picker-btn:hover {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: var(--accent-color, #3390ec);
-}
-
-.contact-picker-btn svg {
-  color: var(--accent-color, #3390ec);
-}
-
-.contact-picker-hint {
-  margin-left: auto;
-  font-size: 12px;
-  color: #8e8e93;
-  font-weight: 400;
-}
-
-/* Contact Chip (Selected state) */
-.contact-chip {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  background: rgba(51, 144, 236, 0.1);
-  border: 2px solid var(--accent-color, #3390ec);
-  border-radius: 14px;
-  padding: 12px 16px;
-  width: 100%;
-  box-sizing: border-box;
-}
-
-.contact-chip-avatar {
-  width: 32px;
-  height: 32px;
   background: var(--accent-color, #3390ec);
-  color: #ffffff;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
-  font-size: 14px;
-  text-transform: uppercase;
-  overflow: hidden;
-}
-
-.contact-chip-avatar img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  border-radius: 50%;
-}
-
-.contact-chip-info {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-}
-
-.contact-chip-name {
-  color: #ffffff;
-  font-size: 15px;
-  font-weight: 600;
-}
-
-.contact-chip-username {
-  color: var(--accent-color, #3390ec);
-  font-size: 12px;
-}
-
-.contact-chip-remove {
-  background: transparent;
+  color: var(--accent-text-color, #ffffff);
   border: none;
-  color: #8e8e93;
+  border-radius: 22px;
+  font-size: 15px;
+  font-weight: 700;
   cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 4px;
-  border-radius: 50%;
-  transition: all 0.2s ease;
+  box-shadow: 0 6px 22px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  -webkit-tap-highlight-color: transparent;
 }
 
-.contact-chip-remove:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: #ff453a;
+.create-reminder-neon-btn:active {
+  transform: scale(0.97);
+  opacity: 0.92;
 }
 
-/* Modal Overlay & Modal Window */
+.create-reminder-neon-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* 7. Contact Modal */
 .contact-modal-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  z-index: 2000;
   display: flex;
   align-items: flex-end;
-  justify-content: center;
-  z-index: 1000;
-  animation: fadeIn 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .contact-modal {
-  background: #1c1c1e;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 20px 20px 0 0;
   width: 100%;
-  max-width: 500px;
   max-height: 80vh;
+  background: rgba(22, 22, 26, 0.94);
+  backdrop-filter: blur(40px);
+  -webkit-backdrop-filter: blur(40px);
+  border-top: 0.5px solid rgba(255, 255, 255, 0.15);
+  border-radius: 28px 28px 0 0;
+  padding: 12px 18px calc(24px + env(safe-area-inset-bottom, 0px));
   display: flex;
   flex-direction: column;
-  padding: 20px 20px calc(20px + env(safe-area-inset-bottom, 0px)) 20px;
-  box-sizing: border-box;
-  animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  gap: 12px;
+  box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.6);
+}
+
+.modal-sheet-drag-handle {
+  width: 36px;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 2px;
+  align-self: center;
 }
 
 .contact-modal-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 16px;
 }
 
-.contact-modal-header h3 {
-  margin: 0;
-  font-size: 20px;
+.modal-header-title-group h3 {
+  font-size: 17px;
   font-weight: 700;
   color: #ffffff;
+  margin: 0;
+}
+
+.modal-header-subtitle {
+  font-size: 11.5px;
+  color: var(--text-muted);
 }
 
 .contact-modal-close {
-  background: rgba(255, 255, 255, 0.08);
-  border: none;
-  border-radius: 50%;
   width: 32px;
   height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
+  background: rgba(255, 255, 255, 0.08);
+  border: none;
+  border-radius: 50%;
   color: #ffffff;
   cursor: pointer;
-  transition: background 0.2s ease;
 }
 
-.contact-modal-close:hover {
-  background: rgba(255, 255, 255, 0.12);
+.custom-user-input-row {
+  display: flex;
+  gap: 8px;
+}
+
+.custom-user-input {
+  flex: 1;
+  background: rgba(0, 0, 0, 0.4);
+  border: 0.5px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  padding: 10px 14px;
+  color: #ffffff;
+  font-size: 13.5px;
+  outline: none;
+}
+
+.custom-user-apply-btn {
+  background: var(--accent-color, #3390ec);
+  color: var(--accent-text-color, #ffffff);
+  border: none;
+  border-radius: 16px;
+  padding: 0 16px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
 }
 
 .contact-search-wrap {
-  position: relative;
   display: flex;
   align-items: center;
-  margin-bottom: 16px;
-}
-
-.contact-search-wrap svg {
-  position: absolute;
-  left: 14px;
-  color: #8e8e93;
-  pointer-events: none;
+  gap: 8px;
+  background: rgba(0, 0, 0, 0.4);
+  border: 0.5px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 10px 14px;
 }
 
 .contact-search {
-  width: 100%;
-  background: rgba(255, 255, 255, 0.05);
-  border: 2px solid rgba(255, 255, 255, 0.08);
-  border-radius: 12px;
-  padding: 12px 12px 12px 42px;
-  color: #ffffff;
-  font-size: 16px;
-  box-sizing: border-box;
-  transition: all 0.2s ease;
-}
-
-.contact-search:focus {
-  outline: none;
-  border-color: var(--accent-color, #3390ec);
-  background: rgba(255, 255, 255, 0.08);
-}
-
-/* Contacts List */
-.contact-list {
   flex: 1;
+  background: transparent;
+  border: none;
+  color: #ffffff;
+  font-size: 13.5px;
+  outline: none;
+}
+
+.contact-invite-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 0.5px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  padding: 10px;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.contact-list {
+  max-height: 220px;
   overflow-y: auto;
-  max-height: 45vh;
-  margin: 0 -8px;
-  padding: 0 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
 .contact-item {
   display: flex;
   align-items: center;
   gap: 12px;
-  width: 100%;
-  background: transparent;
-  border: none;
-  padding: 10px 8px;
-  border-radius: 12px;
+  padding: 8px 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 0.5px solid rgba(255, 255, 255, 0.05);
+  border-radius: 16px;
   cursor: pointer;
-  transition: background 0.2s ease;
-  text-align: left;
-}
-
-.contact-item:hover, .contact-item:active {
-  background: rgba(255, 255, 255, 0.05);
 }
 
 .contact-item-avatar {
-  width: 40px;
-  height: 40px;
-  background: rgba(255, 255, 255, 0.08);
-  color: #ffffff;
+  width: 38px;
+  height: 38px;
   border-radius: 50%;
+  overflow: hidden;
+  background: #26262e;
   display: flex;
   align-items: center;
   justify-content: center;
+  font-size: 14px;
   font-weight: 700;
-  font-size: 16px;
-  text-transform: uppercase;
-  overflow: hidden;
+  color: #ffffff;
 }
 
 .contact-item-avatar img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  border-radius: 50%;
 }
 
 .contact-item-info {
+  flex: 1;
   display: flex;
   flex-direction: column;
+  gap: 1px;
 }
 
 .contact-item-name {
-  color: #ffffff;
-  font-size: 15px;
+  font-size: 13.5px;
   font-weight: 600;
+  color: #ffffff;
 }
 
 .contact-item-username {
-  color: #8e8e93;
-  font-size: 12px;
-  margin-top: 1px;
+  font-size: 11px;
+  color: var(--text-muted);
 }
 
-.contact-empty {
-  text-align: center;
-  padding: 30px;
-  color: #8e8e93;
-  font-size: 15px;
-}
-
-/* Keyframes */
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-@keyframes slideUp {
-  from { transform: translateY(100%); }
-  to { transform: translateY(0); }
-}
-
-/* Make sure modal fits on mobile screens and adjusts for viewport */
-@media (min-width: 500px) {
-  .contact-modal-overlay {
-    align-items: center;
-  }
-  .contact-modal {
-    border-radius: 20px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
-  }
-}
-
-/* Invite Link Button */
-.contact-invite-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  background: var(--accent-color-light, rgba(51, 144, 236, 0.1));
-  border: 1.5px dashed var(--accent-color, #3390ec);
+.contact-select-pill {
+  background: rgba(255, 255, 255, 0.08);
+  border: none;
   border-radius: 12px;
-  padding: 12px;
-  color: var(--accent-color, #3390ec);
-  font-size: 15px;
+  padding: 5px 12px;
+  color: #ffffff;
+  font-size: 12px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
-  width: 100%;
-  margin-bottom: 12px;
-  box-sizing: border-box;
-}
-
-.contact-invite-btn:hover {
-  background: var(--accent-color, #3390ec);
-  color: #ffffff;
-}
-
-.contact-invite-btn svg {
-  transition: transform 0.2s ease;
-}
-
-.contact-invite-btn:hover svg {
-  transform: scale(1.1);
 }

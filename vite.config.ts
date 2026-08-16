@@ -23,6 +23,10 @@ export default defineConfig({
       clientPort: 443, // Для HTTPS туннелей
     },
   },
+  preview: {
+    host: '0.0.0.0',
+    allowedHosts: true
+  },
   build: {
     outDir: 'dist',
     sourcemap: false

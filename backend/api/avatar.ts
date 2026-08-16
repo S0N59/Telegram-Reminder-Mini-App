@@ -13,7 +13,7 @@ export default async function handler(
   }
 
   try {
-    const { userId } = req.query;
+    const { userId, name } = req.query;
     
     if (!userId) {
       return res.status(400).json({ error: 'userId is required' });
@@ -24,6 +24,7 @@ export default async function handler(
       return res.status(503).json({ error: 'Bot token not configured' });
     }
 
+    const fallbackName = encodeURIComponent((name as string) || 'User');
     const { Telegraf } = await import('telegraf');
     const bot = new Telegraf(token);
 
@@ -31,8 +32,8 @@ export default async function handler(
     const photos = await bot.telegram.getUserProfilePhotos(parseInt(userId as string), 0, 1);
     
     if (photos.total_count === 0 || !photos.photos[0] || photos.photos[0].length === 0) {
-      // User has no avatar, redirect to a generic placeholder
-      return res.redirect(302, 'https://ui-avatars.com/api/?name=User&background=random');
+      // User has no avatar, redirect to a dark themed placeholder with their initials
+      return res.redirect(302, `https://ui-avatars.com/api/?name=${fallbackName}&background=26262e&color=ffffff&bold=true`);
     }
 
     // 2. Get the smallest available photo to save bandwidth (index 0 is usually smallest)
@@ -42,7 +43,7 @@ export default async function handler(
     const file = await bot.telegram.getFile(fileId);
     
     if (!file.file_path) {
-      return res.redirect(302, 'https://ui-avatars.com/api/?name=User&background=random');
+      return res.redirect(302, `https://ui-avatars.com/api/?name=${fallbackName}&background=26262e&color=ffffff&bold=true`);
     }
 
     // 4. Fetch the image from Telegram servers
@@ -63,7 +64,7 @@ export default async function handler(
     return res.send(buffer);
   } catch (error) {
     console.error('[AVATAR] Error:', error);
-    // On error, serve a fallback
-    return res.redirect(302, 'https://ui-avatars.com/api/?name=Error&background=ff0000');
+    const fallbackName = encodeURIComponent((req.query.name as string) || 'User');
+    return res.redirect(302, `https://ui-avatars.com/api/?name=${fallbackName}&background=26262e&color=ffffff&bold=true`);
   }
 }

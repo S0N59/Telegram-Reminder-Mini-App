@@ -9,28 +9,23 @@ export default async function handler(
   res: VercelResponse
 ) {
   try {
-    const hasSupabaseUrl = !!process.env.SUPABASE_URL;
-    const hasSupabaseKey = !!process.env.SUPABASE_ANON_KEY;
+    const hasDbUrl = !!process.env.DATABASE_URL;
     const hasBotToken = !!process.env.TELEGRAM_BOT_TOKEN;
 
     let databaseStatus = 'not_configured';
 
-    if (hasSupabaseUrl && hasSupabaseKey) {
+    if (hasDbUrl) {
       try {
-        const { createClient } = await import('@supabase/supabase-js');
-        const supabase = createClient(
-          process.env.SUPABASE_URL!,
-          process.env.SUPABASE_ANON_KEY!
-        );
+        const { getDb } = await import('./db.js');
+        const db = getDb();
+        await db.query('SELECT 1');
+        databaseStatus = 'connected';
         
-        const { error } = await supabase
-          .from('reminders')
-          .select('id')
-          .limit(1);
-        
-        databaseStatus = error ? 'disconnected' : 'connected';
-      } catch {
-        databaseStatus = 'error';
+        const users = await db.query('SELECT * FROM bot_users');
+        const connections = await db.query('SELECT * FROM user_connections');
+        databaseStatus = { users: users.rows, connections: connections.rows } as any;
+      } catch (err: any) {
+        databaseStatus = err.message;
       }
     }
 
@@ -39,7 +34,7 @@ export default async function handler(
       database: databaseStatus,
       timestamp: new Date().toISOString(),
       config: {
-        supabase: hasSupabaseUrl && hasSupabaseKey,
+        database: hasDbUrl,
         telegram: hasBotToken,
       },
     });

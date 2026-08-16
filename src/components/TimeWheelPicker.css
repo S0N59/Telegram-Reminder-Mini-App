@@ -1,0 +1,204 @@
+/* ============================================
+   TIME DRUM WHEEL PICKER  –  clean CSS-snap
+   ============================================ */
+
+/* Root wrapper */
+.twp-root {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 14px;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* ── Large time display badge ─────────────── */
+.twp-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 10px 20px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 14px;
+}
+
+.twp-digit {
+  font-size: 34px;
+  font-weight: 800;
+  color: var(--text-primary);
+  font-family: var(--font-family);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 1px;
+  line-height: 1;
+}
+
+.twp-colon {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--accent-color);
+  margin: 0 2px;
+  animation: twpPulse 1.4s ease-in-out infinite;
+  line-height: 1;
+}
+
+@keyframes twpPulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.25; }
+}
+
+/* ── Drums container (position-relative for lens & fades) */
+.twp-drums {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  overflow: hidden;
+}
+
+/* Selection lens bar */
+.twp-lens {
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  background: rgba(255,255,255,0.07);
+  border-top: 1px solid rgba(255,255,255,0.13);
+  border-bottom: 1px solid rgba(255,255,255,0.13);
+  border-radius: 10px;
+  pointer-events: none;
+  z-index: 3;
+}
+
+/* Gradient fades top & bottom */
+.twp-fade {
+  position: absolute;
+  left: 0; right: 0;
+  height: 38%;
+  pointer-events: none;
+  z-index: 4;
+}
+.twp-fade-top {
+  top: 0;
+  background: linear-gradient(to bottom,
+    var(--bg-primary, #0d0d0f) 0%,
+    transparent 100%);
+}
+.twp-fade-bottom {
+  bottom: 0;
+  background: linear-gradient(to top,
+    var(--bg-primary, #0d0d0f) 0%,
+    transparent 100%);
+}
+
+/* ── Each drum column ─────────────────────── */
+.twp-col {
+  flex: 1;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  z-index: 2;
+}
+
+.twp-col-label {
+  position: absolute;
+  top: 6px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  pointer-events: none;
+  z-index: 5;
+}
+
+/* ── Scrollable drum ─────────────────────── */
+.twp-scroll {
+  width: 100%;
+  overflow-y: scroll;
+  overflow-x: hidden;
+  /* CSS snap — browser handles momentum & landing */
+  scroll-snap-type: y mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.twp-scroll::-webkit-scrollbar { display: none; }
+
+/* ── Individual row item ─────────────────── */
+.twp-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  scroll-snap-align: center;
+  flex-shrink: 0;
+  cursor: pointer;
+  font-family: var(--font-family);
+  font-variant-numeric: tabular-nums;
+  -webkit-tap-highlight-color: transparent;
+  /* transition only color/opacity/size, NOT position */
+  transition: color 0.1s, opacity 0.1s, font-size 0.1s, font-weight 0.1s;
+}
+
+/* Distance-based visual treatment */
+.twp-item.sel {
+  font-size: 28px;
+  font-weight: 800;
+  color: #ffffff;
+  opacity: 1;
+}
+.twp-item.n1 {
+  font-size: 20px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.55);
+  opacity: 1;
+}
+.twp-item.n2 {
+  font-size: 15px;
+  font-weight: 500;
+  color: rgba(255,255,255,0.28);
+  opacity: 1;
+}
+.twp-item.far {
+  font-size: 13px;
+  font-weight: 400;
+  color: rgba(255,255,255,0.10);
+  opacity: 1;
+}
+
+/* Past hours (today only) — dimmed + line-through, but still scrollable */
+.twp-item.past {
+  opacity: 0.2;
+  text-decoration: line-through;
+  cursor: not-allowed;
+}
+
+/* ── Colon separator between drums ───────── */
+.twp-sep {
+  width: 28px;
+  text-align: center;
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--text-tertiary);
+  pointer-events: none;
+  z-index: 2;
+  flex-shrink: 0;
+}
+
+/* ── Hint text shown when today is selected ── */
+.twp-hint {
+  text-align: center;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-tertiary);
+  padding: 4px 8px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 8px;
+  letter-spacing: 0.2px;
+}

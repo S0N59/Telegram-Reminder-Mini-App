@@ -9,9 +9,9 @@
     "strict": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "noEmit": true,
+    "outDir": "dist",
     "types": ["node", "@vercel/node"]
   },
-  "include": ["api/**/*", "lib/**/*"],
+  "include": ["api/**/*", "lib/**/*", "server.ts", "services/**/*"],
   "exclude": ["node_modules"]
 }

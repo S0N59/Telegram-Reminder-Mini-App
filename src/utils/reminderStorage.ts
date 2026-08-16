@@ -168,3 +168,28 @@ export const fetchContactsAPI = async (userId: number): Promise<BotContact[]> =>
   }
 };
 
+export const addContactAPI = async (userId: number, targetUsername: string): Promise<BotContact | null> => {
+  try {
+    const response = await fetch(`${API_URL}/api/contacts`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        userId,
+        targetUsername: targetUsername.replace(/^@/, '').trim()
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to add contact');
+    }
+
+    const data = await response.json();
+    return data.contact || null;
+  } catch (error) {
+    console.error('Error adding contact:', error);
+    return null;
+  }
+};
+

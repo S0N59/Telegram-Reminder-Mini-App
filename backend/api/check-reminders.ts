@@ -1,19 +1,11 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { getDb } from './db.js';
 
-/**
- * This endpoint is called by cron-job.org every minute
- * to check for due reminders and send notifications
- * 
- * Two types of reminders:
- * 1. SIMPLE - Send once with Delete button
- * 2. CONFIRM - Send with Confirm button, re-send at intervals until confirmed
- */
 export default async function handler(
   req: VercelRequest,
   res: VercelResponse
 ) {
   try {
-    // Optional: Add API key authentication for security
     const apiKey = req.headers['x-api-key'];
     const expectedKey = process.env.SCHEDULER_API_KEY;
 
@@ -21,47 +13,23 @@ export default async function handler(
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    // Check if required env vars are set
-    if (!process.env.SUPABASE_URL || !process.env.SUPABASE_ANON_KEY) {
-      return res.status(503).json({
-        error: 'Database not configured',
-        message: 'Missing Supabase environment variables'
-      });
-    }
-
     if (!process.env.TELEGRAM_BOT_TOKEN) {
-      return res.status(503).json({
-        error: 'Telegram bot not configured',
-        message: 'Missing TELEGRAM_BOT_TOKEN environment variable'
-      });
+      return res.status(503).json({ error: 'Telegram bot not configured' });
     }
 
-    // Dynamic imports to avoid module initialization issues
-    const { createClient } = await import('@supabase/supabase-js');
     const { Telegraf } = await import('telegraf');
-
-    const supabase = createClient(
-      process.env.SUPABASE_URL!,
-      process.env.SUPABASE_ANON_KEY!
-    );
-
     const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN!);
+    const db = getDb();
 
-    // Helper function to format notification
-    // Smart time formatter
     function getSmartTime(dateStr: string, timeStr: string): string {
       const [year, month, day] = dateStr.split('-').map(Number);
       const [hour, minute] = timeStr.split(':').map(Number);
-
-      const now = new Date(new Date().getTime() + (4 * 60 * 60 * 1000)); // UTC+4
+      const now = new Date(new Date().getTime() + (4 * 60 * 60 * 1000));
       const target = new Date(year, month - 1, day, hour, minute);
-
       const diffMs = target.getTime() - now.getTime();
-      const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-
+      
       const isToday = now.getUTCFullYear() === year && now.getUTCMonth() === month - 1 && now.getUTCDate() === day;
-      const tomorrow = new Date(now);
-      tomorrow.setDate(tomorrow.getDate() + 1);
+      const tomorrow = new Date(now); tomorrow.setDate(tomorrow.getDate() + 1);
       const isTomorrow = tomorrow.getUTCFullYear() === year && tomorrow.getUTCMonth() === month - 1 && tomorrow.getUTCDate() === day;
 
       if (diffMs > 0 && diffMs < 12 * 60 * 60 * 1000) {
@@ -72,46 +40,26 @@ export default async function handler(
       }
 
       const timeFormatted = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
-
       if (isToday) return `Today at ${timeFormatted}`;
       if (isTomorrow) return `Tomorrow at ${timeFormatted}`;
-
       return `${day}/${month}/${year} at ${timeFormatted}`;
     }
 
-    // Helper function to format notification
     function formatNotification(reminder: any): string {
       if (reminder.status === 'done') {
-        return `✅ <b>TASK COMPLETED</b>\n\n` +
-          `📝 ${reminder.text}\n` +
-          `⏰ Was: ${reminder.time}`;
+        return `✅ <b>TASK COMPLETED</b>\n\n📝 ${reminder.text}\n⏰ Was: ${reminder.time}`;
       }
-
-      const statusMap: any = {
-        'todo': { label: 'To Do', emoji: '⚪' },
-        'in_progress': { label: 'In Progress', emoji: '🟡' },
-        'done': { label: 'Done', emoji: '🟢' }
-      };
-
+      const statusMap: any = { 'todo': { label: 'To Do', emoji: '⚪' }, 'in_progress': { label: 'In Progress', emoji: '🟡' }, 'done': { label: 'Done', emoji: '🟢' } };
       const status = statusMap[reminder.status || 'todo'] || statusMap['todo'];
       const smartTime = getSmartTime(reminder.date, reminder.time);
-
-      return `🔔 <b>REMINDER</b>\n\n` +
-        `📝 <b>${reminder.text}</b>\n\n` +
-        `📌 Status: ${status.emoji} ${status.label}\n` +
-        `⏰ ${smartTime}\n` +
-        `⚡ Priority: ${reminder.priority || 'MEDIUM'}\n` +
-        (reminder.assigned_to_chat_id && reminder.creator_name
-          ? `\n📨 From: ${reminder.creator_name}\n`
-          : '') +
-        `\n━━━━━━━━━━━━━━━`;
+      return `🔔 <b>REMINDER</b>\n\n📝 <b>${reminder.text}</b>\n\n📌 Status: ${status.emoji} ${status.label}\n⏰ ${smartTime}\n⚡ Priority: ${reminder.priority || 'MEDIUM'}\n` +
+        (reminder.assigned_to_chat_id && reminder.creator_name ? `\n📨 From: ${reminder.creator_name}\n` : '') + `\n━━━━━━━━━━━━━━━`;
     }
 
-    // Send notification with new status controls
-    async function sendNotification(chatId: number, reminder: any): Promise<boolean> {
+    async function sendNotification(chatId: number, reminder: any): Promise<number | false> {
       try {
         const message = formatNotification(reminder);
-        await bot.telegram.sendMessage(chatId, message, {
+        const msg = await bot.telegram.sendMessage(chatId, message, {
           parse_mode: 'HTML',
           reply_markup: {
             inline_keyboard: [
@@ -123,190 +71,96 @@ export default async function handler(
             ]
           }
         });
-        return true;
+        return msg.message_id;
       } catch (error) {
         console.error('Error sending notification:', error);
         return false;
       }
     }
 
-    // Get current time
     const nowUTC = new Date();
     const nowTimestamp = nowUTC.getTime();
+    const userLocalTime = new Date(nowUTC.getTime() + (4 * 60 * 60 * 1000));
 
-    // Convert to Armenia time (UTC+4)
-    const USER_TIMEZONE_OFFSET = 4;
-    const userLocalTime = new Date(nowUTC.getTime() + (USER_TIMEZONE_OFFSET * 60 * 60 * 1000));
+    // Ensure column exists
+    try {
+      await db.query(`ALTER TABLE reminders ADD COLUMN IF NOT EXISTS telegram_message_id BIGINT`);
+    } catch (e) {
+      console.error('Failed to add telegram_message_id column:', e);
+    }
 
     const currentHour = userLocalTime.getUTCHours();
     const currentMinute = userLocalTime.getUTCMinutes();
     const currentDate = `${userLocalTime.getUTCFullYear()}-${String(userLocalTime.getUTCMonth() + 1).padStart(2, '0')}-${String(userLocalTime.getUTCDate()).padStart(2, '0')}`;
 
-    // Check current minute and previous minute
     const minutesToCheck = [currentMinute];
-    if (currentMinute === 0) {
-      minutesToCheck.push(59);
-    } else {
-      minutesToCheck.push(currentMinute - 1);
-    }
+    if (currentMinute === 0) minutesToCheck.push(59); else minutesToCheck.push(currentMinute - 1);
 
-    let sentCount = 0;
-    let reRemindCount = 0;
-    let failedCount = 0;
+    let sentCount = 0, reRemindCount = 0, failedCount = 0;
 
-    // 1. Check for NEW reminders that need to be sent
     for (const minute of minutesToCheck) {
       let checkHour = currentHour;
-      if (minute === 59 && currentMinute === 0) {
-        checkHour = currentHour === 0 ? 23 : currentHour - 1;
-      }
-
+      if (minute === 59 && currentMinute === 0) checkHour = currentHour === 0 ? 23 : currentHour - 1;
       const checkTime = `${String(checkHour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
 
-      const { data: reminders, error } = await supabase
-        .from('reminders')
-        .select('*')
-        .eq('date', currentDate)
-        .eq('time', checkTime)
-        .eq('done', false)
-        .eq('sent', false);
+      const { rows: reminders } = await db.query(`
+        SELECT * FROM reminders WHERE date = $1 AND time = $2 AND done = false AND sent = false
+      `, [currentDate, checkTime]);
 
-      if (error) {
-        console.error('[CHECK-REMINDERS] Error fetching new reminders:', error);
-        continue;
-      }
-
-      if (reminders && reminders.length > 0) {
-        for (const reminder of reminders) {
-          try {
-            const targetChatId = reminder.assigned_to_chat_id || reminder.user_id;
-            const success = await sendNotification(
-              targetChatId,
-              reminder
-            );
-
-            if (success) {
-              // Mark as sent and record last_sent_at
-              await supabase
-                .from('reminders')
-                .update({
-                  sent: true,
-                  last_sent_at: nowTimestamp
-                })
-                .eq('id', reminder.id);
-
-              sentCount++;
-            } else {
-              failedCount++;
-            }
-
-            await new Promise(resolve => setTimeout(resolve, 100));
-          } catch (err) {
-            console.error(`[CHECK-REMINDERS] Error processing reminder ${reminder.id}:`, err);
-            failedCount++;
-          }
-        }
-      }
-    }
-
-    // 2. Check for CONFIRM reminders that need RE-SENDING
-    const { data: confirmReminders, error: confirmError } = await supabase
-      .from('reminders')
-      .select('*')
-      .eq('confirm_required', true)
-      .eq('confirmed', false)
-      .eq('done', false)
-      .eq('sent', true);
-
-    if (!confirmError && confirmReminders && confirmReminders.length > 0) {
-      for (const reminder of confirmReminders) {
+      for (const reminder of reminders) {
         try {
-          const lastSentAt = reminder.last_sent_at || 0;
-          const reRemindInterval = (reminder.re_remind_interval || 5) * 60 * 1000; // Convert to ms
-          const timeSinceLastSend = nowTimestamp - lastSentAt;
-
-          // Check if it's time to re-send
-          if (timeSinceLastSend >= reRemindInterval) {
-            const targetChatId = reminder.assigned_to_chat_id || reminder.user_id;
-            const success = await sendNotification(
-              targetChatId,
-              reminder
-            );
-
-            if (success) {
-              // Update last_sent_at
-              await supabase
-                .from('reminders')
-                .update({ last_sent_at: nowTimestamp })
-                .eq('id', reminder.id);
-
-              reRemindCount++;
-            } else {
-              failedCount++;
-            }
-
-            await new Promise(resolve => setTimeout(resolve, 100));
-          }
-        } catch (err) {
-          console.error(`[CHECK-REMINDERS] Error re-sending reminder ${reminder.id}:`, err);
-          failedCount++;
-        }
+          const targetChatId = reminder.assigned_to_chat_id || reminder.user_id;
+          const msgId = await sendNotification(targetChatId, reminder);
+          if (msgId) {
+            await db.query(`UPDATE reminders SET sent = true, last_sent_at = $1, telegram_message_id = $2 WHERE id = $3`, [nowTimestamp, msgId, reminder.id]);
+            sentCount++;
+          } else failedCount++;
+        } catch (err) { failedCount++; }
       }
     }
 
-    // 3. Auto-delete reminders older than 7 days (Run daily at 03:00 AM - 03:02 AM to optimize load and handle cron delays)
+    const { rows: confirmReminders } = await db.query(`
+      SELECT * FROM reminders WHERE confirm_required = true AND confirmed = false AND done = false AND sent = true
+    `);
+
+    for (const reminder of confirmReminders) {
+      try {
+        const lastSentAt = Number(reminder.last_sent_at) || 0;
+        const reRemindInterval = (reminder.re_remind_interval || 5) * 60 * 1000;
+        if (nowTimestamp - lastSentAt >= reRemindInterval) {
+          const targetChatId = reminder.assigned_to_chat_id || reminder.user_id;
+          const msgId = await sendNotification(targetChatId, reminder);
+          if (msgId) {
+            await db.query(`UPDATE reminders SET last_sent_at = $1, telegram_message_id = $2 WHERE id = $3`, [nowTimestamp, msgId, reminder.id]);
+            reRemindCount++;
+          } else failedCount++;
+        }
+      } catch (err) { failedCount++; }
+    }
+
     let deletedCount = 0;
     if (currentHour === 3 && currentMinute <= 2) {
-      const sevenDaysAgo = new Date(userLocalTime);
-      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      const sevenDaysAgo = new Date(userLocalTime); sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
       const cutoffDate = `${sevenDaysAgo.getUTCFullYear()}-${String(sevenDaysAgo.getUTCMonth() + 1).padStart(2, '0')}-${String(sevenDaysAgo.getUTCDate()).padStart(2, '0')}`;
-
-      const { data: oldReminders, error: oldError } = await supabase
-        .from('reminders')
-        .select('id, notion_page_id, user_id')
-        .lt('date', cutoffDate);
-
-      if (!oldError && oldReminders && oldReminders.length > 0) {
-        for (const old of oldReminders) {
-          // Optional: Update Notion to Archive
-          if (old.notion_page_id) {
-             try {
-               const { data: userSettings } = await supabase
-                 .from('user_settings')
-                 .select('notion_token, notion_database_id')
-                 .eq('user_id', old.user_id)
-                 .single();
-
-               const creds = userSettings ? {
-                 notionToken: userSettings.notion_token,
-                 notionDatabaseId: userSettings.notion_database_id
-               } : null;
-
-               const { updateNotionStatus } = await import('../services/notion.js');
-               await updateNotionStatus(old.notion_page_id, 'Archive', creds);
-             } catch (e) {
-               console.error('[CHECK-REMINDERS] Failed to archive old Notion task:', e);
-             }
-          }
-          await supabase.from('reminders').delete().eq('id', old.id);
-          deletedCount++;
+      
+      const { rows: oldReminders } = await db.query(`SELECT id, notion_page_id, user_id FROM reminders WHERE date < $1`, [cutoffDate]);
+      for (const old of oldReminders) {
+        if (old.notion_page_id) {
+          try {
+            const { rows: usRows } = await db.query(`SELECT notion_token, notion_database_id FROM user_settings WHERE user_id = $1`, [old.user_id]);
+            const userSettings = usRows[0];
+            const creds = userSettings ? { notionToken: userSettings.notion_token, notionDatabaseId: userSettings.notion_database_id } : null;
+            const { updateNotionStatus } = await import('../services/notion.js');
+            await updateNotionStatus(old.notion_page_id, 'Archive', creds);
+          } catch (e) { }
         }
+        await db.query(`DELETE FROM reminders WHERE id = $1`, [old.id]);
+        deletedCount++;
       }
     }
 
-    return res.status(200).json({
-      message: 'Reminder check completed',
-      newSent: sentCount,
-      reReminded: reRemindCount,
-      autoDeleted: deletedCount,
-      failed: failedCount,
-      timestamp: new Date().toISOString()
-    });
+    return res.status(200).json({ message: 'Reminder check completed', newSent: sentCount, reReminded: reRemindCount, autoDeleted: deletedCount, failed: failedCount, timestamp: new Date().toISOString() });
   } catch (error) {
-    console.error('[CHECK-REMINDERS] Error:', error);
-    return res.status(500).json({
-      error: 'Internal server error',
-      message: error instanceof Error ? error.message : 'Unknown error'
-    });
+    return res.status(500).json({ error: 'Internal server error', message: error instanceof Error ? error.message : 'Unknown error' });
   }
 }

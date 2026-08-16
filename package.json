@@ -4,22 +4,26 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build": "vite build",
     "preview": "vite preview",
+    "start": "vite preview --port $PORT --host 0.0.0.0",
     "firebase:deploy": "npm run build && firebase deploy --only hosting",
     "firebase:serve": "npm run build && firebase serve --only hosting"
   },
   "dependencies": {
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "firebase": "^10.7.1"
-  },
-  "devDependencies": {
     "@types/react": "^18.2.43",
     "@types/react-dom": "^18.2.17",
     "@vitejs/plugin-react": "^4.2.1",
-    "firebase-tools": "^15.3.1",
+    "firebase": "^10.7.1",
+    "framer-motion": "^12.43.0",
+    "isomorphic-git": "^1.40.0",
+    "lucide-react": "^1.28.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
     "typescript": "^5.3.3",
     "vite": "^5.0.8"
+  },
+  "devDependencies": {
+    "firebase-tools": "^15.3.1"
   }
 }
