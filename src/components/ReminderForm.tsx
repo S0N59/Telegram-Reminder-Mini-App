@@ -668,6 +668,23 @@ export const ReminderForm = ({
                   );
                 })}
               </div>
+
+              {/* Confirm Date Button */}
+              <div className="picker-confirm-row">
+                <button
+                  type="button"
+                  className="picker-confirm-btn"
+                  onClick={() => {
+                    try { webApp?.HapticFeedback?.notificationOccurred?.('success'); } catch {}
+                    setWhenView('none');
+                  }}
+                >
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                  </svg>
+                  <span>Done • {formattedDateLabel}</span>
+                </button>
+              </div>
             </div>
           )}
 
@@ -681,6 +698,23 @@ export const ReminderForm = ({
                 onMinuteChange={handleMinuteChange}
                 isToday={`${formData.year}-${formData.month}-${formData.day}` === today.dateStr}
               />
+
+              {/* Confirm Time Button */}
+              <div className="picker-confirm-row">
+                <button
+                  type="button"
+                  className="picker-confirm-btn"
+                  onClick={() => {
+                    try { webApp?.HapticFeedback?.notificationOccurred?.('success'); } catch {}
+                    setWhenView('none');
+                  }}
+                >
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                  </svg>
+                  <span>Done • {formData.hours}:{formData.minutes}</span>
+                </button>
+              </div>
             </div>
           )}
         </div>
