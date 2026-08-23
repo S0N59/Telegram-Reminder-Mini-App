@@ -470,29 +470,6 @@ export const ReminderForm = ({
     }
   };
 
-  // Direct time input handlers
-  const handleDirectHourChange = (val: string) => {
-    const digits = val.replace(/\D/g, '').slice(0, 2);
-    setFormData(prev => ({ ...prev, hours: digits }));
-  };
-
-  const handleDirectMinuteChange = (val: string) => {
-    const digits = val.replace(/\D/g, '').slice(0, 2);
-    setFormData(prev => ({ ...prev, minutes: digits }));
-  };
-
-  const handleBlurHour = () => {
-    const num = parseInt(formData.hours, 10) || 0;
-    const clamped = Math.max(0, Math.min(23, num));
-    setFormData(prev => ({ ...prev, hours: String(clamped).padStart(2, '0') }));
-  };
-
-  const handleBlurMinute = () => {
-    const num = parseInt(formData.minutes, 10) || 0;
-    const clamped = Math.max(0, Math.min(59, num));
-    setFormData(prev => ({ ...prev, minutes: String(clamped).padStart(2, '0') }));
-  };
-
   return (
     <div className="reminder-form-container animate-fade-in">
       {/* 1. Top Segmented Control: For me | For friend with Liquid Glass sliding pill */}
@@ -555,39 +532,19 @@ export const ReminderForm = ({
       </div>
 
       <div className="form-card-group">
-        {/* 2. Field: What (Interactive distinct text input card) */}
+        {/* 2. Field: What (Clean Liquid Glass Input Card) */}
         <div className="form-card-row form-input-card">
-          <div className="form-input-card-header">
-            <div className="form-input-title-wrap">
-              <span className="input-title-icon">✍️</span>
-              <label className="form-row-label no-margin">Reminder text</label>
-            </div>
-            <span className="form-char-count">{formData.text.length}/200</span>
-          </div>
-
+          <label className="form-row-label">What do you want to remind?</label>
           <div className="form-textarea-interactive-box">
             <textarea
               ref={textareaRef}
               value={formData.text}
               onChange={handleTextChange}
-              placeholder="What would you like to be reminded about? Tap here to type..."
+              placeholder="e.g. Call doctor, buy groceries..."
               className="form-row-textarea"
               maxLength={200}
               rows={2}
             />
-            {formData.text && (
-              <button
-                type="button"
-                className="clear-text-inline-btn"
-                onClick={() => {
-                  setFormData(prev => ({ ...prev, text: '' }));
-                  if (textareaRef.current) textareaRef.current.focus();
-                }}
-                aria-label="Clear text"
-              >
-                ✕
-              </button>
-            )}
           </div>
         </div>
 
@@ -731,49 +688,17 @@ export const ReminderForm = ({
             </div>
           )}
 
-          {/* VISUAL TACTILE TIME DRUM WITH DIRECT INPUT ON TOP */}
+          {/* VISUAL TACTILE TIME DRUM */}
           {whenView === 'time' && (
             <div className="visual-time-box animate-slide-down">
-              {/* TOP HEADER: Direct time typing inputs & Done button on TOP */}
+              {/* TOP HEADER: Title & Done button on TOP */}
               <div className="picker-top-bar time-top-bar">
-                <div className="direct-time-input-group">
-                  <span className="direct-time-label">Type time:</span>
-                  <div className="direct-time-inputs">
-                    <input
-                      type="text"
-                      inputMode="numeric"
-                      pattern="[0-9]*"
-                      maxLength={2}
-                      value={formData.hours}
-                      onChange={(e) => handleDirectHourChange(e.target.value)}
-                      onBlur={handleBlurHour}
-                      placeholder="HH"
-                      className="direct-time-input"
-                      aria-label="Hours"
-                    />
-                    <span className="direct-time-colon">:</span>
-                    <input
-                      type="text"
-                      inputMode="numeric"
-                      pattern="[0-9]*"
-                      maxLength={2}
-                      value={formData.minutes}
-                      onChange={(e) => handleDirectMinuteChange(e.target.value)}
-                      onBlur={handleBlurMinute}
-                      placeholder="MM"
-                      className="direct-time-input"
-                      aria-label="Minutes"
-                    />
-                  </div>
-                </div>
-
+                <span className="cal-title-text">Select Time</span>
                 <button
                   type="button"
                   className="picker-top-done-btn"
                   onClick={() => {
                     try { webApp?.HapticFeedback?.notificationOccurred?.('success'); } catch {}
-                    handleBlurHour();
-                    handleBlurMinute();
                     setWhenView('none');
                   }}
                 >

@@ -174,10 +174,6 @@ export const TimeWheelPicker = ({
           </div>
         </div>
       </div>
-
-      {isToday && (
-        <div className="twp-hint">Only upcoming times are available for today</div>
-      )}
     </div>
   );
 };

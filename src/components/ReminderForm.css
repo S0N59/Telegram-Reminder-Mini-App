@@ -148,47 +148,24 @@
 .form-input-card {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-}
-
-.form-input-card-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.form-input-title-wrap {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.input-title-icon {
-  font-size: 14px;
-}
-
-.form-char-count {
-  font-size: 11px;
-  font-weight: 500;
-  color: var(--text-muted, rgba(255, 255, 255, 0.35));
 }
 
 .form-textarea-interactive-box {
   display: flex;
   align-items: flex-start;
-  background: rgba(0, 0, 0, 0.42);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(0, 0, 0, 0.35);
+  border: 0.5px solid rgba(255, 255, 255, 0.1);
   border-radius: 18px;
   padding: 12px 14px;
   position: relative;
-  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.25);
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .form-textarea-interactive-box:focus-within {
-  border-color: var(--accent-color, #3390ec);
-  background: rgba(0, 0, 0, 0.55);
-  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.4), 0 0 16px rgba(51, 144, 236, 0.2);
+  border-color: rgba(255, 255, 255, 0.25);
+  background: rgba(0, 0, 0, 0.45);
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.35), 0 0 12px rgba(255, 255, 255, 0.05);
 }
 
 .form-row-textarea {
@@ -201,35 +178,13 @@
   font-family: var(--font-family);
   resize: none;
   outline: none;
-  min-height: 52px;
+  min-height: 48px;
   line-height: 1.45;
 }
 
 .form-row-textarea::placeholder {
-  color: rgba(255, 255, 255, 0.38);
-  font-size: 14px;
-}
-
-.clear-text-inline-btn {
-  background: rgba(255, 255, 255, 0.1);
-  border: none;
-  border-radius: 50%;
-  width: 22px;
-  height: 22px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: rgba(255, 255, 255, 0.6);
-  font-size: 11px;
-  cursor: pointer;
-  margin-left: 6px;
-  flex-shrink: 0;
-  transition: all 0.15s ease;
-}
-
-.clear-text-inline-btn:active {
-  background: rgba(255, 255, 255, 0.2);
-  color: #ffffff;
+  color: var(--text-muted, rgba(255, 255, 255, 0.35));
+  font-size: 14.5px;
 }
 
 /* Recipient Card */
@@ -383,46 +338,6 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-}
-
-.direct-time-input-group {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.direct-time-label {
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--text-secondary, rgba(255, 255, 255, 0.6));
-}
-
-.direct-time-inputs {
-  display: flex;
-  align-items: center;
-  background: rgba(0, 0, 0, 0.45);
-  border: 0.5px solid rgba(255, 255, 255, 0.15);
-  border-radius: 12px;
-  padding: 4px 8px;
-  gap: 4px;
-}
-
-.direct-time-input {
-  width: 28px;
-  background: transparent;
-  border: none;
-  color: #ffffff;
-  font-size: 15px;
-  font-weight: 700;
-  text-align: center;
-  outline: none;
-  font-family: inherit;
-}
-
-.direct-time-colon {
-  color: var(--accent-color, #3390ec);
-  font-weight: 700;
-  font-size: 15px;
 }
 
 .cal-title-text {
