@@ -1,5 +1,5 @@
 /* ============================================
-   TIME DRUM WHEEL PICKER  –  clean CSS-snap
+   TIME DRUM WHEEL PICKER – GPU Accelerated
    ============================================ */
 
 /* Root wrapper */
@@ -7,27 +7,27 @@
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  gap: 14px;
+  gap: 12px;
   -webkit-user-select: none;
   user-select: none;
 }
 
-/* ── Large time display badge ─────────────── */
+/* Large time display badge */
 .twp-badge {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 4px;
   padding: 10px 20px;
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.07);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.07);
   border-radius: 14px;
 }
 
 .twp-digit {
-  font-size: 34px;
+  font-size: 32px;
   font-weight: 800;
-  color: var(--text-primary);
+  color: var(--text-primary, #ffffff);
   font-family: var(--font-family);
   font-variant-numeric: tabular-nums;
   letter-spacing: 1px;
@@ -35,37 +35,32 @@
 }
 
 .twp-colon {
-  font-size: 28px;
+  font-size: 26px;
   font-weight: 700;
-  color: var(--accent-color);
+  color: var(--accent-color, #3390ec);
   margin: 0 2px;
-  animation: twpPulse 1.4s ease-in-out infinite;
   line-height: 1;
 }
 
-@keyframes twpPulse {
-  0%, 100% { opacity: 1; }
-  50%       { opacity: 0.25; }
-}
-
-/* ── Drums container (position-relative for lens & fades) */
+/* Drums container */
 .twp-drums {
   position: relative;
   display: flex;
   align-items: flex-start;
   justify-content: center;
   overflow: hidden;
+  border-radius: 16px;
 }
 
 /* Selection lens bar */
 .twp-lens {
   position: absolute;
-  left: 10px;
-  right: 10px;
-  background: rgba(255,255,255,0.07);
-  border-top: 1px solid rgba(255,255,255,0.13);
-  border-bottom: 1px solid rgba(255,255,255,0.13);
-  border-radius: 10px;
+  left: 8px;
+  right: 8px;
+  background: rgba(255, 255, 255, 0.07);
+  border-top: 1px solid rgba(255, 255, 255, 0.15);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
   pointer-events: none;
   z-index: 3;
 }
@@ -73,25 +68,22 @@
 /* Gradient fades top & bottom */
 .twp-fade {
   position: absolute;
-  left: 0; right: 0;
+  left: 0;
+  right: 0;
   height: 38%;
   pointer-events: none;
   z-index: 4;
 }
 .twp-fade-top {
   top: 0;
-  background: linear-gradient(to bottom,
-    var(--bg-primary, #0d0d0f) 0%,
-    transparent 100%);
+  background: linear-gradient(to bottom, rgba(16, 16, 20, 0.95) 0%, transparent 100%);
 }
 .twp-fade-bottom {
   bottom: 0;
-  background: linear-gradient(to top,
-    var(--bg-primary, #0d0d0f) 0%,
-    transparent 100%);
+  background: linear-gradient(to top, rgba(16, 16, 20, 0.95) 0%, transparent 100%);
 }
 
-/* ── Each drum column ─────────────────────── */
+/* Each drum column */
 .twp-col {
   flex: 1;
   position: relative;
@@ -103,23 +95,21 @@
 
 .twp-col-label {
   position: absolute;
-  top: 6px;
+  top: 4px;
   font-size: 9px;
   font-weight: 700;
   letter-spacing: 1px;
   text-transform: uppercase;
-  color: var(--text-tertiary);
+  color: rgba(255, 255, 255, 0.35);
   pointer-events: none;
   z-index: 5;
 }
 
-/* ── Scrollable drum ─────────────────────── */
+/* Scrollable drum — Smooth hardware-accelerated natural scrolling */
 .twp-scroll {
   width: 100%;
   overflow-y: auto;
   overflow-x: hidden;
-  /* Smooth inertia scrolling without aggressive catch */
-  scroll-snap-type: y proximity;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior-y: contain;
   scrollbar-width: none;
@@ -127,94 +117,59 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  cursor: grab;
-  touch-action: pan-y;
-}
-.twp-scroll:active {
-  cursor: grabbing;
+  scroll-behavior: auto;
 }
 .twp-scroll::-webkit-scrollbar { display: none; }
 
-/* ── Individual row item ─────────────────── */
+/* Individual row item — transform & opacity only (Zero layout reflows!) */
 .twp-item {
   width: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
-  scroll-snap-align: center;
   flex-shrink: 0;
   cursor: pointer;
   font-family: var(--font-family);
   font-variant-numeric: tabular-nums;
+  font-size: 19px;
+  font-weight: 600;
+  color: #ffffff;
   -webkit-tap-highlight-color: transparent;
-  /* transition only color/opacity/size, NOT position */
-  transition: color 0.12s ease, opacity 0.12s ease, font-size 0.12s ease, font-weight 0.12s ease;
+  will-change: transform, opacity;
+  transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.15s ease, color 0.15s ease;
 }
 
-/* Distance-based visual treatment */
+/* GPU Scale transform without font-size layout re-calculation */
 .twp-item.sel {
-  font-size: 26px;
+  transform: scale(1.35);
   font-weight: 800;
   color: #ffffff;
   opacity: 1;
 }
 .twp-item.n1 {
-  font-size: 19px;
-  font-weight: 600;
-  color: rgba(255,255,255,0.55);
-  opacity: 1;
+  transform: scale(1.05);
+  color: rgba(255, 255, 255, 0.65);
+  opacity: 0.85;
 }
 .twp-item.n2 {
-  font-size: 14px;
-  font-weight: 500;
-  color: rgba(255,255,255,0.28);
-  opacity: 1;
+  transform: scale(0.9);
+  color: rgba(255, 255, 255, 0.35);
+  opacity: 0.55;
 }
 .twp-item.far {
-  font-size: 12px;
-  font-weight: 400;
-  color: rgba(255,255,255,0.10);
-  opacity: 1;
+  transform: scale(0.8);
+  color: rgba(255, 255, 255, 0.15);
+  opacity: 0.25;
 }
 
-/* ── Colon separator between drums ───────── */
+/* Colon separator between drums */
 .twp-sep {
-  width: 28px;
+  width: 24px;
   text-align: center;
-  font-size: 26px;
+  font-size: 24px;
   font-weight: 700;
-  color: var(--text-tertiary);
+  color: rgba(255, 255, 255, 0.4);
   pointer-events: none;
   z-index: 2;
   flex-shrink: 0;
-}
-
-/* ── Quick Jump Chips ── */
-.twp-quick-chips {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  margin-top: 6px;
-  flex-wrap: wrap;
-}
-
-.twp-chip {
-  padding: 5px 12px;
-  background: rgba(255, 255, 255, 0.07);
-  border: 0.5px solid rgba(255, 255, 255, 0.12);
-  border-radius: 12px;
-  color: rgba(255, 255, 255, 0.85);
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  -webkit-tap-highlight-color: transparent;
-}
-
-.twp-chip:active {
-  transform: scale(0.95);
-  background: var(--accent-color, #3390ec);
-  border-color: var(--accent-color, #3390ec);
-  color: #ffffff;
 }
