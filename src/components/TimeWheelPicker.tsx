@@ -66,7 +66,7 @@ export const TimeWheelPicker = ({
     if (hRef.current && !isUserScrollingH.current) {
       const target = hIdx * ITEM_H;
       if (Math.abs(hRef.current.scrollTop - target) > 2) {
-        hRef.current.scrollTo({ top: target, behavior: 'smooth' });
+        hRef.current.scrollTop = target;
       }
     }
   }, [hIdx]);
@@ -75,7 +75,7 @@ export const TimeWheelPicker = ({
     if (mRef.current && !isUserScrollingM.current) {
       const target = mIdx * ITEM_H;
       if (Math.abs(mRef.current.scrollTop - target) > 2) {
-        mRef.current.scrollTo({ top: target, behavior: 'smooth' });
+        mRef.current.scrollTop = target;
       }
     }
   }, [mIdx]);
@@ -85,6 +85,10 @@ export const TimeWheelPicker = ({
     if (isToday && hIdx === curH && mIdx < minMinute) {
       const validMinIdx = Math.min(minMinute, 59);
       const validMinStr = MINUTES_LIST[validMinIdx];
+      lastMVal.current = validMinStr;
+      if (mRef.current) {
+        mRef.current.scrollTop = validMinIdx * ITEM_H;
+      }
       onMinuteChange(validMinStr);
     }
   }, [isToday, hIdx, curH, mIdx, minMinute, onMinuteChange]);
@@ -122,7 +126,7 @@ export const TimeWheelPicker = ({
       if (Math.abs(el.scrollTop - snapTop) > 1) {
         el.scrollTo({ top: snapTop, behavior: 'smooth' });
       }
-    }, 150);
+    }, 80);
   }, [triggerHaptic, onHourChange, isToday, minHour]);
 
   const onMScroll = useCallback(() => {
@@ -157,7 +161,7 @@ export const TimeWheelPicker = ({
       if (Math.abs(el.scrollTop - snapTop) > 1) {
         el.scrollTo({ top: snapTop, behavior: 'smooth' });
       }
-    }, 150);
+    }, 80);
   }, [triggerHaptic, onMinuteChange, isToday, minMinute, hIdx, curH]);
 
   // Direct tap on item — block past taps
