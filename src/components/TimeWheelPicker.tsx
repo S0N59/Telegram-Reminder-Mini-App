@@ -80,6 +80,15 @@ export const TimeWheelPicker = ({
     }
   }, [mIdx]);
 
+  // If today and hour is current hour, ensure minutes are not in the past
+  useEffect(() => {
+    if (isToday && hIdx === curH && mIdx < minMinute) {
+      const validMinIdx = Math.min(minMinute, 59);
+      const validMinStr = MINUTES_LIST[validMinIdx];
+      onMinuteChange(validMinStr);
+    }
+  }, [isToday, hIdx, curH, mIdx, minMinute, onMinuteChange]);
+
   // High-performance scroll listeners with past-time bounce-back
   const onHScroll = useCallback(() => {
     const el = hRef.current;
