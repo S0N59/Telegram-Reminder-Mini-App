@@ -162,6 +162,14 @@
   opacity: 0.25;
 }
 
+/* Past time items — dimmed, not selectable */
+.twp-item.past {
+  opacity: 0.15 !important;
+  color: rgba(255, 255, 255, 0.08) !important;
+  text-decoration: line-through;
+  cursor: not-allowed;
+}
+
 /* Colon separator between drums */
 .twp-sep {
   width: 24px;

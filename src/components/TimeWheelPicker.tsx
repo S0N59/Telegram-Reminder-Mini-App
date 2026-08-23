@@ -19,7 +19,7 @@ const HOURS_LIST = Array.from({ length: 24 }, (_, i) => pad(i));
 const MINUTES_LIST = Array.from({ length: 60 }, (_, i) => pad(i));
 
 export const TimeWheelPicker = ({
-  hours, minutes, onHourChange, onMinuteChange,
+  hours, minutes, onHourChange, onMinuteChange, isToday,
 }: TimeWheelPickerProps) => {
   const hRef = useRef<HTMLDivElement>(null);
   const mRef = useRef<HTMLDivElement>(null);
@@ -42,6 +42,15 @@ export const TimeWheelPicker = ({
     }
   }, [webApp]);
 
+  // Current time for past-blocking
+  const now = new Date();
+  const curH = now.getHours();
+  const curM = now.getMinutes();
+
+  // Minimum allowed values (only relevant when isToday)
+  const minHour = isToday ? curH : 0;
+  const minMinute = (isToday && (parseInt(hours, 10) || 0) === curH) ? curM + 1 : 0;
+
   const hIdx = Math.max(0, Math.min(23, parseInt(hours, 10) || 0));
   const mIdx = Math.max(0, Math.min(59, parseInt(minutes, 10) || 0));
 
@@ -52,7 +61,7 @@ export const TimeWheelPicker = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Sync scroll when props change externally (e.g. initial load or reset)
+  // Sync scroll when props change externally
   useEffect(() => {
     if (hRef.current && !isUserScrollingH.current) {
       const target = hIdx * ITEM_H;
@@ -71,7 +80,7 @@ export const TimeWheelPicker = ({
     }
   }, [mIdx]);
 
-  // High-performance scroll listeners
+  // High-performance scroll listeners with past-time bounce-back
   const onHScroll = useCallback(() => {
     const el = hRef.current;
     if (!el) return;
@@ -92,13 +101,20 @@ export const TimeWheelPicker = ({
     if (snapTimeoutH.current) window.clearTimeout(snapTimeoutH.current);
     snapTimeoutH.current = window.setTimeout(() => {
       isUserScrollingH.current = false;
-      const targetIdx = Math.round(el.scrollTop / ITEM_H);
+      let targetIdx = Math.round(el.scrollTop / ITEM_H);
+      // Bounce back if landed on a past hour
+      if (isToday && targetIdx < minHour) {
+        targetIdx = minHour;
+        const val = HOURS_LIST[targetIdx];
+        lastHVal.current = val;
+        onHourChange(val);
+      }
       const snapTop = targetIdx * ITEM_H;
       if (Math.abs(el.scrollTop - snapTop) > 1) {
         el.scrollTo({ top: snapTop, behavior: 'smooth' });
       }
     }, 150);
-  }, [triggerHaptic, onHourChange]);
+  }, [triggerHaptic, onHourChange, isToday, minHour]);
 
   const onMScroll = useCallback(() => {
     const el = mRef.current;
@@ -120,30 +136,39 @@ export const TimeWheelPicker = ({
     if (snapTimeoutM.current) window.clearTimeout(snapTimeoutM.current);
     snapTimeoutM.current = window.setTimeout(() => {
       isUserScrollingM.current = false;
-      const targetIdx = Math.round(el.scrollTop / ITEM_H);
+      let targetIdx = Math.round(el.scrollTop / ITEM_H);
+      // Bounce back if landed on a past minute (same hour as now, today)
+      if (isToday && targetIdx < minMinute && hIdx === curH) {
+        targetIdx = Math.min(minMinute, 59);
+        const val = MINUTES_LIST[targetIdx];
+        lastMVal.current = val;
+        onMinuteChange(val);
+      }
       const snapTop = targetIdx * ITEM_H;
       if (Math.abs(el.scrollTop - snapTop) > 1) {
         el.scrollTo({ top: snapTop, behavior: 'smooth' });
       }
     }, 150);
-  }, [triggerHaptic, onMinuteChange]);
+  }, [triggerHaptic, onMinuteChange, isToday, minMinute, hIdx, curH]);
 
-  // Direct tap on any item
+  // Direct tap on item — block past taps
   const clickH = useCallback((idx: number) => {
+    if (isToday && idx < minHour) return;
     triggerHaptic();
     const val = HOURS_LIST[idx];
     lastHVal.current = val;
     hRef.current?.scrollTo({ top: idx * ITEM_H, behavior: 'smooth' });
     onHourChange(val);
-  }, [triggerHaptic, onHourChange]);
+  }, [triggerHaptic, onHourChange, isToday, minHour]);
 
   const clickM = useCallback((idx: number) => {
+    if (isToday && hIdx === curH && idx < minMinute) return;
     triggerHaptic();
     const val = MINUTES_LIST[idx];
     lastMVal.current = val;
     mRef.current?.scrollTo({ top: idx * ITEM_H, behavior: 'smooth' });
     onMinuteChange(val);
-  }, [triggerHaptic, onMinuteChange]);
+  }, [triggerHaptic, onMinuteChange, isToday, hIdx, curH, minMinute]);
 
   const viewH = ITEM_H * (PAD * 2 + 1);
 
@@ -171,7 +196,10 @@ export const TimeWheelPicker = ({
             <div style={{ height: PAD * ITEM_H, flexShrink: 0 }} />
             {HOURS_LIST.map((h, i) => {
               const diff = Math.abs(i - hIdx);
-              const cls = 'twp-item ' + (i === hIdx ? 'sel' : diff === 1 ? 'n1' : diff === 2 ? 'n2' : 'far');
+              const isPast = isToday && i < minHour;
+              const cls = 'twp-item'
+                + (isPast ? ' past' : '')
+                + ' ' + (i === hIdx ? 'sel' : diff === 1 ? 'n1' : diff === 2 ? 'n2' : 'far');
               return <div key={h} className={cls} style={{ height: ITEM_H }} onClick={() => clickH(i)}>{h}</div>;
             })}
             <div style={{ height: PAD * ITEM_H, flexShrink: 0 }} />
@@ -191,7 +219,10 @@ export const TimeWheelPicker = ({
             <div style={{ height: PAD * ITEM_H, flexShrink: 0 }} />
             {MINUTES_LIST.map((m, i) => {
               const diff = Math.abs(i - mIdx);
-              const cls = 'twp-item ' + (i === mIdx ? 'sel' : diff === 1 ? 'n1' : diff === 2 ? 'n2' : 'far');
+              const isPast = isToday && hIdx === curH && i < minMinute;
+              const cls = 'twp-item'
+                + (isPast ? ' past' : '')
+                + ' ' + (i === mIdx ? 'sel' : diff === 1 ? 'n1' : diff === 2 ? 'n2' : 'far');
               return <div key={m} className={cls} style={{ height: ITEM_H }} onClick={() => clickM(i)}>{m}</div>;
             })}
             <div style={{ height: PAD * ITEM_H, flexShrink: 0 }} />
@@ -201,3 +232,4 @@ export const TimeWheelPicker = ({
     </div>
   );
 };
+
