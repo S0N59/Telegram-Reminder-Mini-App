@@ -7,7 +7,7 @@ interface TimeWheelPickerProps {
   minutes: string;
   onHourChange: (h: string) => void;
   onMinuteChange: (m: string) => void;
-  isToday: boolean;
+  isToday?: boolean;
 }
 
 const ITEM_H = 46;
@@ -15,8 +15,11 @@ const PAD = 2;
 
 function pad(n: number) { return String(n).padStart(2, '0'); }
 
+const HOURS_LIST = Array.from({ length: 24 }, (_, i) => pad(i));
+const MINUTES_LIST = Array.from({ length: 60 }, (_, i) => pad(i));
+
 export const TimeWheelPicker = ({
-  hours, minutes, onHourChange, onMinuteChange, isToday,
+  hours, minutes, onHourChange, onMinuteChange,
 }: TimeWheelPickerProps) => {
   const hRef = useRef<HTMLDivElement>(null);
   const mRef = useRef<HTMLDivElement>(null);
@@ -39,42 +42,17 @@ export const TimeWheelPicker = ({
     }
   }, [webApp]);
 
-  const now = new Date();
-  const curH = now.getHours();
-  const curM = now.getMinutes();
+  const hIdx = Math.max(0, Math.min(23, parseInt(hours, 10) || 0));
+  const mIdx = Math.max(0, Math.min(59, parseInt(minutes, 10) || 0));
 
-  // Available lists
-  const startH = isToday ? curH : 0;
-  const hoursAvail: string[] = [];
-  for (let h = startH; h <= 23; h++) hoursAvail.push(pad(h));
-
-  const selHNum = parseInt(hours, 10) || 0;
-  const minStart = (isToday && selHNum === curH) ? Math.min(curM + 1, 59) : 0;
-  const minutesAvail: string[] = [];
-  for (let m = minStart; m <= 59; m++) minutesAvail.push(pad(m));
-
-  const clampedH = hoursAvail.includes(hours) ? hours : (hoursAvail[0] ?? '00');
-  const clampedM = minutesAvail.includes(minutes) ? minutes : (minutesAvail[0] ?? '00');
-
-  const hIdx = Math.max(0, hoursAvail.indexOf(clampedH));
-  const mIdx = Math.max(0, minutesAvail.indexOf(clampedM));
-
-  useEffect(() => {
-    if (clampedH !== hours) onHourChange(clampedH);
-  }, [clampedH, hours, onHourChange]);
-
-  useEffect(() => {
-    if (clampedM !== minutes) onMinuteChange(clampedM);
-  }, [clampedM, minutes, onMinuteChange]);
-
-  // Initial scroll position
+  // Initial scroll position on mount
   useEffect(() => {
     if (hRef.current) hRef.current.scrollTop = hIdx * ITEM_H;
     if (mRef.current) mRef.current.scrollTop = mIdx * ITEM_H;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Programmatic sync when props change
+  // Sync scroll when props change externally (e.g. initial load or reset)
   useEffect(() => {
     if (hRef.current && !isUserScrollingH.current) {
       const target = hIdx * ITEM_H;
@@ -93,7 +71,7 @@ export const TimeWheelPicker = ({
     }
   }, [mIdx]);
 
-  // High-performance RAF scroll listeners
+  // High-performance scroll listeners
   const onHScroll = useCallback(() => {
     const el = hRef.current;
     if (!el) return;
@@ -102,8 +80,8 @@ export const TimeWheelPicker = ({
     if (rafIdH.current) cancelAnimationFrame(rafIdH.current);
     rafIdH.current = requestAnimationFrame(() => {
       const idx = Math.round(el.scrollTop / ITEM_H);
-      const clamped = Math.max(0, Math.min(hoursAvail.length - 1, idx));
-      const val = hoursAvail[clamped];
+      const clamped = Math.max(0, Math.min(23, idx));
+      const val = HOURS_LIST[clamped];
       if (val && val !== lastHVal.current) {
         lastHVal.current = val;
         triggerHaptic();
@@ -120,7 +98,7 @@ export const TimeWheelPicker = ({
         el.scrollTo({ top: snapTop, behavior: 'smooth' });
       }
     }, 150);
-  }, [hoursAvail, triggerHaptic, onHourChange]);
+  }, [triggerHaptic, onHourChange]);
 
   const onMScroll = useCallback(() => {
     const el = mRef.current;
@@ -130,8 +108,8 @@ export const TimeWheelPicker = ({
     if (rafIdM.current) cancelAnimationFrame(rafIdM.current);
     rafIdM.current = requestAnimationFrame(() => {
       const idx = Math.round(el.scrollTop / ITEM_H);
-      const clamped = Math.max(0, Math.min(minutesAvail.length - 1, idx));
-      const val = minutesAvail[clamped];
+      const clamped = Math.max(0, Math.min(59, idx));
+      const val = MINUTES_LIST[clamped];
       if (val && val !== lastMVal.current) {
         lastMVal.current = val;
         triggerHaptic();
@@ -148,31 +126,33 @@ export const TimeWheelPicker = ({
         el.scrollTo({ top: snapTop, behavior: 'smooth' });
       }
     }, 150);
-  }, [minutesAvail, triggerHaptic, onMinuteChange]);
+  }, [triggerHaptic, onMinuteChange]);
 
-  // Direct tap to jump
+  // Direct tap on any item
   const clickH = useCallback((idx: number) => {
     triggerHaptic();
-    lastHVal.current = hoursAvail[idx];
+    const val = HOURS_LIST[idx];
+    lastHVal.current = val;
     hRef.current?.scrollTo({ top: idx * ITEM_H, behavior: 'smooth' });
-    onHourChange(hoursAvail[idx]);
-  }, [hoursAvail, triggerHaptic, onHourChange]);
+    onHourChange(val);
+  }, [triggerHaptic, onHourChange]);
 
   const clickM = useCallback((idx: number) => {
     triggerHaptic();
-    lastMVal.current = minutesAvail[idx];
+    const val = MINUTES_LIST[idx];
+    lastMVal.current = val;
     mRef.current?.scrollTo({ top: idx * ITEM_H, behavior: 'smooth' });
-    onMinuteChange(minutesAvail[idx]);
-  }, [minutesAvail, triggerHaptic, onMinuteChange]);
+    onMinuteChange(val);
+  }, [triggerHaptic, onMinuteChange]);
 
   const viewH = ITEM_H * (PAD * 2 + 1);
 
   return (
     <div className="twp-root">
       <div className="twp-badge">
-        <span className="twp-digit">{clampedH}</span>
+        <span className="twp-digit">{pad(hIdx)}</span>
         <span className="twp-colon">:</span>
-        <span className="twp-digit">{clampedM}</span>
+        <span className="twp-digit">{pad(mIdx)}</span>
       </div>
 
       <div className="twp-drums" style={{ height: viewH }}>
@@ -189,7 +169,7 @@ export const TimeWheelPicker = ({
             onScroll={onHScroll}
           >
             <div style={{ height: PAD * ITEM_H, flexShrink: 0 }} />
-            {hoursAvail.map((h, i) => {
+            {HOURS_LIST.map((h, i) => {
               const diff = Math.abs(i - hIdx);
               const cls = 'twp-item ' + (i === hIdx ? 'sel' : diff === 1 ? 'n1' : diff === 2 ? 'n2' : 'far');
               return <div key={h} className={cls} style={{ height: ITEM_H }} onClick={() => clickH(i)}>{h}</div>;
@@ -209,7 +189,7 @@ export const TimeWheelPicker = ({
             onScroll={onMScroll}
           >
             <div style={{ height: PAD * ITEM_H, flexShrink: 0 }} />
-            {minutesAvail.map((m, i) => {
+            {MINUTES_LIST.map((m, i) => {
               const diff = Math.abs(i - mIdx);
               const cls = 'twp-item ' + (i === mIdx ? 'sel' : diff === 1 ? 'n1' : diff === 2 ? 'n2' : 'far');
               return <div key={m} className={cls} style={{ height: ITEM_H }} onClick={() => clickM(i)}>{m}</div>;
