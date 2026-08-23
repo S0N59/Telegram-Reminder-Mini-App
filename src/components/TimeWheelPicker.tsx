@@ -10,7 +10,7 @@ interface TimeWheelPickerProps {
   isToday: boolean;
 }
 
-const ITEM_H = 52;
+const ITEM_H = 46;
 const PAD = 2;
 
 function pad(n: number) { return String(n).padStart(2, '0'); }
@@ -22,12 +22,19 @@ export const TimeWheelPicker = ({
   const mRef = useRef<HTMLDivElement>(null);
   const lastHVal = useRef(hours);
   const lastMVal = useRef(minutes);
-  const prevHLen = useRef(-1);
-  const prevMLen = useRef(-1);
+  const isScrollingH = useRef(false);
+  const isScrollingM = useRef(false);
+  const scrollTimeoutH = useRef<number | null>(null);
+  const scrollTimeoutM = useRef<number | null>(null);
 
   const webApp = getTelegramWebApp();
+  const lastHapticTime = useRef(0);
   const haptic = useCallback(() => {
-    try { webApp?.HapticFeedback?.selectionChanged?.(); } catch { /* */ }
+    const now = Date.now();
+    if (now - lastHapticTime.current > 70) {
+      lastHapticTime.current = now;
+      try { webApp?.HapticFeedback?.selectionChanged?.(); } catch { /* */ }
+    }
   }, [webApp]);
 
   const now = new Date();
@@ -64,35 +71,33 @@ export const TimeWheelPicker = ({
   useEffect(() => {
     if (hRef.current) hRef.current.scrollTop = hIdx * ITEM_H;
     if (mRef.current) mRef.current.scrollTop = mIdx * ITEM_H;
-    prevHLen.current = hoursAvail.length;
-    prevMLen.current = minutesAvail.length;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // When available list length changes (e.g. switching hours changes minutes list),
-  // reset scroll position to match current selection
+  // Sync scroll when props change externally (not during active scroll)
   useEffect(() => {
-    if (prevMLen.current !== -1 && prevMLen.current !== minutesAvail.length) {
-      if (mRef.current) {
-        mRef.current.scrollTop = mIdx * ITEM_H;
+    if (hRef.current && !isScrollingH.current) {
+      const targetTop = hIdx * ITEM_H;
+      if (Math.abs(hRef.current.scrollTop - targetTop) > 2) {
+        hRef.current.scrollTo({ top: targetTop, behavior: 'smooth' });
       }
     }
-    prevMLen.current = minutesAvail.length;
-  }, [minutesAvail.length, mIdx]);
+  }, [hIdx]);
 
   useEffect(() => {
-    if (prevHLen.current !== -1 && prevHLen.current !== hoursAvail.length) {
-      if (hRef.current) {
-        hRef.current.scrollTop = hIdx * ITEM_H;
+    if (mRef.current && !isScrollingM.current) {
+      const targetTop = mIdx * ITEM_H;
+      if (Math.abs(mRef.current.scrollTop - targetTop) > 2) {
+        mRef.current.scrollTo({ top: targetTop, behavior: 'smooth' });
       }
     }
-    prevHLen.current = hoursAvail.length;
-  }, [hoursAvail.length, hIdx]);
+  }, [mIdx]);
 
-  // Direct onScroll — NO debounce. Read position immediately.
+  // Handle scroll with smooth inertia and gentle snap on stop
   const onHScroll = useCallback(() => {
     const el = hRef.current;
     if (!el) return;
+    isScrollingH.current = true;
     const idx = Math.round(el.scrollTop / ITEM_H);
     const clamped = Math.max(0, Math.min(hoursAvail.length - 1, idx));
     const val = hoursAvail[clamped];
@@ -101,11 +106,21 @@ export const TimeWheelPicker = ({
       haptic();
       onHourChange(val);
     }
+    if (scrollTimeoutH.current) window.clearTimeout(scrollTimeoutH.current);
+    scrollTimeoutH.current = window.setTimeout(() => {
+      isScrollingH.current = false;
+      const finalIdx = Math.round(el.scrollTop / ITEM_H);
+      const snapTop = finalIdx * ITEM_H;
+      if (Math.abs(el.scrollTop - snapTop) > 1) {
+        el.scrollTo({ top: snapTop, behavior: 'smooth' });
+      }
+    }, 140);
   }, [hoursAvail, haptic, onHourChange]);
 
   const onMScroll = useCallback(() => {
     const el = mRef.current;
     if (!el) return;
+    isScrollingM.current = true;
     const idx = Math.round(el.scrollTop / ITEM_H);
     const clamped = Math.max(0, Math.min(minutesAvail.length - 1, idx));
     const val = minutesAvail[clamped];
@@ -114,9 +129,18 @@ export const TimeWheelPicker = ({
       haptic();
       onMinuteChange(val);
     }
+    if (scrollTimeoutM.current) window.clearTimeout(scrollTimeoutM.current);
+    scrollTimeoutM.current = window.setTimeout(() => {
+      isScrollingM.current = false;
+      const finalIdx = Math.round(el.scrollTop / ITEM_H);
+      const snapTop = finalIdx * ITEM_H;
+      if (Math.abs(el.scrollTop - snapTop) > 1) {
+        el.scrollTo({ top: snapTop, behavior: 'smooth' });
+      }
+    }, 140);
   }, [minutesAvail, haptic, onMinuteChange]);
 
-  // Click to jump
+  // Click on number to jump directly
   const clickH = useCallback((idx: number) => {
     haptic();
     lastHVal.current = hoursAvail[idx];
@@ -130,6 +154,61 @@ export const TimeWheelPicker = ({
     mRef.current?.scrollTo({ top: idx * ITEM_H, behavior: 'smooth' });
     onMinuteChange(minutesAvail[idx]);
   }, [minutesAvail, haptic, onMinuteChange]);
+
+  // Mouse wheel support for desktop
+  const handleWheel = (ref: React.RefObject<HTMLDivElement>, e: React.WheelEvent) => {
+    e.preventDefault();
+    if (!ref.current) return;
+    const delta = e.deltaY > 0 ? ITEM_H : -ITEM_H;
+    ref.current.scrollBy({ top: delta, behavior: 'smooth' });
+  };
+
+  // Mouse drag support for desktop
+  const setupDrag = (ref: React.RefObject<HTMLDivElement>) => {
+    return (e: React.MouseEvent) => {
+      const el = ref.current;
+      if (!el) return;
+      const startY = e.pageY;
+      const startScrollTop = el.scrollTop;
+      let isDragging = false;
+
+      const onMouseMove = (moveEvent: MouseEvent) => {
+        const delta = startY - moveEvent.pageY;
+        if (Math.abs(delta) > 3) isDragging = true;
+        el.scrollTop = startScrollTop + delta;
+      };
+
+      const onMouseUp = () => {
+        window.removeEventListener('mousemove', onMouseMove);
+        window.removeEventListener('mouseup', onMouseUp);
+        if (isDragging) {
+          const idx = Math.round(el.scrollTop / ITEM_H);
+          el.scrollTo({ top: idx * ITEM_H, behavior: 'smooth' });
+        }
+      };
+
+      window.addEventListener('mousemove', onMouseMove);
+      window.addEventListener('mouseup', onMouseUp);
+    };
+  };
+
+  // Quick increment buttons
+  const addMinutes = (delta: number) => {
+    haptic();
+    let totalM = (parseInt(clampedH, 10) * 60 + parseInt(clampedM, 10) + delta) % (24 * 60);
+    if (totalM < 0) totalM += 24 * 60;
+    const newH = pad(Math.floor(totalM / 60));
+    const newM = pad(totalM % 60);
+    onHourChange(newH);
+    onMinuteChange(newM);
+  };
+
+  const setMinutePreset = (targetMin: string) => {
+    haptic();
+    if (minutesAvail.includes(targetMin)) {
+      onMinuteChange(targetMin);
+    }
+  };
 
   const viewH = ITEM_H * (PAD * 2 + 1);
 
@@ -148,7 +227,14 @@ export const TimeWheelPicker = ({
 
         <div className="twp-col">
           <div className="twp-col-label">Hour</div>
-          <div ref={hRef} className="twp-scroll" style={{ height: viewH }} onScroll={onHScroll}>
+          <div
+            ref={hRef}
+            className="twp-scroll"
+            style={{ height: viewH }}
+            onScroll={onHScroll}
+            onWheel={(e) => handleWheel(hRef, e)}
+            onMouseDown={setupDrag(hRef)}
+          >
             <div style={{ height: PAD * ITEM_H, flexShrink: 0 }} />
             {hoursAvail.map((h, i) => {
               const diff = Math.abs(i - hIdx);
@@ -163,7 +249,14 @@ export const TimeWheelPicker = ({
 
         <div className="twp-col">
           <div className="twp-col-label">Min</div>
-          <div ref={mRef} className="twp-scroll" style={{ height: viewH }} onScroll={onMScroll}>
+          <div
+            ref={mRef}
+            className="twp-scroll"
+            style={{ height: viewH }}
+            onScroll={onMScroll}
+            onWheel={(e) => handleWheel(mRef, e)}
+            onMouseDown={setupDrag(mRef)}
+          >
             <div style={{ height: PAD * ITEM_H, flexShrink: 0 }} />
             {minutesAvail.map((m, i) => {
               const diff = Math.abs(i - mIdx);
@@ -173,6 +266,15 @@ export const TimeWheelPicker = ({
             <div style={{ height: PAD * ITEM_H, flexShrink: 0 }} />
           </div>
         </div>
+      </div>
+
+      {/* Quick shortcuts for fast time picking */}
+      <div className="twp-quick-chips">
+        <button type="button" className="twp-chip" onClick={() => addMinutes(15)}>+15m</button>
+        <button type="button" className="twp-chip" onClick={() => addMinutes(30)}>+30m</button>
+        <button type="button" className="twp-chip" onClick={() => addMinutes(60)}>+1h</button>
+        <button type="button" className="twp-chip" onClick={() => setMinutePreset('00')}>:00</button>
+        <button type="button" className="twp-chip" onClick={() => setMinutePreset('30')}>:30</button>
       </div>
     </div>
   );
