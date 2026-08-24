@@ -540,6 +540,25 @@ export const ReminderForm = ({
       </div>
 
       <div className="form-card-group">
+        {/* 1. Field: Recipient (Only if For friend - placed at TOP) */}
+        {recipientMode === 'friend' && (
+          <div className="form-card-row form-recipient-card" onClick={handleOpenContactPicker}>
+            <label className="form-row-label">Recipient (Friend)</label>
+            <div className="form-row-interactive">
+              {formData.assignedTo ? (
+                <div className="selected-friend-chip">
+                  <span>{formData.assignedTo}</span>
+                </div>
+              ) : (
+                <span className="placeholder-text">Choose friend or type @username...</span>
+              )}
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="row-icon">
+                <polyline points="9 18 15 12 9 6"></polyline>
+              </svg>
+            </div>
+          </div>
+        )}
+
         {/* 2. Field: What (Clean Liquid Glass Input Card) */}
         <div className="form-card-row form-input-card">
           <label className="form-row-label">What do you want to remind?</label>
@@ -555,25 +574,6 @@ export const ReminderForm = ({
             />
           </div>
         </div>
-
-        {/* 3. Field: Who (Only if For friend) */}
-        {recipientMode === 'friend' && (
-          <div className="form-card-row form-recipient-card" onClick={handleOpenContactPicker}>
-            <label className="form-row-label">Recipient</label>
-            <div className="form-row-interactive">
-              {formData.assignedTo ? (
-                <div className="selected-friend-chip">
-                  <span>{formData.assignedTo}</span>
-                </div>
-              ) : (
-                <span className="placeholder-text">Choose friend or type @username...</span>
-              )}
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="row-icon">
-                <polyline points="9 18 15 12 9 6"></polyline>
-              </svg>
-            </div>
-          </div>
-        )}
 
         {/* 4. Field: When Selector with Liquid Glass sliding pill */}
         <div className="form-card-row visual-when-card">
@@ -719,7 +719,11 @@ export const ReminderForm = ({
                 minutes={formData.minutes}
                 onHourChange={handleHourChange}
                 onMinuteChange={handleMinuteChange}
-                isToday={`${formData.year}-${formData.month}-${formData.day}` === today.dateStr}
+                isToday={
+                  parseInt(formData.year, 10) === now.getFullYear() &&
+                  parseInt(formData.month, 10) === (now.getMonth() + 1) &&
+                  parseInt(formData.day, 10) === now.getDate()
+                }
               />
             </div>
           )}

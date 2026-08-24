@@ -51,8 +51,17 @@ export const TimeWheelPicker = ({
   const minHour = isToday ? curH : 0;
   const minMinute = (isToday && (parseInt(hours, 10) || 0) === curH) ? curM + 1 : 0;
 
-  const hIdx = Math.max(0, Math.min(23, parseInt(hours, 10) || 0));
-  const mIdx = Math.max(0, Math.min(59, parseInt(minutes, 10) || 0));
+  const rawH = parseInt(hours, 10) || 0;
+  const rawM = parseInt(minutes, 10) || 0;
+  const hIdx = Math.max(minHour, Math.min(23, rawH));
+  const mIdx = Math.max((isToday && hIdx === curH) ? minMinute : 0, Math.min(59, rawM));
+
+  // If props have a past hour on today, automatically emit clamped valid hour
+  useEffect(() => {
+    if (isToday && rawH < minHour) {
+      onHourChange(pad(minHour));
+    }
+  }, [isToday, rawH, minHour, onHourChange]);
 
   // Initial scroll position on mount
   useEffect(() => {
@@ -82,7 +91,7 @@ export const TimeWheelPicker = ({
 
   // If today and hour is current hour, ensure minutes are not in the past
   useEffect(() => {
-    if (isToday && hIdx === curH && mIdx < minMinute) {
+    if (isToday && hIdx === curH && rawM < minMinute) {
       const validMinIdx = Math.min(minMinute, 59);
       const validMinStr = MINUTES_LIST[validMinIdx];
       lastMVal.current = validMinStr;
@@ -91,9 +100,9 @@ export const TimeWheelPicker = ({
       }
       onMinuteChange(validMinStr);
     }
-  }, [isToday, hIdx, curH, mIdx, minMinute, onMinuteChange]);
+  }, [isToday, hIdx, curH, rawM, minMinute, onMinuteChange]);
 
-  // High-performance scroll listeners with safely clamped bounds and past-time bounce-back
+  // High-performance scroll listeners with strictly clamped bounds and past-time bounce-back
   const onHScroll = useCallback(() => {
     const el = hRef.current;
     if (!el) return;
@@ -102,7 +111,7 @@ export const TimeWheelPicker = ({
     if (rafIdH.current) cancelAnimationFrame(rafIdH.current);
     rafIdH.current = requestAnimationFrame(() => {
       const rawIdx = Math.round(el.scrollTop / ITEM_H);
-      const clamped = Math.max(0, Math.min(23, rawIdx));
+      const clamped = Math.max(minHour, Math.min(23, rawIdx));
       const val = HOURS_LIST[clamped];
       if (val && val !== lastHVal.current) {
         lastHVal.current = val;
@@ -115,11 +124,7 @@ export const TimeWheelPicker = ({
     snapTimeoutH.current = window.setTimeout(() => {
       isUserScrollingH.current = false;
       const rawIdx = Math.round(el.scrollTop / ITEM_H);
-      let targetIdx = Math.max(0, Math.min(23, rawIdx));
-      // Bounce back if landed on a past hour
-      if (isToday && targetIdx < minHour) {
-        targetIdx = minHour;
-      }
+      let targetIdx = Math.max(minHour, Math.min(23, rawIdx));
       const val = HOURS_LIST[targetIdx];
       if (val && val !== lastHVal.current) {
         lastHVal.current = val;
@@ -128,17 +133,19 @@ export const TimeWheelPicker = ({
       const snapTop = targetIdx * ITEM_H;
       el.scrollTo({ top: snapTop, behavior: 'smooth' });
     }, 80);
-  }, [triggerHaptic, onHourChange, isToday, minHour]);
+  }, [triggerHaptic, onHourChange, minHour]);
 
   const onMScroll = useCallback(() => {
     const el = mRef.current;
     if (!el) return;
     isUserScrollingM.current = true;
 
+    const effectiveMinMinute = (isToday && hIdx === curH) ? minMinute : 0;
+
     if (rafIdM.current) cancelAnimationFrame(rafIdM.current);
     rafIdM.current = requestAnimationFrame(() => {
       const rawIdx = Math.round(el.scrollTop / ITEM_H);
-      const clamped = Math.max(0, Math.min(59, rawIdx));
+      const clamped = Math.max(effectiveMinMinute, Math.min(59, rawIdx));
       const val = MINUTES_LIST[clamped];
       if (val && val !== lastMVal.current) {
         lastMVal.current = val;
@@ -151,11 +158,7 @@ export const TimeWheelPicker = ({
     snapTimeoutM.current = window.setTimeout(() => {
       isUserScrollingM.current = false;
       const rawIdx = Math.round(el.scrollTop / ITEM_H);
-      let targetIdx = Math.max(0, Math.min(59, rawIdx));
-      // Bounce back if landed on a past minute (same hour as now, today)
-      if (isToday && hIdx === curH && targetIdx < minMinute) {
-        targetIdx = Math.min(minMinute, 59);
-      }
+      let targetIdx = Math.max(effectiveMinMinute, Math.min(59, rawIdx));
       const val = MINUTES_LIST[targetIdx];
       if (val && val !== lastMVal.current) {
         lastMVal.current = val;

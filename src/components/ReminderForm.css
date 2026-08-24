@@ -638,42 +638,41 @@
   transform: none;
 }
 
-/* 7. Contact Modal (Portal to body) */
+/* 7. Contact Modal (Portal to body, floating above island) */
 .contact-modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.75);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  z-index: 99999;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  z-index: 999999;
   display: flex;
-  align-items: flex-end;
+  align-items: flex-start;
   justify-content: center;
+  padding: calc(24px + env(safe-area-inset-top, 12px)) 14px calc(110px + env(safe-area-inset-bottom, 20px));
+  box-sizing: border-box;
+  overflow-y: auto;
 }
 
 .contact-modal {
   width: 100%;
-  max-width: 560px;
-  height: 82vh;
-  max-height: 85vh;
-  background: #141418;
-  border-top: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 28px 28px 0 0;
-  padding: 14px 18px calc(24px + env(safe-area-inset-bottom, 16px));
+  max-width: 500px;
+  max-height: calc(100vh - 150px);
+  background: #18181c;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 28px;
+  padding: 20px 18px 22px;
   display: flex;
   flex-direction: column;
   gap: 12px;
-  box-shadow: 0 -12px 48px rgba(0, 0, 0, 0.85);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.95), 0 0 0 1px rgba(255, 255, 255, 0.05);
   box-sizing: border-box;
+  margin-top: auto;
+  margin-bottom: auto;
 }
 
 .modal-sheet-drag-handle {
-  width: 36px;
-  height: 4px;
-  background: rgba(255, 255, 255, 0.25);
-  border-radius: 2px;
-  align-self: center;
-  flex-shrink: 0;
+  display: none;
 }
 
 .contact-modal-header {
@@ -681,28 +680,29 @@
   align-items: center;
   justify-content: space-between;
   flex-shrink: 0;
+  padding-bottom: 2px;
 }
 
 .modal-header-title-group h3 {
-  font-size: 17px;
+  font-size: 18px;
   font-weight: 700;
   color: #ffffff;
   margin: 0;
 }
 
 .modal-header-subtitle {
-  font-size: 11.5px;
-  color: var(--text-muted);
+  font-size: 12px;
+  color: var(--text-muted, rgba(255, 255, 255, 0.5));
 }
 
 .contact-modal-close {
-  width: 32px;
-  height: 32px;
+  width: 34px;
+  height: 34px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 255, 255, 0.08);
-  border: none;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 50%;
   color: #ffffff;
   cursor: pointer;
@@ -717,13 +717,16 @@
 
 .custom-user-input {
   flex: 1;
-  background: rgba(0, 0, 0, 0.4);
-  border: 0.5px solid rgba(255, 255, 255, 0.12);
+  background: rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: 16px;
-  padding: 10px 14px;
+  padding: 11px 14px;
   color: #ffffff;
-  font-size: 13.5px;
+  font-size: 14px;
   outline: none;
+}
+.custom-user-input:focus {
+  border-color: var(--accent-color, #3390ec);
 }
 
 .custom-user-apply-btn {
@@ -732,8 +735,8 @@
   border: none;
   border-radius: 16px;
   padding: 0 18px;
-  font-size: 13px;
-  font-weight: 600;
+  font-size: 13.5px;
+  font-weight: 700;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
 }
@@ -742,10 +745,10 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  background: rgba(0, 0, 0, 0.4);
-  border: 0.5px solid rgba(255, 255, 255, 0.08);
+  background: rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 16px;
-  padding: 10px 14px;
+  padding: 11px 14px;
   flex-shrink: 0;
 }
 
@@ -763,10 +766,10 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
-  background: rgba(255, 255, 255, 0.06);
-  border: 0.5px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 16px;
-  padding: 10px;
+  padding: 11px;
   color: #ffffff;
   font-size: 13px;
   font-weight: 600;
@@ -777,23 +780,32 @@
 
 .contact-list {
   flex: 1;
-  min-height: 180px;
+  min-height: 160px;
+  max-height: 320px;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   display: flex;
   flex-direction: column;
   gap: 8px;
-  padding-bottom: 20px;
+  padding-bottom: 8px;
   touch-action: pan-y;
+}
+
+.contact-empty {
+  padding: 24px 16px;
+  text-align: center;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.5);
+  line-height: 1.5;
 }
 
 .contact-item {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 10px 12px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 0.5px solid rgba(255, 255, 255, 0.07);
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 18px;
   cursor: pointer;
   transition: background 0.15s ease, transform 0.1s ease;
@@ -801,7 +813,7 @@
 }
 
 .contact-item:active {
-  background: rgba(255, 255, 255, 0.09);
+  background: rgba(255, 255, 255, 0.1);
   transform: scale(0.985);
 }
 

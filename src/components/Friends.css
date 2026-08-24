@@ -3,7 +3,7 @@
    ============================================ */
 
 .friends-page {
-  padding: 0 16px 24px;
+  padding: 0 16px calc(110px + env(safe-area-inset-bottom, 20px));
 }
 
 /* Primary Telegram Share Hero Banner */
