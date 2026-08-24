@@ -654,18 +654,18 @@
 .contact-modal {
   width: 100%;
   max-width: 540px;
-  /* Leave space above nav island: bottom nav is ~88px total (68px height + 20px bottom) */
-  max-height: calc(100vh - 100px);
+  /* Fixed height so the list fills all available space */
+  height: calc(100vh - 100px);
   background: #18181c;
   border: 1px solid rgba(255, 255, 255, 0.16);
   border-radius: 28px 28px 0 0;
   padding: 10px 18px 0;
-  padding-bottom: calc(110px + env(safe-area-inset-bottom, 0px));
   display: flex;
   flex-direction: column;
   gap: 12px;
   box-shadow: 0 -8px 40px rgba(0, 0, 0, 0.8);
   box-sizing: border-box;
+  overflow: hidden;
 }
 
 .modal-sheet-drag-handle {
@@ -783,13 +783,14 @@
 
 .contact-list {
   flex: 1;
-  min-height: 80px;
+  min-height: 0;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   display: flex;
   flex-direction: column;
   gap: 8px;
-  padding-bottom: 8px;
+  /* Padding so last item scrolls above the nav island */
+  padding-bottom: calc(110px + env(safe-area-inset-bottom, 0px));
   touch-action: pan-y;
 }
 
