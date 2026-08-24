@@ -15,9 +15,6 @@ const PAD = 2;
 
 function pad(n: number) { return String(n).padStart(2, '0'); }
 
-const HOURS_LIST = Array.from({ length: 24 }, (_, i) => pad(i));
-const MINUTES_LIST = Array.from({ length: 60 }, (_, i) => pad(i));
-
 export const TimeWheelPicker = ({
   hours, minutes, onHourChange, onMinuteChange, isToday,
 }: TimeWheelPickerProps) => {
@@ -42,26 +39,41 @@ export const TimeWheelPicker = ({
     }
   }, [webApp]);
 
-  // Current time for past-blocking
   const now = new Date();
   const curH = now.getHours();
   const curM = now.getMinutes();
 
-  // Minimum allowed values (only relevant when isToday)
-  const minHour = isToday ? curH : 0;
-  const minMinute = (isToday && (parseInt(hours, 10) || 0) === curH) ? curM + 1 : 0;
+  // Dynamic available lists — strictly no past hours on today
+  const startH = isToday ? curH : 0;
+  const hoursAvail: string[] = [];
+  for (let h = startH; h <= 23; h++) hoursAvail.push(pad(h));
 
-  const rawH = parseInt(hours, 10) || 0;
-  const rawM = parseInt(minutes, 10) || 0;
-  const hIdx = Math.max(minHour, Math.min(23, rawH));
-  const mIdx = Math.max((isToday && hIdx === curH) ? minMinute : 0, Math.min(59, rawM));
+  const selHNum = parseInt(hours, 10) || 0;
+  const minStart = (isToday && selHNum === curH) ? Math.min(curM + 1, 59) : 0;
+  const minutesAvail: string[] = [];
+  for (let m = minStart; m <= 59; m++) minutesAvail.push(pad(m));
 
-  // If props have a past hour on today, automatically emit clamped valid hour
+  // Clamped valid values
+  const clampedH = hoursAvail.includes(hours) ? hours : (hoursAvail[0] ?? '00');
+  const clampedM = minutesAvail.includes(minutes) ? minutes : (minutesAvail[0] ?? '00');
+
+  const hIdx = Math.max(0, hoursAvail.indexOf(clampedH));
+  const mIdx = Math.max(0, minutesAvail.indexOf(clampedM));
+
+  // Emit corrected values if clamped differed
   useEffect(() => {
-    if (isToday && rawH < minHour) {
-      onHourChange(pad(minHour));
+    if (clampedH !== hours) {
+      lastHVal.current = clampedH;
+      onHourChange(clampedH);
     }
-  }, [isToday, rawH, minHour, onHourChange]);
+  }, [clampedH, hours, onHourChange]);
+
+  useEffect(() => {
+    if (clampedM !== minutes) {
+      lastMVal.current = clampedM;
+      onMinuteChange(clampedM);
+    }
+  }, [clampedM, minutes, onMinuteChange]);
 
   // Initial scroll position on mount
   useEffect(() => {
@@ -70,7 +82,7 @@ export const TimeWheelPicker = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Sync scroll when props change externally
+  // Sync scroll when available items or selection changes
   useEffect(() => {
     if (hRef.current && !isUserScrollingH.current) {
       const target = hIdx * ITEM_H;
@@ -78,7 +90,7 @@ export const TimeWheelPicker = ({
         hRef.current.scrollTop = target;
       }
     }
-  }, [hIdx]);
+  }, [hIdx, hoursAvail.length]);
 
   useEffect(() => {
     if (mRef.current && !isUserScrollingM.current) {
@@ -87,22 +99,9 @@ export const TimeWheelPicker = ({
         mRef.current.scrollTop = target;
       }
     }
-  }, [mIdx]);
+  }, [mIdx, minutesAvail.length]);
 
-  // If today and hour is current hour, ensure minutes are not in the past
-  useEffect(() => {
-    if (isToday && hIdx === curH && rawM < minMinute) {
-      const validMinIdx = Math.min(minMinute, 59);
-      const validMinStr = MINUTES_LIST[validMinIdx];
-      lastMVal.current = validMinStr;
-      if (mRef.current) {
-        mRef.current.scrollTop = validMinIdx * ITEM_H;
-      }
-      onMinuteChange(validMinStr);
-    }
-  }, [isToday, hIdx, curH, rawM, minMinute, onMinuteChange]);
-
-  // High-performance scroll listeners with strictly clamped bounds and past-time bounce-back
+  // Scroll listeners
   const onHScroll = useCallback(() => {
     const el = hRef.current;
     if (!el) return;
@@ -111,8 +110,8 @@ export const TimeWheelPicker = ({
     if (rafIdH.current) cancelAnimationFrame(rafIdH.current);
     rafIdH.current = requestAnimationFrame(() => {
       const rawIdx = Math.round(el.scrollTop / ITEM_H);
-      const clamped = Math.max(minHour, Math.min(23, rawIdx));
-      const val = HOURS_LIST[clamped];
+      const clamped = Math.max(0, Math.min(hoursAvail.length - 1, rawIdx));
+      const val = hoursAvail[clamped];
       if (val && val !== lastHVal.current) {
         lastHVal.current = val;
         triggerHaptic();
@@ -124,8 +123,8 @@ export const TimeWheelPicker = ({
     snapTimeoutH.current = window.setTimeout(() => {
       isUserScrollingH.current = false;
       const rawIdx = Math.round(el.scrollTop / ITEM_H);
-      let targetIdx = Math.max(minHour, Math.min(23, rawIdx));
-      const val = HOURS_LIST[targetIdx];
+      const targetIdx = Math.max(0, Math.min(hoursAvail.length - 1, rawIdx));
+      const val = hoursAvail[targetIdx];
       if (val && val !== lastHVal.current) {
         lastHVal.current = val;
         onHourChange(val);
@@ -133,20 +132,18 @@ export const TimeWheelPicker = ({
       const snapTop = targetIdx * ITEM_H;
       el.scrollTo({ top: snapTop, behavior: 'smooth' });
     }, 80);
-  }, [triggerHaptic, onHourChange, minHour]);
+  }, [hoursAvail, triggerHaptic, onHourChange]);
 
   const onMScroll = useCallback(() => {
     const el = mRef.current;
     if (!el) return;
     isUserScrollingM.current = true;
 
-    const effectiveMinMinute = (isToday && hIdx === curH) ? minMinute : 0;
-
     if (rafIdM.current) cancelAnimationFrame(rafIdM.current);
     rafIdM.current = requestAnimationFrame(() => {
       const rawIdx = Math.round(el.scrollTop / ITEM_H);
-      const clamped = Math.max(effectiveMinMinute, Math.min(59, rawIdx));
-      const val = MINUTES_LIST[clamped];
+      const clamped = Math.max(0, Math.min(minutesAvail.length - 1, rawIdx));
+      const val = minutesAvail[clamped];
       if (val && val !== lastMVal.current) {
         lastMVal.current = val;
         triggerHaptic();
@@ -158,8 +155,8 @@ export const TimeWheelPicker = ({
     snapTimeoutM.current = window.setTimeout(() => {
       isUserScrollingM.current = false;
       const rawIdx = Math.round(el.scrollTop / ITEM_H);
-      let targetIdx = Math.max(effectiveMinMinute, Math.min(59, rawIdx));
-      const val = MINUTES_LIST[targetIdx];
+      const targetIdx = Math.max(0, Math.min(minutesAvail.length - 1, rawIdx));
+      const val = minutesAvail[targetIdx];
       if (val && val !== lastMVal.current) {
         lastMVal.current = val;
         onMinuteChange(val);
@@ -167,37 +164,34 @@ export const TimeWheelPicker = ({
       const snapTop = targetIdx * ITEM_H;
       el.scrollTo({ top: snapTop, behavior: 'smooth' });
     }, 80);
-  }, [triggerHaptic, onMinuteChange, isToday, minMinute, hIdx, curH]);
+  }, [minutesAvail, triggerHaptic, onMinuteChange]);
 
-  // Direct tap on item — block past taps
   const clickH = useCallback((idx: number) => {
-    const clampedIdx = Math.max(0, Math.min(23, idx));
-    if (isToday && clampedIdx < minHour) return;
+    const clampedIdx = Math.max(0, Math.min(hoursAvail.length - 1, idx));
     triggerHaptic();
-    const val = HOURS_LIST[clampedIdx];
+    const val = hoursAvail[clampedIdx];
     lastHVal.current = val;
     hRef.current?.scrollTo({ top: clampedIdx * ITEM_H, behavior: 'smooth' });
     onHourChange(val);
-  }, [triggerHaptic, onHourChange, isToday, minHour]);
+  }, [hoursAvail, triggerHaptic, onHourChange]);
 
   const clickM = useCallback((idx: number) => {
-    const clampedIdx = Math.max(0, Math.min(59, idx));
-    if (isToday && hIdx === curH && clampedIdx < minMinute) return;
+    const clampedIdx = Math.max(0, Math.min(minutesAvail.length - 1, idx));
     triggerHaptic();
-    const val = MINUTES_LIST[clampedIdx];
+    const val = minutesAvail[clampedIdx];
     lastMVal.current = val;
     mRef.current?.scrollTo({ top: clampedIdx * ITEM_H, behavior: 'smooth' });
     onMinuteChange(val);
-  }, [triggerHaptic, onMinuteChange, isToday, hIdx, curH, minMinute]);
+  }, [minutesAvail, triggerHaptic, onMinuteChange]);
 
   const viewH = ITEM_H * (PAD * 2 + 1);
 
   return (
     <div className="twp-root">
       <div className="twp-badge">
-        <span className="twp-digit">{pad(hIdx)}</span>
+        <span className="twp-digit">{clampedH}</span>
         <span className="twp-colon">:</span>
-        <span className="twp-digit">{pad(mIdx)}</span>
+        <span className="twp-digit">{clampedM}</span>
       </div>
 
       <div className="twp-drums" style={{ height: viewH }}>
@@ -214,12 +208,9 @@ export const TimeWheelPicker = ({
             onScroll={onHScroll}
           >
             <div style={{ height: PAD * ITEM_H, flexShrink: 0 }} />
-            {HOURS_LIST.map((h, i) => {
+            {hoursAvail.map((h, i) => {
               const diff = Math.abs(i - hIdx);
-              const isPast = isToday && i < minHour;
-              const cls = 'twp-item'
-                + (isPast ? ' past' : '')
-                + ' ' + (i === hIdx ? 'sel' : diff === 1 ? 'n1' : diff === 2 ? 'n2' : 'far');
+              const cls = 'twp-item ' + (i === hIdx ? 'sel' : diff === 1 ? 'n1' : diff === 2 ? 'n2' : 'far');
               return <div key={h} className={cls} style={{ height: ITEM_H }} onClick={() => clickH(i)}>{h}</div>;
             })}
             <div style={{ height: PAD * ITEM_H, flexShrink: 0 }} />
@@ -237,12 +228,9 @@ export const TimeWheelPicker = ({
             onScroll={onMScroll}
           >
             <div style={{ height: PAD * ITEM_H, flexShrink: 0 }} />
-            {MINUTES_LIST.map((m, i) => {
+            {minutesAvail.map((m, i) => {
               const diff = Math.abs(i - mIdx);
-              const isPast = isToday && hIdx === curH && i < minMinute;
-              const cls = 'twp-item'
-                + (isPast ? ' past' : '')
-                + ' ' + (i === mIdx ? 'sel' : diff === 1 ? 'n1' : diff === 2 ? 'n2' : 'far');
+              const cls = 'twp-item ' + (i === mIdx ? 'sel' : diff === 1 ? 'n1' : diff === 2 ? 'n2' : 'far');
               return <div key={m} className={cls} style={{ height: ITEM_H }} onClick={() => clickM(i)}>{m}</div>;
             })}
             <div style={{ height: PAD * ITEM_H, flexShrink: 0 }} />
