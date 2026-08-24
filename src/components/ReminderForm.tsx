@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import type { ChangeEvent } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { ReminderFormData, Reminder, RepeatType, PriorityType } from '../types/reminder';
 import { getTelegramWebApp } from '../utils/telegram';
@@ -256,14 +257,18 @@ export const ReminderForm = ({
   };
 
   const handleOpenContactPicker = useCallback(async () => {
-    if (!contactsLoaded && userId) {
-      const data = await fetchContactsAPI(userId);
-      setContacts(data);
-      setContactsLoaded(true);
-    }
     setContactSearch('');
     setShowContactPicker(true);
-  }, [contactsLoaded, userId]);
+    if (userId) {
+      try {
+        const data = await fetchContactsAPI(userId);
+        setContacts(data);
+        setContactsLoaded(true);
+      } catch (e) {
+        console.error('Failed to load contacts:', e);
+      }
+    }
+  }, [userId]);
 
   const handleInviteFriend = useCallback(() => {
     if (!userId) return;
@@ -509,6 +514,9 @@ export const ReminderForm = ({
               webApp?.HapticFeedback?.selectionChanged?.();
             } catch {}
             setRecipientMode('friend');
+            if (!formData.assignedTo) {
+              handleOpenContactPicker();
+            }
           }}
         >
           {recipientMode === 'friend' && (
@@ -838,8 +846,8 @@ export const ReminderForm = ({
         </button>
       </div>
 
-      {/* Contact Picker Modal */}
-      {showContactPicker && (
+      {/* Contact Picker Modal (Portal to body for full viewport coverage) */}
+      {showContactPicker && createPortal(
         <div className="contact-modal-overlay" onClick={() => setShowContactPicker(false)}>
           <div className="contact-modal animate-slide-up" onClick={(e) => e.stopPropagation()}>
             <div className="modal-sheet-drag-handle"></div>
@@ -861,10 +869,12 @@ export const ReminderForm = ({
               <input
                 type="text"
                 className="custom-user-input"
-                placeholder="Enter @username directly..."
+                placeholder="Enter @username..."
                 value={customFriendInput}
                 onChange={(e) => setCustomFriendInput(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleApplyCustomFriend()}
+                autoCapitalize="none"
+                autoCorrect="off"
               />
               <button
                 type="button"
@@ -898,8 +908,8 @@ export const ReminderForm = ({
               <span>Share Invite Link</span>
             </button>
 
-            {/* Contact list with isolated scroll */}
-            <div className="contact-list" onTouchMove={(e) => e.stopPropagation()}>
+            {/* Contact list with full scroll height */}
+            <div className="contact-list">
               {filteredContacts.length === 0 ? (
                 <div className="contact-empty">
                   {contactsLoaded ? 'No connected friends found. Type an @username above or share your invite link!' : 'Loading friends...'}
@@ -933,7 +943,8 @@ export const ReminderForm = ({
               )}
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

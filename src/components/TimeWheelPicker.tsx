@@ -93,7 +93,7 @@ export const TimeWheelPicker = ({
     }
   }, [isToday, hIdx, curH, mIdx, minMinute, onMinuteChange]);
 
-  // High-performance scroll listeners with past-time bounce-back
+  // High-performance scroll listeners with safely clamped bounds and past-time bounce-back
   const onHScroll = useCallback(() => {
     const el = hRef.current;
     if (!el) return;
@@ -101,8 +101,8 @@ export const TimeWheelPicker = ({
 
     if (rafIdH.current) cancelAnimationFrame(rafIdH.current);
     rafIdH.current = requestAnimationFrame(() => {
-      const idx = Math.round(el.scrollTop / ITEM_H);
-      const clamped = Math.max(0, Math.min(23, idx));
+      const rawIdx = Math.round(el.scrollTop / ITEM_H);
+      const clamped = Math.max(0, Math.min(23, rawIdx));
       const val = HOURS_LIST[clamped];
       if (val && val !== lastHVal.current) {
         lastHVal.current = val;
@@ -114,18 +114,19 @@ export const TimeWheelPicker = ({
     if (snapTimeoutH.current) window.clearTimeout(snapTimeoutH.current);
     snapTimeoutH.current = window.setTimeout(() => {
       isUserScrollingH.current = false;
-      let targetIdx = Math.round(el.scrollTop / ITEM_H);
+      const rawIdx = Math.round(el.scrollTop / ITEM_H);
+      let targetIdx = Math.max(0, Math.min(23, rawIdx));
       // Bounce back if landed on a past hour
       if (isToday && targetIdx < minHour) {
         targetIdx = minHour;
-        const val = HOURS_LIST[targetIdx];
+      }
+      const val = HOURS_LIST[targetIdx];
+      if (val && val !== lastHVal.current) {
         lastHVal.current = val;
         onHourChange(val);
       }
       const snapTop = targetIdx * ITEM_H;
-      if (Math.abs(el.scrollTop - snapTop) > 1) {
-        el.scrollTo({ top: snapTop, behavior: 'smooth' });
-      }
+      el.scrollTo({ top: snapTop, behavior: 'smooth' });
     }, 80);
   }, [triggerHaptic, onHourChange, isToday, minHour]);
 
@@ -136,8 +137,8 @@ export const TimeWheelPicker = ({
 
     if (rafIdM.current) cancelAnimationFrame(rafIdM.current);
     rafIdM.current = requestAnimationFrame(() => {
-      const idx = Math.round(el.scrollTop / ITEM_H);
-      const clamped = Math.max(0, Math.min(59, idx));
+      const rawIdx = Math.round(el.scrollTop / ITEM_H);
+      const clamped = Math.max(0, Math.min(59, rawIdx));
       const val = MINUTES_LIST[clamped];
       if (val && val !== lastMVal.current) {
         lastMVal.current = val;
@@ -149,37 +150,40 @@ export const TimeWheelPicker = ({
     if (snapTimeoutM.current) window.clearTimeout(snapTimeoutM.current);
     snapTimeoutM.current = window.setTimeout(() => {
       isUserScrollingM.current = false;
-      let targetIdx = Math.round(el.scrollTop / ITEM_H);
+      const rawIdx = Math.round(el.scrollTop / ITEM_H);
+      let targetIdx = Math.max(0, Math.min(59, rawIdx));
       // Bounce back if landed on a past minute (same hour as now, today)
-      if (isToday && targetIdx < minMinute && hIdx === curH) {
+      if (isToday && hIdx === curH && targetIdx < minMinute) {
         targetIdx = Math.min(minMinute, 59);
-        const val = MINUTES_LIST[targetIdx];
+      }
+      const val = MINUTES_LIST[targetIdx];
+      if (val && val !== lastMVal.current) {
         lastMVal.current = val;
         onMinuteChange(val);
       }
       const snapTop = targetIdx * ITEM_H;
-      if (Math.abs(el.scrollTop - snapTop) > 1) {
-        el.scrollTo({ top: snapTop, behavior: 'smooth' });
-      }
+      el.scrollTo({ top: snapTop, behavior: 'smooth' });
     }, 80);
   }, [triggerHaptic, onMinuteChange, isToday, minMinute, hIdx, curH]);
 
   // Direct tap on item — block past taps
   const clickH = useCallback((idx: number) => {
-    if (isToday && idx < minHour) return;
+    const clampedIdx = Math.max(0, Math.min(23, idx));
+    if (isToday && clampedIdx < minHour) return;
     triggerHaptic();
-    const val = HOURS_LIST[idx];
+    const val = HOURS_LIST[clampedIdx];
     lastHVal.current = val;
-    hRef.current?.scrollTo({ top: idx * ITEM_H, behavior: 'smooth' });
+    hRef.current?.scrollTo({ top: clampedIdx * ITEM_H, behavior: 'smooth' });
     onHourChange(val);
   }, [triggerHaptic, onHourChange, isToday, minHour]);
 
   const clickM = useCallback((idx: number) => {
-    if (isToday && hIdx === curH && idx < minMinute) return;
+    const clampedIdx = Math.max(0, Math.min(59, idx));
+    if (isToday && hIdx === curH && clampedIdx < minMinute) return;
     triggerHaptic();
-    const val = MINUTES_LIST[idx];
+    const val = MINUTES_LIST[clampedIdx];
     lastMVal.current = val;
-    mRef.current?.scrollTo({ top: idx * ITEM_H, behavior: 'smooth' });
+    mRef.current?.scrollTo({ top: clampedIdx * ITEM_H, behavior: 'smooth' });
     onMinuteChange(val);
   }, [triggerHaptic, onMinuteChange, isToday, hIdx, curH, minMinute]);
 
