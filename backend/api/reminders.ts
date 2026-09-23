@@ -1,39 +1,85 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { getDb } from './db.js';
 import { createNotionTask, updateNotionTask, updateNotionStatus } from '../services/notion.js';
+import { encryptText, decryptText } from '../services/crypto.js';
+import { requireTelegramUser, setApiCors } from '../lib/telegramAuth.js';
 
 export default async function handler(
   req: VercelRequest,
   res: VercelResponse
 ) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  setApiCors(res, 'GET, POST, PUT, DELETE, OPTIONS');
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
+  const telegramUser = requireTelegramUser(req, res);
+  if (!telegramUser) return;
 
   try {
     const db = getDb();
     const { method } = req;
     const { userId, id } = req.query;
 
+    // Ensure schema columns & lightweight indexes exist
+    await db.query(`
+      ALTER TABLE reminders ADD COLUMN IF NOT EXISTS group_id TEXT;
+      CREATE INDEX IF NOT EXISTS idx_reminders_user_date ON reminders(user_id, date, done);
+      CREATE INDEX IF NOT EXISTS idx_reminders_assigned_chat ON reminders(assigned_to_chat_id, done);
+      CREATE INDEX IF NOT EXISTS idx_reminders_group_id ON reminders(group_id);
+    `).catch(() => {});
+
     if (method === 'GET') {
       if (!userId) return res.status(400).json({ error: 'userId is required' });
-      const parsedUserId = parseInt(userId as string);
-      
+      const parsedUserId = telegramUser.id;
+
+      // --- 7-Day Auto-Cleanup for Completed / Expired Tasks ---
+      // 7 days in milliseconds = 7 * 24 * 60 * 60 * 1000 = 604800000
+      const sevenDaysAgo = Date.now() - (7 * 24 * 60 * 60 * 1000);
+      try {
+        // Find completed or expired tasks older than 7 days
+        const { rows: expiredRows } = await db.query(`
+          SELECT id, user_id, done, status FROM reminders 
+          WHERE user_id = $1 
+            AND (done = true OR status = 'done')
+            AND created_at < $2
+        `, [parsedUserId, sevenDaysAgo]);
+
+        if (expiredRows.length > 0) {
+          const expiredIds = expiredRows.map(r => r.id);
+          // Increment total_completed in user_settings before removing
+          await db.query(`
+            INSERT INTO user_settings (user_id, total_completed, updated_at)
+            VALUES ($1, $2, $3)
+            ON CONFLICT (user_id) DO UPDATE SET 
+              total_completed = COALESCE(user_settings.total_completed, 0) + $2,
+              updated_at = $3
+          `, [parsedUserId, expiredRows.length, Date.now()]);
+
+          // Delete expired rows from reminders table
+          await db.query(`DELETE FROM reminders WHERE id = ANY($1::text[])`, [expiredIds]);
+        }
+      } catch (cleanupErr) {
+        console.error('Auto-cleanup error:', cleanupErr);
+      }
+
       const { rows } = await db.query(`
         SELECT * FROM reminders 
-        WHERE user_id = $1 OR assigned_to_chat_id = $1
+        WHERE user_id = $1 OR assigned_to_chat_id = $1 OR (
+          group_id IS NOT NULL AND group_id IN (
+            SELECT group_id FROM reminders WHERE (user_id = $1 OR assigned_to_chat_id = $1) AND group_id IS NOT NULL
+          )
+        )
         ORDER BY date ASC, time ASC
       `, [parsedUserId]);
 
-      const reminders = rows.map((r: any) => ({
+      const reminders = rows
+        .filter((r: any) => r && r.id && r.date && r.time && r.text)
+        .map((r: any) => ({
         id: r.id,
-        text: r.text,
-        date: r.date,
-        time: r.time,
+        text: decryptText(r.text) || '',
+        date: r.date || '',
+        time: r.time || '',
         createdAt: Number(r.created_at),
         userId: Number(r.user_id),
         done: r.done || false,
@@ -52,21 +98,25 @@ export default async function handler(
         assignedTo: r.assigned_to,
         assignedToChatId: r.assigned_to_chat_id ? Number(r.assigned_to_chat_id) : undefined,
         creatorName: r.creator_name,
+        groupId: r.group_id || undefined,
         isSentToMe: r.assigned_to_chat_id ? Number(r.assigned_to_chat_id) === parsedUserId : false,
       }));
       return res.status(200).json(reminders);
     }
 
+
     if (method === 'POST') {
       const {
-        id: bodyId, text, date, time, userId: bodyUserId, priority = 'MEDIUM',
+        id: bodyId, text, date, time, priority = 'MEDIUM',
         repeat = 'NONE', customWeekdays, confirmRequired = false, reRemindInterval = 5,
-        category, assignedTo, assignedToChatId, creatorName,
+        category, assignedTo, assignedToChatId, creatorName, groupId, group_id,
       } = req.body;
 
-      if (!text || !date || !time || !bodyUserId) {
-        return res.status(400).json({ error: 'Missing required fields: text, date, time, userId' });
+      if (!text || !date || !time) {
+        return res.status(400).json({ error: 'Missing required fields: text, date, time' });
       }
+
+      const finalGroupId = groupId || group_id || null;
 
       let resolvedChatId = assignedToChatId ? Number(assignedToChatId) : null;
       if (!resolvedChatId && assignedTo) {
@@ -83,15 +133,17 @@ export default async function handler(
             INSERT INTO user_connections (user_id_1, user_id_2, created_at)
             VALUES ($1, $2, $3), ($2, $1, $3)
             ON CONFLICT DO NOTHING
-          `, [bodyUserId, resolvedChatId, timestamp]);
+          `, [telegramUser.id, resolvedChatId, timestamp]);
         }
       }
 
+      const encryptedText = encryptText(text.trim());
+
       const reminder = {
         id: bodyId || Date.now().toString(),
-        text: text.trim(),
+        text: encryptedText,
         date, time,
-        user_id: bodyUserId,
+        user_id: telegramUser.id,
         created_at: Date.now(),
         done: false, sent: false, status: 'todo', priority,
         repeat_type: repeat, custom_weekdays: customWeekdays || null,
@@ -99,20 +151,22 @@ export default async function handler(
         re_remind_interval: reRemindInterval, confirmed: false, last_sent_at: null,
         category: category || null, assigned_to: assignedTo || null,
         assigned_to_chat_id: resolvedChatId, creator_name: creatorName || null,
+        group_id: finalGroupId,
       };
 
       await db.query(`
         INSERT INTO reminders (
           id, text, date, time, user_id, created_at, done, sent, status, priority,
           repeat_type, custom_weekdays, resend_count, max_resend, confirm_required,
-          re_remind_interval, confirmed, last_sent_at, category, assigned_to, assigned_to_chat_id, creator_name
+          re_remind_interval, confirmed, last_sent_at, category, assigned_to, assigned_to_chat_id, creator_name, group_id
         ) VALUES (
-          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22
+          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23
         )
       `, [
         reminder.id, reminder.text, reminder.date, reminder.time, reminder.user_id, reminder.created_at, reminder.done, reminder.sent, reminder.status, reminder.priority,
         reminder.repeat_type, reminder.custom_weekdays, reminder.resend_count, reminder.max_resend, reminder.confirm_required,
-        reminder.re_remind_interval, reminder.confirmed, reminder.last_sent_at, reminder.category, reminder.assigned_to, reminder.assigned_to_chat_id, reminder.creator_name
+        reminder.re_remind_interval, reminder.confirmed, reminder.last_sent_at, reminder.category, reminder.assigned_to, reminder.assigned_to_chat_id, reminder.creator_name,
+        reminder.group_id
       ]);
 
       const { rows: usRows } = await db.query(`SELECT notion_token, notion_database_id, total_created FROM user_settings WHERE user_id = $1`, [reminder.user_id]);
@@ -126,13 +180,19 @@ export default async function handler(
       `, [reminder.user_id, currentCreated + 1, Date.now()]);
 
       const creds = userSettings ? { notionToken: userSettings.notion_token, notionDatabaseId: userSettings.notion_database_id } : null;
-      const notionPageId = await createNotionTask(reminder, creds);
+      const notionPageId = await createNotionTask({ ...reminder, text: text.trim() }, creds);
       
       if (notionPageId) {
         await db.query(`UPDATE reminders SET notion_page_id = $1 WHERE id = $2`, [notionPageId, reminder.id]);
       }
 
-      return res.status(201).json({ ...reminder, createdAt: reminder.created_at, userId: Number(reminder.user_id) });
+      return res.status(201).json({
+        ...reminder,
+        text: text.trim(), // Return decrypted
+        createdAt: reminder.created_at,
+        userId: Number(reminder.user_id),
+        groupId: reminder.group_id
+      });
     }
 
     if (method === 'PUT') {
@@ -143,6 +203,9 @@ export default async function handler(
       const { rows: oldRows } = await db.query(`SELECT * FROM reminders WHERE id = $1`, [id]);
       if (oldRows.length === 0) return res.status(404).json({ error: 'Reminder not found' });
       let data = oldRows[0];
+      if (Number(data.user_id) !== telegramUser.id && Number(data.assigned_to_chat_id) !== telegramUser.id) {
+        return res.status(403).json({ error: 'Forbidden' });
+      }
 
       if (timeChanged) {
         data.sent = false; data.done = false; data.status = 'todo'; data.confirmed = false;
@@ -152,32 +215,42 @@ export default async function handler(
       const fields = [
         'text', 'date', 'time', 'done', 'sent', 'status', 'priority', 'repeat_type',
         'custom_weekdays', 'category', 'assigned_to', 'assigned_to_chat_id', 'creator_name',
-        'confirm_required', 're_remind_interval', 'confirmed', 'last_sent_at', 'resend_count'
+        'confirm_required', 're_remind_interval', 'confirmed', 'last_sent_at', 'resend_count', 'group_id'
       ];
 
       for (const field of fields) {
         const reqField = field === 'repeat_type' ? 'repeat' : field.replace(/_([a-z])/g, g => g[1].toUpperCase());
-        if (reqBody[reqField] !== undefined) data[field] = reqBody[reqField];
+        if (reqBody[reqField] !== undefined) {
+          if (field === 'text') {
+            data[field] = encryptText(reqBody[reqField]);
+          } else {
+            data[field] = reqBody[reqField];
+          }
+        }
       }
 
       await db.query(`
         UPDATE reminders SET
           text=$1, date=$2, time=$3, done=$4, sent=$5, status=$6, priority=$7, repeat_type=$8,
           custom_weekdays=$9, category=$10, assigned_to=$11, assigned_to_chat_id=$12, creator_name=$13,
-          confirm_required=$14, re_remind_interval=$15, confirmed=$16, last_sent_at=$17, resend_count=$18
-        WHERE id=$19
+          confirm_required=$14, re_remind_interval=$15, confirmed=$16, last_sent_at=$17, resend_count=$18,
+          group_id=$19
+        WHERE id=$20
       `, [
         data.text, data.date, data.time, data.done, data.sent, data.status, data.priority, data.repeat_type,
         data.custom_weekdays, data.category, data.assigned_to, data.assigned_to_chat_id, data.creator_name,
         data.confirm_required, data.re_remind_interval, data.confirmed, data.last_sent_at, data.resend_count,
+        data.group_id,
         id
       ]);
+
+      const decryptedText = decryptText(data.text);
 
       if (data.notion_page_id) {
         const { rows: usRows } = await db.query(`SELECT notion_token, notion_database_id FROM user_settings WHERE user_id = $1`, [data.user_id]);
         const userSettings = usRows[0];
         const creds = userSettings ? { notionToken: userSettings.notion_token, notionDatabaseId: userSettings.notion_database_id } : null;
-        await updateNotionTask(data, creds);
+        await updateNotionTask({ ...data, text: decryptedText }, creds);
       }
 
       // Sync Telegram bot message if it was sent
@@ -191,7 +264,7 @@ export default async function handler(
             const statusMap: any = { 'todo': { label: 'To Do', emoji: '⚪' }, 'in_progress': { label: 'In Progress', emoji: '🟡' }, 'done': { label: 'Done', emoji: '🟢' } };
             const status = statusMap[data.status || (data.done ? 'done' : 'todo')] || statusMap['todo'];
             const smartTime = `${data.date} at ${data.time}`;
-            const messageText = `🔔 <b>REMINDER</b>\n\n📝 <b>${data.text}</b>\n\n📌 Status: ${status.emoji} ${status.label}\n⏰ ${smartTime}\n⚡ Priority: ${data.priority || 'MEDIUM'}\n` +
+            const messageText = `🔔 <b>REMINDER</b>\n\n📝 <b>${decryptedText}</b>\n\n📌 Status: ${status.emoji} ${status.label}\n⏰ ${smartTime}\n⚡ Priority: ${data.priority || 'MEDIUM'}\n` +
               (data.assigned_to_chat_id && data.creator_name ? `\n📨 From: ${data.creator_name}\n` : '') + `\n━━━━━━━━━━━━━━━`;
             
             const editBtn = { text: '📝 Edit', callback_data: `edit_${data.id}` };
@@ -212,7 +285,7 @@ export default async function handler(
       }
 
       return res.status(200).json({
-        id: data.id, text: data.text, date: data.date, time: data.time, createdAt: Number(data.created_at),
+        id: data.id, text: decryptedText, date: data.date, time: data.time, createdAt: Number(data.created_at),
         userId: Number(data.user_id), done: data.done, sent: data.sent, status: data.status, priority: data.priority,
         repeat: data.repeat_type, customWeekdays: data.custom_weekdays, resendCount: data.resend_count,
         maxResend: data.max_resend, category: data.category, assignedTo: data.assigned_to,
@@ -220,10 +293,14 @@ export default async function handler(
       });
     }
 
+
     if (method === 'DELETE') {
       if (!id) return res.status(400).json({ error: 'Reminder id is required' });
       const { rows } = await db.query(`SELECT * FROM reminders WHERE id = $1`, [id]);
       const reminder = rows[0];
+      if (reminder && Number(reminder.user_id) !== telegramUser.id && Number(reminder.assigned_to_chat_id) !== telegramUser.id) {
+        return res.status(403).json({ error: 'Forbidden' });
+      }
 
       if (reminder) {
         try {
@@ -239,10 +316,27 @@ export default async function handler(
 
           const creds = userSettings ? { notionToken: userSettings.notion_token, notionDatabaseId: userSettings.notion_database_id } : null;
           if (reminder.notion_page_id) await updateNotionStatus(reminder.notion_page_id, 'Archive', creds);
-          
-          if (reminder.sent && reminder.telegram_message_id) {
-            const token = process.env.TELEGRAM_BOT_TOKEN;
-            if (token) {
+        } catch (e) {
+          console.error('Failed to sync Archive to Notion', e);
+        }
+
+        const token = process.env.TELEGRAM_BOT_TOKEN;
+
+        // If it is a group reminder
+        if (reminder.group_id) {
+          const { rows: groupRows } = await db.query(
+            `SELECT * FROM reminders WHERE group_id = $1`,
+            [reminder.group_id]
+          );
+
+          // Check if any other participant is in progress or completed
+          const othersInProgress = groupRows.some(
+            (r: any) => r.id !== reminder.id && (r.status === 'in_progress' || r.done || r.status === 'done')
+          );
+
+          if (othersInProgress) {
+            // Someone else already started: only delete this specific record to protect others' progress
+            if (reminder.sent && reminder.telegram_message_id && token) {
               const chatId = reminder.assigned_to_chat_id || reminder.user_id;
               await fetch(`https://api.telegram.org/bot${token}/deleteMessage`, {
                 method: 'POST',
@@ -250,13 +344,35 @@ export default async function handler(
                 body: JSON.stringify({ chat_id: chatId, message_id: reminder.telegram_message_id })
               }).catch(() => {});
             }
+            await db.query(`DELETE FROM reminders WHERE id = $1`, [id]);
+          } else {
+            // No one else has started: delete the entire group and all related Telegram bot messages
+            for (const gr of groupRows) {
+              if (gr.sent && gr.telegram_message_id && token) {
+                const chatId = gr.assigned_to_chat_id || gr.user_id;
+                await fetch(`https://api.telegram.org/bot${token}/deleteMessage`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ chat_id: chatId, message_id: gr.telegram_message_id })
+                }).catch(() => {});
+              }
+            }
+            await db.query(`DELETE FROM reminders WHERE group_id = $1`, [reminder.group_id]);
           }
-        } catch (e) {
-          console.error('Failed to sync Archive to Notion or Telegram', e);
+        } else {
+          // Single reminder: delete from Telegram for recipient too
+          if (reminder.sent && reminder.telegram_message_id && token) {
+            const chatId = reminder.assigned_to_chat_id || reminder.user_id;
+            await fetch(`https://api.telegram.org/bot${token}/deleteMessage`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ chat_id: chatId, message_id: reminder.telegram_message_id })
+            }).catch(() => {});
+          }
+          await db.query(`DELETE FROM reminders WHERE id = $1`, [id]);
         }
       }
 
-      await db.query(`DELETE FROM reminders WHERE id = $1`, [id]);
       return res.status(200).json({ success: true });
     }
 

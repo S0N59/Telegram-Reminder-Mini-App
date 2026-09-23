@@ -3,6 +3,16 @@ export type RepeatType = 'NONE' | 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'CUSTOM';
 export type PriorityType = 'HIGH' | 'MEDIUM' | 'LOW';
 export type ReminderType = 'SIMPLE' | 'CONFIRM';
 
+export interface GroupParticipant {
+  id: string; // reminder id
+  userId?: number;
+  name: string;
+  username?: string;
+  status: 'todo' | 'in_progress' | 'done';
+  done: boolean;
+  isMe?: boolean;
+}
+
 export interface Reminder {
   id: string;
   text: string;
@@ -32,6 +42,14 @@ export interface Reminder {
   assignedToChatId?: number;
   creatorName?: string;
   isSentToMe?: boolean;
+  groupId?: string;
+  groupParticipants?: GroupParticipant[];
+}
+
+export interface ReminderRecipient {
+  username: string;
+  chatId: number;
+  name: string;
 }
 
 export interface ReminderFormData {
@@ -49,10 +67,13 @@ export interface ReminderFormData {
   assignedTo?: string;
   assignedToChatId?: number;
   creatorName?: string;
+  groupId?: string;
   // Confirmation required fields
   reminderType?: ReminderType;
   confirmRequired?: boolean;
   reRemindInterval?: number;
+  // Multi-recipient support
+  recipients?: ReminderRecipient[];
 }
 
 export interface ReminderPayload {

@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { config } from '../config';
+import { ReminderCustomization } from './ReminderCustomization';
+import { NotificationConfig } from '../utils/settingsAPI';
 import './Settings.css';
 
 export type AccentColor = 'blue' | 'red' | 'yellow' | 'green' | 'purple' | 'orange' | 'pink' | 'cyan' | 'indigo' | 'toxic-yellow';
@@ -18,7 +20,11 @@ interface SettingsProps {
   userUsername?: string;
   notionToken?: string;
   notionDatabaseId?: string;
-  onSaveNotion: (token: string, dbId: string) => Promise<boolean>;
+  onSaveNotion?: (token: string, dbId: string) => Promise<boolean>;
+  notificationConfig?: NotificationConfig | null;
+  onSaveNotificationConfig?: (config: NotificationConfig) => Promise<boolean>;
+  onResetNotificationConfig?: () => Promise<boolean>;
+  onOpenActivity?: () => void;
 }
 
 const accentColors: { value: AccentColor; label: string; color: string }[] = [
@@ -50,47 +56,32 @@ export const Settings = ({
   userUsername,
   notionToken,
   notionDatabaseId,
-  onSaveNotion
+  onSaveNotion,
+  notificationConfig,
+  onSaveNotificationConfig,
+  onResetNotificationConfig,
+  onOpenActivity,
 }: SettingsProps) => {
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
-  const [notionTokenInput, setNotionTokenInput] = useState(notionToken || '');
-  const [notionDbInput, setNotionDbInput] = useState(notionDatabaseId || '');
-  const [notionStatus, setNotionStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [showGuide, setShowGuide] = useState(false);
-  const [enableNotion, setEnableNotion] = useState(!!notionToken);
-
-  const isConnected = !!notionToken;
-
-  useEffect(() => {
-    setNotionTokenInput(notionToken || '');
-    setNotionDbInput(notionDatabaseId || '');
-    if (notionToken) setEnableNotion(true);
-  }, [notionToken, notionDatabaseId]);
 
   const toggleSection = (section: string) => {
     setExpandedSection(expandedSection === section ? null : section);
   };
 
-  const handleSaveNotion = async () => {
-    setNotionStatus('saving');
-    const ok = await onSaveNotion(notionTokenInput.trim(), notionDbInput.trim());
-    setNotionStatus(ok ? 'saved' : 'error');
-    setTimeout(() => setNotionStatus('idle'), 2500);
-  };
-
-  const handleDisconnectNotion = async () => {
-    setNotionTokenInput('');
-    setNotionDbInput('');
-    setNotionStatus('saving');
-    const ok = await onSaveNotion('', '');
-    setNotionStatus(ok ? 'saved' : 'error');
-    setTimeout(() => setNotionStatus('idle'), 2500);
-  };
-
   return (
     <div className="settings-page">
-      {/* 1. Profile Card */}
-      <div className="settings-profile-card">
+      {/* 1. Profile Card (Opens Activity) */}
+      <div
+        className="settings-profile-card"
+        onClick={() => {
+          try { (window as any)?.Telegram?.WebApp?.HapticFeedback?.selectionChanged?.(); } catch {}
+          onOpenActivity?.();
+        }}
+        role="button"
+        tabIndex={0}
+        aria-label="View Activity"
+      >
          <div className="profile-avatar-circle">
            {userId ? (
              <img
@@ -107,7 +98,10 @@ export const Settings = ({
          </div>
         <div className="profile-info-text">
           <span className="profile-name">{userName || 'Remigram User'}</span>
-          {userUsername && <span className="profile-username">@{userUsername}</span>}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            {userUsername && <span className="profile-username">@{userUsername}</span>}
+            <span style={{ fontSize: '11px', color: '#3390ec', fontWeight: 500 }}>· Activity</span>
+          </div>
         </div>
         <div className="profile-arrow">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -163,6 +157,33 @@ export const Settings = ({
                 </div>
               </div>
             )}
+          </div>
+        )}
+
+        {/* Reminder Customization */}
+        <div className="settings-menu-item" onClick={() => toggleSection('rem-customization')}>
+          <div className="menu-item-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 20h9"></path>
+              <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+            </svg>
+          </div>
+          <span className="menu-item-title">Reminder Customization</span>
+          <span className="menu-item-value" style={{ textTransform: 'capitalize' }}>
+            {notificationConfig?.textStyle || 'Default'}
+          </span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`menu-item-chevron ${expandedSection === 'rem-customization' ? 'rotated' : ''}`}>
+            <polyline points="9 18 15 12 9 6"></polyline>
+          </svg>
+        </div>
+
+        {expandedSection === 'rem-customization' && (
+          <div className="settings-expandable-content" style={{ padding: '8px 12px 16px' }}>
+            <ReminderCustomization
+              initialConfig={notificationConfig}
+              onSave={onSaveNotificationConfig || (async () => true)}
+              onReset={onResetNotificationConfig || (async () => true)}
+            />
           </div>
         )}
 
@@ -238,68 +259,6 @@ export const Settings = ({
             <polyline points="9 18 15 12 9 6"></polyline>
           </svg>
         </div>
-
-        {/* Connected Accounts (Notion) */}
-        <div className="settings-menu-item" onClick={() => toggleSection('connected')}>
-          <div className="menu-item-icon">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect>
-              <rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect>
-              <line x1="6" y1="6" x2="6.01" y2="6"></line>
-              <line x1="6" y1="18" x2="6.01" y2="18"></line>
-            </svg>
-          </div>
-          <span className="menu-item-title">Connected Accounts</span>
-          <span className="menu-item-value">{isConnected ? 'Notion' : 'None'}</span>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`menu-item-chevron ${expandedSection === 'connected' ? 'rotated' : ''}`}>
-            <polyline points="9 18 15 12 9 6"></polyline>
-          </svg>
-        </div>
-
-        {expandedSection === 'connected' && (
-          <div className="settings-expandable-content">
-            <div className="expand-row">
-              <span>Enable Notion Sync</span>
-              <label className="toggle-switch">
-                <input
-                  type="checkbox"
-                  checked={enableNotion}
-                  onChange={(e) => {
-                    setEnableNotion(e.target.checked);
-                    if (!e.target.checked && isConnected) handleDisconnectNotion();
-                  }}
-                />
-                <span className="slider"></span>
-              </label>
-            </div>
-            {enableNotion && (
-              <div className="notion-config-fields">
-                <input
-                  className="notion-field-input"
-                  type="password"
-                  placeholder="Notion Integration Token"
-                  value={notionTokenInput}
-                  onChange={e => setNotionTokenInput(e.target.value)}
-                />
-                <input
-                  className="notion-field-input"
-                  type="text"
-                  placeholder="Notion Database ID"
-                  value={notionDbInput}
-                  onChange={e => setNotionDbInput(e.target.value)}
-                />
-                <button
-                  type="button"
-                  className="notion-save-action-btn"
-                  onClick={handleSaveNotion}
-                  disabled={notionStatus === 'saving'}
-                >
-                  {notionStatus === 'saving' ? 'Saving...' : notionStatus === 'saved' ? 'Saved!' : 'Save Credentials'}
-                </button>
-              </div>
-            )}
-          </div>
-        )}
       </div>
     </div>
   );

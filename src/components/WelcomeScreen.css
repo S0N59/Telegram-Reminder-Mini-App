@@ -7,6 +7,9 @@
   flex-direction: column;
   gap: 16px;
   padding-bottom: 24px;
+  max-width: 760px;
+  margin: 0 auto;
+  width: 100%;
   animation: welcomeFadeIn 0.3s ease;
 }
 

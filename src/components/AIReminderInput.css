@@ -1,0 +1,427 @@
+/* ==========================================================================
+   AIReminderInput.css — Liquid Glass AI Assistant Workspace
+   ========================================================================== */
+
+.ai-workspace-container {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 0 0 100px; /* Aligned with standard 16px page margin */
+  position: relative;
+  width: 100%;
+}
+
+/* ─── 1. Main Welcome State Card ─── */
+.ai-welcome-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 16px 18px;
+  border-radius: 20px;
+  background: rgba(24, 24, 30, 0.55);
+  border: 0.5px solid rgba(255, 255, 255, 0.09);
+  backdrop-filter: blur(28px) saturate(180%);
+  -webkit-backdrop-filter: blur(28px) saturate(180%);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), inset 0 0.75px 0 rgba(255, 255, 255, 0.14);
+}
+
+.ai-sparkle-icon-wrap {
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(51, 144, 236, 0.2) 0%, rgba(175, 82, 222, 0.15) 100%);
+  border: 0.5px solid rgba(51, 144, 236, 0.3);
+  color: #3390ec;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 4px 14px rgba(51, 144, 236, 0.2);
+}
+
+.ai-welcome-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+
+.ai-welcome-top-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.ai-welcome-greeting {
+  font-size: 15px;
+  font-weight: 600;
+  color: #ffffff;
+  letter-spacing: -0.01em;
+}
+
+/* ─── Star Credits Badge ─── */
+.ai-credits-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(255, 199, 0, 0.12);
+  border: 0.5px solid rgba(255, 199, 0, 0.35);
+  border-radius: 9999px;
+  padding: 3px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #ffd60a;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+
+.ai-credits-star {
+  font-size: 11px;
+  color: #ffd60a;
+  text-shadow: 0 0 8px rgba(255, 214, 10, 0.6);
+}
+
+.ai-credits-count {
+  font-weight: 700;
+}
+
+.ai-credits-label {
+  font-size: 9.5px;
+  opacity: 0.8;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.ai-welcome-desc {
+  font-size: 12.5px;
+  color: var(--text-secondary, rgba(255, 255, 255, 0.6));
+  line-height: 1.45;
+}
+
+/* ─── 3. Section Titles ─── */
+.ai-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ai-section-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 4px;
+}
+
+.ai-section-title span {
+  font-size: 11.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-secondary, rgba(255, 255, 255, 0.5));
+}
+
+/* ─── 4. Quick Actions Grid ─── */
+.ai-quick-actions-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.ai-quick-action-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: rgba(22, 22, 28, 0.5);
+  border: 0.5px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  cursor: pointer;
+  text-align: left;
+  position: relative;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2), inset 0 0.5px 0 rgba(255, 255, 255, 0.1);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.ai-quick-action-card:hover {
+  background: rgba(30, 30, 38, 0.7);
+  border-color: rgba(51, 144, 236, 0.3);
+  transform: translateY(-1px);
+}
+
+.ai-quick-action-card:active {
+  transform: scale(0.97);
+  background: rgba(35, 35, 45, 0.8);
+}
+
+.ai-action-icon-box {
+  width: 30px;
+  height: 30px;
+  border-radius: 10px;
+  background: rgba(51, 144, 236, 0.12);
+  border: 0.5px solid rgba(51, 144, 236, 0.25);
+  color: #3390ec;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.ai-action-text-box {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ai-action-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ai-action-desc {
+  font-size: 11px;
+  color: var(--text-secondary, rgba(255, 255, 255, 0.5));
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ai-action-arrow {
+  color: rgba(255, 255, 255, 0.25);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  transition: transform 0.2s ease, color 0.2s ease;
+}
+
+.ai-quick-action-card:hover .ai-action-arrow {
+  color: #3390ec;
+  transform: translateX(2px);
+}
+
+/* ─── 5. Popular Prompts (Horizontal Scroll Chips) ─── */
+.ai-prompts-scroll-container {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 4px 2px 8px;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.ai-prompts-scroll-container::-webkit-scrollbar {
+  display: none;
+}
+
+.ai-prompt-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 9999px;
+  background: rgba(22, 22, 28, 0.55);
+  border: 0.5px solid rgba(255, 255, 255, 0.09);
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 12.5px;
+  font-weight: 500;
+  white-space: nowrap;
+  flex-shrink: 0;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2), inset 0 0.5px 0 rgba(255, 255, 255, 0.1);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.ai-prompt-chip:hover {
+  background: rgba(32, 32, 42, 0.75);
+  border-color: rgba(51, 144, 236, 0.35);
+  color: #ffffff;
+}
+
+.ai-prompt-chip:active {
+  transform: scale(0.96);
+}
+
+.ai-chip-sparkle {
+  color: #3390ec;
+  font-size: 11px;
+  opacity: 0.9;
+}
+
+.ai-chip-text {
+  letter-spacing: -0.01em;
+}
+
+/* ─── 6. Floating Liquid Glass Chat Input Bar ─── */
+.ai-input-wrapper {
+  position: sticky;
+  bottom: 12px;
+  z-index: 40;
+  padding: 10px 0 0;
+  margin-top: 10px;
+}
+
+.ai-input-floating-bar {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  background: rgba(18, 18, 24, 0.92);
+  border: 0.5px solid rgba(255, 255, 255, 0.16);
+  border-radius: 20px;
+  padding: 14px 14px 14px 18px;
+  backdrop-filter: blur(32px) saturate(190%);
+  -webkit-backdrop-filter: blur(32px) saturate(190%);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6), inset 0 0.75px 0 rgba(255, 255, 255, 0.18);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  min-height: 56px;
+}
+
+.ai-input-floating-bar:focus-within {
+  border-color: rgba(51, 144, 236, 0.6);
+  box-shadow: 0 14px 44px rgba(0, 0, 0, 0.65), 0 0 0 2px rgba(51, 144, 236, 0.2), inset 0 0.75px 0 rgba(255, 255, 255, 0.25);
+  background: rgba(22, 22, 30, 0.97);
+}
+
+.ai-input-floating-bar.loading {
+  border-color: rgba(51, 144, 236, 0.5);
+  opacity: 0.9;
+}
+
+.ai-floating-textarea {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #ffffff;
+  font-size: 13.5px;
+  font-family: var(--font-family, -apple-system, BlinkMacSystemFont, sans-serif);
+  line-height: 1.5;
+  resize: none;
+  min-height: 44px;
+  max-height: 140px;
+  padding: 0;
+  -webkit-appearance: none;
+  box-sizing: border-box;
+}
+
+.ai-floating-textarea::placeholder {
+  color: rgba(255, 255, 255, 0.36);
+  font-size: 13px;
+}
+
+.ai-floating-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  margin-bottom: 2px;
+}
+
+.ai-btn-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  -webkit-tap-highlight-color: transparent;
+  position: relative;
+}
+
+.ai-btn-send {
+  background: rgba(255, 255, 255, 0.08);
+  border: 0.5px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.ai-btn-send.has-content {
+  background: #3390ec;
+  border-color: rgba(51, 144, 236, 0.8);
+  color: #ffffff;
+  box-shadow: 0 2px 14px rgba(51, 144, 236, 0.45);
+}
+
+.ai-btn-send.has-content:hover {
+  filter: brightness(1.1);
+  transform: scale(1.04);
+}
+
+.ai-btn-send.has-content:active {
+  transform: scale(0.94);
+}
+
+.ai-btn-send:disabled {
+  cursor: default;
+}
+
+.ai-loading-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  animation: ai-spin 0.65s linear infinite;
+}
+
+@keyframes ai-spin {
+  to { transform: rotate(360deg); }
+}
+
+.ai-error-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 69, 58, 0.12);
+  border: 0.5px solid rgba(255, 69, 58, 0.3);
+  border-radius: 12px;
+  padding: 8px 12px;
+  margin-top: 8px;
+  font-size: 12px;
+  color: #ff6b62;
+  backdrop-filter: blur(12px);
+}
+
+/* ─── Daily Limit Banner ─── */
+.ai-daily-limit-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  background: rgba(255, 159, 10, 0.1);
+  border: 0.5px solid rgba(255, 159, 10, 0.35);
+  border-radius: 16px;
+  padding: 14px 16px;
+  margin-top: 10px;
+  backdrop-filter: blur(16px);
+}
+
+.ai-daily-limit-icon {
+  color: #ff9f0a;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.ai-daily-limit-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #ff9f0a;
+  margin-bottom: 4px;
+}
+
+.ai-daily-limit-desc {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.6);
+  line-height: 1.5;
+}
+

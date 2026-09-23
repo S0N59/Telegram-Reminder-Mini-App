@@ -13,11 +13,21 @@ import webhookHandler from './api/webhook.js';
 import contactsHandler from './api/contacts.js';
 import settingsHandler from './api/settings.js';
 import avatarHandler from './api/avatar.js';
+import broadcastHandler from './api/broadcast.js';
+import aiHandler from './api/ai.js';
+import channelsHandler from './api/channels.js';
+import adminStatsHandler from './api/admin-stats.js';
+import uploadHandler from './api/upload.js';
+import emojiHandler from './api/emoji.js';
+import youtubeHandler from './api/youtube.js';
+import { checkYouTubeUploads } from './services/youtubeScheduler.js';
 
 const app = express();
 
 // Middleware
 app.use(cors());
+// Media uploads arrive as raw bytes, so they must bypass the JSON parser.
+app.use('/api/upload', express.raw({ type: () => true, limit: '52mb' }));
 app.use(express.json());
 
 // Create an adapter for Vercel functions
@@ -43,6 +53,15 @@ app.all('/api/webhook', adaptVercel(webhookHandler));
 app.all('/api/contacts', adaptVercel(contactsHandler));
 app.all('/api/settings', adaptVercel(settingsHandler));
 app.all('/api/avatar', adaptVercel(avatarHandler));
+app.all('/api/broadcast', adaptVercel(broadcastHandler));
+app.all('/api/ai', adaptVercel(aiHandler));
+app.all('/api/channels', adaptVercel(channelsHandler));
+app.all('/api/admin-stats', adaptVercel(adminStatsHandler));
+app.all('/api/upload', adaptVercel(uploadHandler));
+app.all('/api/emoji', adaptVercel(emojiHandler));
+app.all('/api/youtube', adaptVercel(youtubeHandler));
+app.use('/api/youtube', adaptVercel(youtubeHandler));
+
 
 const PORT = process.env.PORT || 3000;
 
@@ -72,6 +91,9 @@ async function runScheduledCheck() {
     if (sent > 0 || reReminded > 0 || failed > 0) {
       console.log(`[SCHEDULER] ✅ Sent: ${sent}, Re-reminded: ${reReminded}, Failed: ${failed}`);
     }
+
+    // Run YouTube Uploads Check
+    await checkYouTubeUploads().catch(e => console.error('[SCHEDULER] YouTube check error:', e));
   } catch (error) {
     console.error('[SCHEDULER] ❌ Error during scheduled check:', error);
   }

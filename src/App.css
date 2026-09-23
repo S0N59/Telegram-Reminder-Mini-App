@@ -91,17 +91,37 @@ body {
   position: relative;
 }
 
-/* ---- Page Header (Frosted Liquid Glass) ---- */
+/* ---- Page Header (Frosted Liquid Glass with Telegram Fullscreen Inset) ---- */
 .app-header {
   position: sticky;
   top: 0;
   z-index: 100;
-  background: rgba(8, 8, 10, 0.78);
+  background: rgba(8, 8, 10, 0.82);
   backdrop-filter: blur(32px) saturate(180%);
   -webkit-backdrop-filter: blur(32px) saturate(180%);
   border-bottom: 0.5px solid rgba(255, 255, 255, 0.08);
-  padding: 14px 20px 10px;
+  padding-top: max(
+    env(safe-area-inset-top, 0px),
+    var(--tg-content-safe-area-inset-top, 0px),
+    var(--app-top-safe-area, 0px),
+    14px
+  );
+  padding-left: max(env(safe-area-inset-left, 0px), 16px);
+  padding-right: max(env(safe-area-inset-right, 0px), 16px);
+  padding-bottom: 12px;
   margin-bottom: 8px;
+}
+
+/* Mini App: title must sit below Telegram's ✕ Close / header chrome */
+html.tg-webapp .app-header,
+html.tg-fullscreen .app-header,
+html.tg-mobile .app-header {
+  padding-top: max(
+    env(safe-area-inset-top, 0px),
+    var(--tg-content-safe-area-inset-top, 0px),
+    var(--app-top-safe-area, 0px),
+    80px
+  );
 }
 
 .header-content {
@@ -109,6 +129,9 @@ body {
   align-items: center;
   justify-content: space-between;
   min-height: 40px;
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
 }
 
 .app-header h1 {
@@ -159,6 +182,13 @@ body {
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   animation: pageFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* In Studio Editor mode, allow viewport scrolling so sticky toolbar attaches directly to viewport */
+.app.in-editor-mode .app-content,
+.app:has(.studio-container.in-editor) .app-content {
+  overflow: visible !important;
+  overflow-y: visible !important;
 }
 
 @keyframes pageFadeIn {
@@ -424,10 +454,23 @@ body {
   transform: translateX(20px);
 }
 
-/* ---- Scrollbar ---- */
+/* ---- Scrollbar (Desktop Polish) ---- */
 ::-webkit-scrollbar {
-  width: 0;
-  height: 0;
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.14);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.25);
 }
 
 /* ---- Badge ---- */
@@ -446,6 +489,16 @@ body {
   align-items: center;
   justify-content: center;
   padding: 0 4px;
+}
+
+/* ---- Create Tab Page Container ---- */
+.create-tab-page {
+  padding: 4px 16px 24px;
+  width: 100%;
+  box-sizing: border-box;
+  overflow-x: hidden;
+  max-width: 760px;
+  margin: 0 auto;
 }
 
 /* ---- Utility ---- */

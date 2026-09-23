@@ -70,6 +70,18 @@ CREATE TABLE IF NOT EXISTS user_connections (
   created_at BIGINT NOT NULL,
   PRIMARY KEY (user_id_1, user_id_2)
 );
+
+CREATE TABLE IF NOT EXISTS user_channels (
+  id TEXT PRIMARY KEY,
+  user_id BIGINT NOT NULL,
+  chat_id BIGINT NOT NULL,
+  title TEXT NOT NULL,
+  username TEXT,
+  chat_type TEXT NOT NULL,
+  created_at BIGINT NOT NULL,
+  UNIQUE (user_id, chat_id)
+);
+CREATE INDEX IF NOT EXISTS idx_user_channels_user_id ON user_channels(user_id);
 `;
 
   try {

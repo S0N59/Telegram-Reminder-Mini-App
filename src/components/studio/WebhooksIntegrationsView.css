@@ -1,0 +1,809 @@
+/* ══════════════════════════════════════════════════════════════════════════
+   REMIGRAM STUDIO: Integrations Catalog + Config Pages
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Catalog Container ── */
+.intg-catalog-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 16px 14px 40px;
+  max-width: 800px;
+  margin: 0 auto;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* ── Header ── */
+.intg-catalog-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.intg-back-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  border: 0.5px solid rgba(255, 255, 255, 0.14);
+  color: #ffffff;
+  cursor: pointer;
+  transition: all 0.16s ease;
+  flex-shrink: 0;
+}
+
+.intg-back-btn:hover {
+  background: rgba(255, 255, 255, 0.16);
+  transform: translateY(-1px);
+}
+
+.intg-header-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.intg-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: #38bdf8;
+  text-transform: uppercase;
+}
+
+.intg-badge-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #38bdf8;
+  box-shadow: 0 0 8px #38bdf8;
+}
+
+.intg-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0;
+  letter-spacing: -0.3px;
+}
+
+.intg-desc {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.55);
+  margin: 0;
+  line-height: 1.4;
+}
+
+/* ══════════════════════════════════════
+   Platform Cards Grid
+   ══════════════════════════════════════ */
+
+.intg-platforms-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.intg-platform-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.035);
+  border: 0.5px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  cursor: pointer;
+  transition: all 0.18s ease;
+  text-align: left;
+  width: 100%;
+  box-sizing: border-box;
+  color: #ffffff;
+  font-family: inherit;
+}
+
+.intg-platform-card:hover {
+  background: rgba(255, 255, 255, 0.065);
+  border-color: rgba(255, 255, 255, 0.16);
+  transform: translateY(-1px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+.intg-platform-card:active {
+  transform: scale(0.985);
+}
+
+.intg-platform-card.disabled {
+  opacity: 0.5;
+  cursor: default;
+  pointer-events: none;
+}
+
+/* Platform Icon Pills */
+.platform-card-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.platform-card-icon.yt-brand {
+  background: rgba(255, 0, 0, 0.12);
+  border: 0.5px solid rgba(255, 0, 0, 0.25);
+  color: #ff0000;
+}
+
+.platform-card-icon.notion-brand {
+  background: rgba(255, 255, 255, 0.08);
+  border: 0.5px solid rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+}
+
+.platform-card-icon.twitch-brand {
+  background: rgba(145, 70, 255, 0.12);
+  border: 0.5px solid rgba(145, 70, 255, 0.25);
+  color: #9146ff;
+}
+
+/* Card Body */
+.platform-card-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.platform-card-name-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.platform-card-name {
+  font-size: 15px;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.platform-card-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.platform-card-status.active {
+  background: rgba(48, 209, 88, 0.14);
+  border: 0.5px solid rgba(48, 209, 88, 0.3);
+  color: #30d158;
+}
+
+.platform-card-status .status-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #30d158;
+  box-shadow: 0 0 6px #30d158;
+}
+
+.platform-card-status.inactive {
+  background: rgba(255, 255, 255, 0.06);
+  border: 0.5px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.platform-card-status.coming-soon {
+  background: rgba(145, 70, 255, 0.14);
+  border: 0.5px solid rgba(145, 70, 255, 0.3);
+  color: #b388ff;
+}
+
+.platform-card-desc {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.5);
+  line-height: 1.45;
+}
+
+.platform-card-chevron {
+  color: rgba(255, 255, 255, 0.3);
+  flex-shrink: 0;
+}
+
+/* ══════════════════════════════════════
+   Config Page (shared across platforms)
+   ══════════════════════════════════════ */
+
+.intg-config-page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px 14px 40px;
+  max-width: 1050px;
+  margin: 0 auto;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.config-page-top-nav {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+}
+
+.config-page-top-nav .intg-back-btn {
+  flex-shrink: 0;
+}
+
+.config-header-brand {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.035);
+  border: 0.5px solid rgba(255, 255, 255, 0.08);
+}
+
+.config-brand-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.config-brand-icon.yt-icon-lg {
+  background: rgba(255, 0, 0, 0.14);
+  border: 0.5px solid rgba(255, 0, 0, 0.3);
+  color: #ff0000;
+}
+
+.config-brand-icon.notion-icon-lg {
+  background: rgba(255, 255, 255, 0.08);
+  border: 0.5px solid rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+}
+
+.config-brand-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.config-brand-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0;
+}
+
+.config-brand-subtitle {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.config-status-pill {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 8px;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+.config-status-pill.active {
+  background: rgba(48, 209, 88, 0.14);
+  border: 0.5px solid rgba(48, 209, 88, 0.3);
+  color: #30d158;
+}
+
+.config-status-pill.inactive {
+  background: rgba(255, 255, 255, 0.06);
+  border: 0.5px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.config-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 40px;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 13px;
+}
+
+.config-body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* Toggle Row */
+.config-toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 0.5px solid rgba(255, 255, 255, 0.06);
+}
+
+.config-toggle-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.config-toggle-label {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #f1f5f9;
+}
+
+.config-toggle-hint {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+/* Form Fields */
+.config-form-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.config-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.config-field-label {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.config-field-label .req {
+  color: #ff453a;
+}
+
+.config-field-label .opt {
+  color: rgba(255, 255, 255, 0.4);
+  font-weight: 400;
+}
+
+.config-field-input,
+.config-field-select {
+  width: 100%;
+  box-sizing: border-box;
+  background: rgba(255, 255, 255, 0.05);
+  border: 0.5px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  padding: 10px 12px;
+  color: #ffffff;
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+  transition: all 0.16s ease;
+}
+
+.config-field-input:focus,
+.config-field-select:focus {
+  border-color: #38bdf8;
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.18);
+}
+
+.config-field-select {
+  appearance: none;
+  -webkit-appearance: none;
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='rgba(255,255,255,0.5)' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  padding-right: 32px;
+}
+
+.config-field-select option {
+  background: #1a1a2e;
+  color: #ffffff;
+}
+
+.config-field-hint {
+  font-size: 10.5px;
+  color: rgba(255, 255, 255, 0.4);
+  line-height: 1.4;
+}
+
+.config-field-textarea {
+  width: 100%;
+  box-sizing: border-box;
+  background: rgba(255, 255, 255, 0.05);
+  border: 0.5px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  padding: 10px 12px;
+  color: #ffffff;
+  font-size: 13px;
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+  outline: none;
+  resize: vertical;
+  min-height: 100px;
+  transition: all 0.16s ease;
+  line-height: 1.5;
+}
+
+.config-field-textarea:focus {
+  border-color: #38bdf8;
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.18);
+}
+
+/* Tag Chips */
+.config-tag-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.config-tag-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: rgba(56, 189, 248, 0.1);
+  border: 0.5px solid rgba(56, 189, 248, 0.25);
+  color: #38bdf8;
+  font-size: 10.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.14s ease;
+  font-family: inherit;
+}
+
+.config-tag-chip:hover {
+  background: rgba(56, 189, 248, 0.2);
+}
+
+/* Options grid */
+.config-options-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.config-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 0.5px solid rgba(255, 255, 255, 0.06);
+  cursor: pointer;
+  transition: all 0.14s ease;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.config-checkbox-label:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.config-checkbox-label input[type="checkbox"] {
+  accent-color: #38bdf8;
+  width: 16px;
+  height: 16px;
+}
+
+/* No channels alert */
+.config-no-channels {
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(255, 149, 0, 0.08);
+  border: 0.5px solid rgba(255, 149, 0, 0.2);
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 12px;
+}
+
+/* Status Alert */
+.config-status-alert {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 12.5px;
+  font-weight: 500;
+}
+
+.config-status-alert.success {
+  background: rgba(48, 209, 88, 0.1);
+  border: 0.5px solid rgba(48, 209, 88, 0.25);
+  color: #30d158;
+}
+
+.config-status-alert.error {
+  background: rgba(255, 69, 58, 0.1);
+  border: 0.5px solid rgba(255, 69, 58, 0.25);
+  color: #ff453a;
+}
+
+/* Action Bar */
+.config-action-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+  flex-wrap: wrap;
+}
+
+.config-save-btn,
+.config-test-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 38px;
+  padding: 0 18px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.16s ease;
+  border: none;
+  font-family: inherit;
+}
+
+.config-save-btn {
+  background: #2481cc;
+  color: #ffffff;
+  flex: 1;
+}
+
+.config-save-btn:hover:not(:disabled) {
+  background: #1a6db0;
+}
+
+.config-save-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.config-test-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: 0.5px solid rgba(255, 255, 255, 0.14);
+  color: #ffffff;
+}
+
+.config-test-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.config-test-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.config-disconnect-btn {
+  height: 38px;
+  padding: 0 14px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  background: rgba(255, 69, 58, 0.1);
+  border: 0.5px solid rgba(255, 69, 58, 0.25);
+  color: #ff453a;
+  cursor: pointer;
+  transition: all 0.16s ease;
+  font-family: inherit;
+}
+
+.config-disconnect-btn:hover:not(:disabled) {
+  background: rgba(255, 69, 58, 0.2);
+}
+
+.config-disconnect-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ══════════════════════════════════════
+   YouTube Config — Live Preview Panel
+   ══════════════════════════════════════ */
+
+.yt-config-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+@media (min-width: 768px) {
+  .yt-config-layout {
+    flex-direction: row;
+    gap: 28px;
+    align-items: flex-start;
+  }
+
+  .yt-config-form-col {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .yt-config-preview-col {
+    width: 380px;
+    max-width: 420px;
+    flex-shrink: 0;
+    position: sticky;
+    top: 20px;
+    align-self: flex-start;
+  }
+}
+
+.yt-config-form-col {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* Preview Panel */
+.yt-config-preview-col {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.yt-preview-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.yt-preview-label svg {
+  color: #38bdf8;
+}
+
+/* Telegram Message Bubble */
+.tg-message-bubble {
+  background: rgba(255, 255, 255, 0.06);
+  border: 0.5px solid rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.tg-bubble-thumb-wrap {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.tg-bubble-thumb-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.tg-bubble-play-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.tg-bubble-play-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+}
+
+.tg-bubble-text {
+  padding: 12px 14px;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.9);
+  line-height: 1.5;
+  word-break: break-word;
+}
+
+.tg-bubble-text b {
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.tg-bubble-text a {
+  color: #38bdf8;
+  text-decoration: none;
+}
+
+.tg-bubble-button-row {
+  padding: 0 14px 12px;
+}
+
+.tg-bubble-inline-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  padding: 8px;
+  border-radius: 8px;
+  background: rgba(56, 189, 248, 0.12);
+  border: 0.5px solid rgba(56, 189, 248, 0.25);
+  color: #38bdf8;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: default;
+}
+
+.tg-bubble-meta {
+  padding: 0 14px 10px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.3);
+}
+
+/* Preview placeholder state */
+.yt-preview-placeholder {
+  padding: 30px 16px;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.35);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.yt-preview-placeholder svg {
+  opacity: 0.3;
+  margin-bottom: 8px;
+}
+
+/* Template header row */
+.config-template-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 6px;
+}

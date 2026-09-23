@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import type { Reminder } from '../types/reminder';
 import type { Language } from '../i18n';
 import { config } from '../config';
+import { unifyGroupReminders } from '../utils/reminder';
 import { ConfirmModal } from './ConfirmModal';
 import { ReminderCard } from './ReminderCard';
 import { ReminderDetailModal } from './ReminderDetailModal';
@@ -26,6 +27,7 @@ interface ReminderListProps {
   language: Language;
   accentColor: string;
   monochromePriority: boolean;
+  onModalOpenChange?: (open: boolean) => void;
   strings: {
     nextReminderTitle: string;
     allRemindersTitle: string;
@@ -55,11 +57,58 @@ export const ReminderList = ({
   strings,
   accentColor,
   monochromePriority,
+  onModalOpenChange,
 }: ReminderListProps) => {
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [clearConfirmOpen, setClearConfirmOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<'all' | 'today' | 'upcoming' | 'completed'>('all');
-  const [selectedDetailReminder, setSelectedDetailReminder] = useState<Reminder | null>(null);
+  const [statusFilter, setStatusFilter] = useState<'all' | 'today' | 'completed'>('all');
+  const [activeScopeTab, setActiveScopeTab] = useState<'all' | 'me' | 'friends' | 'groups'>('all');
+  const [selectedReminderId, setSelectedReminderId] = useState<string | null>(null);
+
+  const currentUserId = user?.id;
+
+  // Unify group reminders into single cards with live participant statuses
+  const unifiedReminders = useMemo(() => {
+    return unifyGroupReminders(reminders, currentUserId);
+  }, [reminders, currentUserId]);
+
+  const selectedDetailReminder = useMemo(() => {
+    if (!selectedReminderId) return null;
+    return unifiedReminders.find(r => r.id === selectedReminderId) || null;
+  }, [unifiedReminders, selectedReminderId]);
+
+  const openDetailModal = (r: Reminder) => {
+    setSelectedReminderId(r.id);
+    onModalOpenChange?.(true);
+  };
+  const closeDetailModal = () => {
+    setSelectedReminderId(null);
+    if (!deleteConfirmId && !clearConfirmOpen) {
+      onModalOpenChange?.(false);
+    }
+  };
+
+  const openDeleteConfirm = (id: string) => {
+    setDeleteConfirmId(id);
+    onModalOpenChange?.(true);
+  };
+  const closeDeleteConfirm = () => {
+    setDeleteConfirmId(null);
+    if (!selectedReminderId && !clearConfirmOpen) {
+      onModalOpenChange?.(false);
+    }
+  };
+
+  const openClearConfirm = () => {
+    setClearConfirmOpen(true);
+    onModalOpenChange?.(true);
+  };
+  const closeClearConfirm = () => {
+    setClearConfirmOpen(false);
+    if (!selectedReminderId && !deleteConfirmId) {
+      onModalOpenChange?.(false);
+    }
+  };
 
   const now = new Date();
   const currentHour = now.getHours();
@@ -78,54 +127,99 @@ export const ReminderList = ({
 
   const userName = user?.first_name || user?.username || 'User';
 
-  // Counts for tabs
+  // Counts for status banner
   const allActiveCount = useMemo(() => {
-    return reminders.filter(r => !r.done && r.status !== 'done').length;
-  }, [reminders]);
+    return unifiedReminders.filter(r => !r.done && r.status !== 'done').length;
+  }, [unifiedReminders]);
 
   const todayCount = useMemo(() => {
-    return reminders.filter(r => !r.done && r.status !== 'done' && r.date === todayStr).length;
-  }, [reminders, todayStr]);
-
-  const upcomingCount = useMemo(() => {
-    return reminders.filter(r => !r.done && r.status !== 'done' && r.date > todayStr).length;
-  }, [reminders, todayStr]);
-
-  const inProgressCount = useMemo(() => {
-    return reminders.filter(r => r.status === 'in_progress' && !r.done).length;
-  }, [reminders]);
+    return unifiedReminders.filter(r => !r.done && r.status !== 'done' && r.date === todayStr).length;
+  }, [unifiedReminders, todayStr]);
 
   const completedCount = useMemo(() => {
-    return reminders.filter(r => r.done || r.status === 'done').length;
-  }, [reminders]);
+    return unifiedReminders.filter(r => r.done || r.status === 'done').length;
+  }, [unifiedReminders]);
 
-  // Daily productivity progress
-  const todayTotal = reminders.filter(r => r.date === todayStr).length;
-  const todayDone = reminders.filter(r => r.date === todayStr && (r.done || r.status === 'done')).length;
-  const progressPercent = todayTotal > 0 ? Math.round((todayDone / todayTotal) * 100) : 0;
+  // Scope filter counts based on active status filter
+  const totalTabCount = useMemo(() => {
+    if (statusFilter === 'completed') return completedCount;
+    if (statusFilter === 'today') return todayCount;
+    return allActiveCount;
+  }, [statusFilter, completedCount, todayCount, allActiveCount]);
 
-  // Filter based on selected tab
+  const meCount = useMemo(() => {
+    const list = statusFilter === 'completed'
+      ? unifiedReminders.filter(r => r.done || r.status === 'done')
+      : statusFilter === 'today'
+      ? unifiedReminders.filter(r => !r.done && r.status !== 'done' && r.date === todayStr)
+      : unifiedReminders.filter(r => !r.done && r.status !== 'done');
+    return list.filter(r => !r.assignedTo && !r.assignedToChatId && (!r.groupParticipants || r.groupParticipants.length <= 1)).length;
+  }, [unifiedReminders, statusFilter, todayStr]);
+
+  const friendsCount = useMemo(() => {
+    const list = statusFilter === 'completed'
+      ? unifiedReminders.filter(r => r.done || r.status === 'done')
+      : statusFilter === 'today'
+      ? unifiedReminders.filter(r => !r.done && r.status !== 'done' && r.date === todayStr)
+      : unifiedReminders.filter(r => !r.done && r.status !== 'done');
+    return list.filter(r => (r.assignedTo || r.assignedToChatId) && (!r.groupParticipants || r.groupParticipants.length <= 1)).length;
+  }, [unifiedReminders, statusFilter, todayStr]);
+
+  const groupsCount = useMemo(() => {
+    const list = statusFilter === 'completed'
+      ? unifiedReminders.filter(r => r.done || r.status === 'done')
+      : statusFilter === 'today'
+      ? unifiedReminders.filter(r => !r.done && r.status !== 'done' && r.date === todayStr)
+      : unifiedReminders.filter(r => !r.done && r.status !== 'done');
+    return list.filter(r => r.groupParticipants && r.groupParticipants.length > 1).length;
+  }, [unifiedReminders, statusFilter, todayStr]);
+
+  // Filter reminders based on top statusFilter AND activeScopeTab
   const filteredReminders = useMemo(() => {
-    if (activeTab === 'completed') {
-      return reminders.filter(r => r.done || r.status === 'done');
-    }
-    if (activeTab === 'today') {
-      return reminders.filter(r => !r.done && r.status !== 'done' && r.date === todayStr);
-    }
-    if (activeTab === 'upcoming') {
-      return reminders.filter(r => !r.done && r.status !== 'done' && r.date > todayStr);
-    }
-    // 'all' tab: all active reminders
-    return reminders.filter(r => !r.done && r.status !== 'done');
-  }, [reminders, activeTab, todayStr]);
+    let list = unifiedReminders;
 
-  // Group reminders by date
+    // 1. Status filter (Active / Today / Completed)
+    if (statusFilter === 'completed') {
+      list = list.filter(r => r.done || r.status === 'done');
+    } else if (statusFilter === 'today') {
+      list = list.filter(r => !r.done && r.status !== 'done' && r.date === todayStr);
+    } else {
+      // 'all': all active
+      list = list.filter(r => !r.done && r.status !== 'done');
+    }
+
+    // 2. Scope tab filter (All Tasks / For Me / Friends / Groups)
+    if (activeScopeTab === 'me') {
+      list = list.filter(r => !r.assignedTo && !r.assignedToChatId && (!r.groupParticipants || r.groupParticipants.length <= 1));
+    } else if (activeScopeTab === 'friends') {
+      list = list.filter(r => (r.assignedTo || r.assignedToChatId) && (!r.groupParticipants || r.groupParticipants.length <= 1));
+    } else if (activeScopeTab === 'groups') {
+      list = list.filter(r => r.groupParticipants && r.groupParticipants.length > 1);
+    }
+
+    return list;
+  }, [unifiedReminders, statusFilter, activeScopeTab, todayStr]);
+
+  const getPriorityRank = (p?: string) => {
+    const lower = (p || '').toLowerCase();
+    if (lower === 'high') return 3;
+    if (lower === 'medium') return 2;
+    if (lower === 'low') return 1;
+    return 0;
+  };
+
+  // Group reminders by date and sort priority-first within each group
   const groupedReminders = useMemo(() => {
     const groups: { [date: string]: Reminder[] } = {};
     const sorted = [...filteredReminders].sort((a, b) => {
-      const dateCompare = a.date.localeCompare(b.date);
+      const dateCompare = (a.date || '').localeCompare(b.date || '');
       if (dateCompare !== 0) return dateCompare;
-      return a.time.localeCompare(b.time);
+
+      // High priority first
+      const prioDiff = getPriorityRank(b.priority) - getPriorityRank(a.priority);
+      if (prioDiff !== 0) return prioDiff;
+
+      return (a.time || '').localeCompare(b.time || '');
     });
 
     sorted.forEach(r => {
@@ -139,47 +233,66 @@ export const ReminderList = ({
   }, [filteredReminders]);
 
   const formatDateHeader = (dateStr: string): { main: string; sub: string } => {
-    const [y, m, d] = dateStr.split('-').map(Number);
-    const dateObj = new Date(y, m - 1, d);
-    const monthName = dateObj.toLocaleString('en-US', { month: 'short' });
-    const subStr = `${monthName} ${d}`;
-
-    if (dateStr === todayStr) {
-      return { main: 'Today', sub: subStr };
+    try {
+      if (dateStr === todayStr) {
+        return { main: 'Today', sub: '' };
+      }
+      if (dateStr === tomorrowStr) {
+        return { main: 'Tomorrow', sub: '' };
+      }
+      const [y, m, d] = (dateStr || '').split('-').map(Number);
+      if (!y || !m || !d) return { main: dateStr || 'Today', sub: '' };
+      const dateObj = new Date(y, m - 1, d);
+      if (isNaN(dateObj.getTime())) return { main: dateStr || 'Today', sub: '' };
+      const monthName = dateObj.toLocaleString('en-US', { month: 'short' });
+      const subStr = `${monthName} ${d}`;
+      const dayName = dateObj.toLocaleString('en-US', { weekday: 'short' });
+      return { main: `${dayName}, ${subStr}`, sub: `${y}` };
+    } catch {
+      return { main: dateStr || 'Today', sub: '' };
     }
-    if (dateStr === tomorrowStr) {
-      return { main: 'Tomorrow', sub: subStr };
-    }
-    const dayName = dateObj.toLocaleString('en-US', { weekday: 'short' });
-    return { main: `${dayName}, ${subStr}`, sub: `${y}` };
   };
 
   const formatDate = (dateStr: string): string => {
-    if (dateStr === todayStr) return strings.todayLabel;
-    if (dateStr === tomorrowStr) return strings.tomorrowLabel;
-    const [y, m, d] = dateStr.split('-').map(Number);
-    const dateObj = new Date(y, m - 1, d);
-    return `${strings.daysShort[dateObj.getDay()]}, ${d} ${strings.monthsShort[m - 1]}`;
+    try {
+      if (dateStr === todayStr) return strings?.todayLabel || 'Today';
+      if (dateStr === tomorrowStr) return strings?.tomorrowLabel || 'Tomorrow';
+      const [y, m, d] = (dateStr || '').split('-').map(Number);
+      if (!y || !m || !d) return dateStr || '';
+      const dateObj = new Date(y, m - 1, d);
+      if (isNaN(dateObj.getTime())) return dateStr || '';
+      const dayName = strings?.daysShort?.[dateObj.getDay()] || '';
+      const monthName = strings?.monthsShort?.[m - 1] || '';
+      return `${dayName}, ${d} ${monthName}`;
+    } catch {
+      return dateStr || '';
+    }
   };
 
   const formatTimeUntil = (date: string, time: string): string => {
-    const rDate = new Date(`${date}T${time}:00`);
-    const diff = rDate.getTime() - new Date().getTime();
-    if (diff < 0) return strings.passedLabel;
+    try {
+      if (!date || !time) return '';
+      const rDate = new Date(`${date}T${time}:00`);
+      const diff = rDate.getTime() - new Date().getTime();
+      if (isNaN(diff)) return '';
+      if (diff < 0) return strings?.passedLabel || 'passed';
 
-    const totalMinutes = Math.ceil(diff / 60000);
-    const days = Math.floor(totalMinutes / (60 * 24));
-    const hours = Math.floor((totalMinutes % (60 * 24)) / 60);
-    const mins = totalMinutes % 60;
+      const totalMinutes = Math.ceil(diff / 60000);
+      const days = Math.floor(totalMinutes / (60 * 24));
+      const hours = Math.floor((totalMinutes % (60 * 24)) / 60);
+      const mins = totalMinutes % 60;
 
-    if (days > 0) return strings.inDaysHours(days, hours);
-    if (hours > 0) return strings.inHoursMinutes(hours, mins);
-    return strings.inMinutes(Math.max(1, mins));
+      if (days > 0) return strings?.inDaysHours ? strings.inDaysHours(days, hours) : `in ${days}d ${hours}h`;
+      if (hours > 0) return strings?.inHoursMinutes ? strings.inHoursMinutes(hours, mins) : `in ${hours}h ${mins}m`;
+      return strings?.inMinutes ? strings.inMinutes(Math.max(1, mins)) : `in ${Math.max(1, mins)}m`;
+    } catch {
+      return '';
+    }
   };
 
   return (
     <div className="reminder-list-page animate-fade-in">
-      {/* Modern Liquid Glass Inbox Summary Banner */}
+      {/* Modern Liquid Glass Inbox Summary Banner with 3 Time/Status Buttons */}
       <div className="inbox-summary-glass-card">
         <div className="inbox-summary-header">
           <div className="inbox-summary-title-wrap">
@@ -190,7 +303,7 @@ export const ReminderList = ({
                 : `${allActiveCount} pending • ${todayCount} today`}
             </span>
           </div>
-          {completedCount > 0 && activeTab === 'completed' && (
+          {completedCount > 0 && statusFilter === 'completed' && (
             <button
               type="button"
               className="inbox-clear-completed-btn"
@@ -201,35 +314,27 @@ export const ReminderList = ({
           )}
         </div>
 
-        {/* Quick Summary Stats */}
+        {/* Quick Summary Stats (3 Clean Items: Active, Today, Done) */}
         <div className="inbox-quick-stat-bar">
           <div
-            className={`inbox-stat-item ${activeTab === 'all' ? 'highlight' : ''}`}
-            onClick={() => setActiveTab('all')}
+            className={`inbox-stat-item ${statusFilter === 'all' ? 'highlight' : ''}`}
+            onClick={() => setStatusFilter('all')}
           >
             <span className="inbox-stat-val">{allActiveCount}</span>
             <span className="inbox-stat-lbl">Active</span>
           </div>
           <div className="inbox-stat-divider" />
           <div
-            className={`inbox-stat-item ${activeTab === 'today' ? 'highlight' : ''}`}
-            onClick={() => setActiveTab('today')}
+            className={`inbox-stat-item ${statusFilter === 'today' ? 'highlight' : ''}`}
+            onClick={() => setStatusFilter('today')}
           >
             <span className="inbox-stat-val">{todayCount}</span>
             <span className="inbox-stat-lbl">Today</span>
           </div>
           <div className="inbox-stat-divider" />
           <div
-            className={`inbox-stat-item ${activeTab === 'upcoming' ? 'highlight' : ''}`}
-            onClick={() => setActiveTab('upcoming')}
-          >
-            <span className="inbox-stat-val">{upcomingCount}</span>
-            <span className="inbox-stat-lbl">Upcoming</span>
-          </div>
-          <div className="inbox-stat-divider" />
-          <div
-            className={`inbox-stat-item done ${activeTab === 'completed' ? 'highlight' : ''}`}
-            onClick={() => setActiveTab('completed')}
+            className={`inbox-stat-item done ${statusFilter === 'completed' ? 'highlight' : ''}`}
+            onClick={() => setStatusFilter('completed')}
           >
             <span className="inbox-stat-val">{completedCount}</span>
             <span className="inbox-stat-lbl">Done</span>
@@ -237,21 +342,21 @@ export const ReminderList = ({
         </div>
       </div>
 
-      {/* Modern Filter Tab Bar with dynamic counters & sliding Liquid Glass pill */}
+      {/* 4 Main Category Tabs: All Tasks, For Me, Friends, Groups (Zero emojis) */}
       <div className="inbox-filter-bar">
         {[
-          { id: 'all' as const, label: 'All', count: allActiveCount },
-          { id: 'today' as const, label: 'Today', count: todayCount },
-          { id: 'upcoming' as const, label: 'Upcoming', count: upcomingCount },
-          { id: 'completed' as const, label: 'Done', count: completedCount },
+          { id: 'all' as const, label: 'All Tasks', count: totalTabCount },
+          { id: 'me' as const, label: 'For Me', count: meCount },
+          { id: 'friends' as const, label: 'Friends', count: friendsCount },
+          { id: 'groups' as const, label: 'Groups', count: groupsCount },
         ].map((tab) => {
-          const isActive = activeTab === tab.id;
+          const isActive = activeScopeTab === tab.id;
           return (
             <button
               key={tab.id}
               type="button"
               className={`inbox-filter-btn ${isActive ? 'active' : ''}`}
-              onClick={() => setActiveTab(tab.id)}
+              onClick={() => setActiveScopeTab(tab.id)}
             >
               {isActive && (
                 <motion.div
@@ -273,20 +378,21 @@ export const ReminderList = ({
       </div>
 
       {/* Reminder Cards / Groups */}
+
       {Object.keys(groupedReminders).length === 0 ? (
         <div className="reminder-empty-state">
           <div className="empty-icon">
-            {activeTab === 'completed' ? '🎉' : activeTab === 'today' ? '✨' : '📅'}
+            {statusFilter === 'completed' ? '🎉' : statusFilter === 'today' ? '✨' : '📅'}
           </div>
           <div className="empty-title">
-            {activeTab === 'completed'
+            {statusFilter === 'completed'
               ? 'No completed reminders'
-              : activeTab === 'today'
+              : statusFilter === 'today'
               ? 'No reminders for today'
               : 'No reminders found'}
           </div>
           <div className="empty-desc">
-            {activeTab === 'completed'
+            {statusFilter === 'completed'
               ? 'Mark reminders as done to see them here'
               : 'Create a new reminder to get started'}
           </div>
@@ -305,14 +411,15 @@ export const ReminderList = ({
                   <ReminderCard
                     key={reminder.id}
                     reminder={reminder}
-                    onDelete={(id) => setDeleteConfirmId(id)}
-                    onEdit={() => setSelectedDetailReminder(reminder)}
+                    onDelete={(id) => openDeleteConfirm(id)}
+                    onEdit={() => openDetailModal(reminder)}
                     onStatusChange={onStatusChange}
                     isPassed={new Date(`${reminder.date}T${reminder.time}:00`).getTime() <= now.getTime()}
                     formatDate={formatDate}
                     formatTimeUntil={formatTimeUntil}
                     accentColor={accentColor}
                     monochromePriority={monochromePriority}
+                    currentUserId={user?.id}
                   />
                 ))}
               </div>
@@ -322,35 +429,37 @@ export const ReminderList = ({
       )}
 
       {/* Clear Completed Action */}
-      {activeTab === 'completed' && completedCount > 0 && (
+      {statusFilter === 'completed' && completedCount > 0 && (
         <div className="clear-completed-bar">
           <button
             type="button"
             className="clear-completed-btn"
-            onClick={() => setClearConfirmOpen(true)}
+            onClick={openClearConfirm}
           >
             Clear All Completed
           </button>
         </div>
       )}
 
+
       {/* Reminder Detail Modal (Opens when tapping on any card) */}
       <ReminderDetailModal
         reminder={selectedDetailReminder}
         isOpen={!!selectedDetailReminder}
-        onClose={() => setSelectedDetailReminder(null)}
+        onClose={closeDetailModal}
         onEdit={(r) => {
-          setSelectedDetailReminder(null);
+          closeDetailModal();
           onEdit(r);
         }}
         onDelete={(id) => {
-          setSelectedDetailReminder(null);
-          setDeleteConfirmId(id);
+          closeDetailModal();
+          openDeleteConfirm(id);
         }}
         onStatusChange={onStatusChange}
         formatDate={formatDate}
         formatTimeUntil={formatTimeUntil}
         monochromePriority={monochromePriority}
+        currentUserId={currentUserId}
       />
 
       {/* Delete Confirmation Modal */}
@@ -363,9 +472,9 @@ export const ReminderList = ({
           cancelText="Cancel"
           onConfirm={() => {
             onDelete(deleteConfirmId);
-            setDeleteConfirmId(null);
+            closeDeleteConfirm();
           }}
-          onCancel={() => setDeleteConfirmId(null)}
+          onCancel={closeDeleteConfirm}
           isDestructive={true}
         />
       )}
@@ -380,12 +489,13 @@ export const ReminderList = ({
           cancelText="Cancel"
           onConfirm={() => {
             onClearPassed();
-            setClearConfirmOpen(false);
+            closeClearConfirm();
           }}
-          onCancel={() => setClearConfirmOpen(false)}
+          onCancel={closeClearConfirm}
           isDestructive={true}
         />
       )}
     </div>
+
   );
 };

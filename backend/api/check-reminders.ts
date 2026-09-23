@@ -1,5 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { getDb } from './db.js';
+import { decryptText } from '../services/crypto.js';
 
 export default async function handler(
   req: VercelRequest,
@@ -20,6 +21,22 @@ export default async function handler(
     const { Telegraf } = await import('telegraf');
     const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN!);
     const db = getDb();
+
+    // --- Weekly 7-day auto-cleanup during scheduler runs ---
+    const sevenDaysAgo = Date.now() - (7 * 24 * 60 * 60 * 1000);
+    try {
+      const { rows: expiredList } = await db.query(`
+        SELECT id, user_id FROM reminders 
+        WHERE (done = true OR status = 'done') AND created_at < $1
+      `, [sevenDaysAgo]);
+
+      if (expiredList.length > 0) {
+        const ids = expiredList.map(r => r.id);
+        await db.query(`DELETE FROM reminders WHERE id = ANY($1::text[])`, [ids]);
+      }
+    } catch (e) {
+      console.error('Scheduler auto-cleanup warning:', e);
+    }
 
     function getSmartTime(dateStr: string, timeStr: string): string {
       const [year, month, day] = dateStr.split('-').map(Number);
@@ -45,31 +62,137 @@ export default async function handler(
       return `${day}/${month}/${year} at ${timeFormatted}`;
     }
 
-    function formatNotification(reminder: any): string {
+    function formatNotification(reminder: any, userConfig?: any): string {
+      const plainText = decryptText(reminder.text);
       if (reminder.status === 'done') {
-        return `✅ <b>TASK COMPLETED</b>\n\n📝 ${reminder.text}\n⏰ Was: ${reminder.time}`;
+        return `✅ <b>TASK COMPLETED</b>\n\n📝 ${plainText}\n⏰ Was: ${reminder.time}`;
       }
-      const statusMap: any = { 'todo': { label: 'To Do', emoji: '⚪' }, 'in_progress': { label: 'In Progress', emoji: '🟡' }, 'done': { label: 'Done', emoji: '🟢' } };
-      const status = statusMap[reminder.status || 'todo'] || statusMap['todo'];
-      const smartTime = getSmartTime(reminder.date, reminder.time);
-      return `🔔 <b>REMINDER</b>\n\n📝 <b>${reminder.text}</b>\n\n📌 Status: ${status.emoji} ${status.label}\n⏰ ${smartTime}\n⚡ Priority: ${reminder.priority || 'MEDIUM'}\n` +
-        (reminder.assigned_to_chat_id && reminder.creator_name ? `\n📨 From: ${reminder.creator_name}\n` : '') + `\n━━━━━━━━━━━━━━━`;
+
+      if (!userConfig) {
+        const statusMap: any = { 'todo': { label: 'To Do', emoji: '⚪' }, 'in_progress': { label: 'In Progress', emoji: '🟡' }, 'done': { label: 'Done', emoji: '🟢' } };
+        const status = statusMap[reminder.status || 'todo'] || statusMap['todo'];
+        const smartTime = getSmartTime(reminder.date, reminder.time);
+        return `🔔 <b>REMINDER</b>\n\n📝 <b>${plainText}</b>\n\n📌 Status: ${status.emoji} ${status.label}\n⏰ ${smartTime}\n⚡ Priority: ${reminder.priority || 'MEDIUM'}\n` +
+          (reminder.assigned_to_chat_id && reminder.creator_name ? `\n📨 From: ${reminder.creator_name}\n` : '') + `\n━━━━━━━━━━━━━━━`;
+      }
+
+      let formattedText = `<b>${plainText}</b>`;
+      if (userConfig.textStyle === 'spoiler') {
+        formattedText = `<tg-spoiler><b>${plainText}</b></tg-spoiler>`;
+      } else if (userConfig.textStyle === 'quote') {
+        formattedText = `<blockquote>${plainText}</blockquote>`;
+      } else if (userConfig.textStyle === 'monospace') {
+        formattedText = `<code>${plainText}</code>`;
+      }
+
+      let body = `🔔 <b>REMINDER</b>\n\n📝 ${formattedText}\n\n`;
+
+      if (userConfig.showStatus !== false) {
+        const statusMap: any = { 'todo': { label: 'To Do', emoji: '⚪' }, 'in_progress': { label: 'In Progress', emoji: '🟡' }, 'done': { label: 'Done', emoji: '🟢' } };
+        const status = statusMap[reminder.status || 'todo'] || statusMap['todo'];
+        body += `📌 Status: ${status.emoji} ${status.label}\n`;
+      }
+
+      if (userConfig.showTime !== false) {
+        const smartTime = getSmartTime(reminder.date, reminder.time);
+        body += `⏰ ${smartTime}\n`;
+      }
+
+      if (userConfig.showPriority !== false) {
+        body += `⚡ Priority: ${reminder.priority || 'MEDIUM'}\n`;
+      }
+
+      if (userConfig.showCreator !== false && reminder.assigned_to_chat_id && reminder.creator_name) {
+        body += `\n📨 From: ${reminder.creator_name}\n`;
+      }
+
+      body += `\n━━━━━━━━━━━━━━━`;
+      return body;
+    }
+
+    function getKeyboard(reminder: any, userConfig?: any) {
+      const currentStatus = reminder.status || (reminder.done ? 'done' : 'todo');
+      const webAppUrl = process.env.WEBAPP_URL || 'https://frontend-dev-production-b4d9.up.railway.app';
+
+      if (!userConfig || !userConfig.buttons) {
+        const editBtn = { text: '📝 Edit', callback_data: `edit_${reminder.id}` };
+        const deleteBtn = { text: '❌ Delete', callback_data: `delete_${reminder.id}` };
+
+        if (currentStatus === 'done') {
+          return { inline_keyboard: [[editBtn, deleteBtn]] };
+        }
+        if (currentStatus === 'in_progress') {
+          return {
+            inline_keyboard: [
+              [{ text: '🟢 Done', callback_data: `status_done_${reminder.id}` }],
+              [editBtn, deleteBtn]
+            ]
+          };
+        }
+        return {
+          inline_keyboard: [
+            [{ text: '🟡 In Progress', callback_data: `status_progress_${reminder.id}` }],
+            [editBtn, deleteBtn]
+          ]
+        };
+      }
+
+      const buttons = userConfig.buttons;
+      const rows: any[][] = [];
+      const primaryRow: any[] = [];
+
+      if (buttons.statusToggle !== false) {
+        if (currentStatus === 'in_progress') {
+          primaryRow.push({ text: '🟢 Done', callback_data: `status_done_${reminder.id}` });
+        } else if (currentStatus !== 'done') {
+          primaryRow.push({ text: '🟡 In Progress', callback_data: `status_progress_${reminder.id}` });
+        }
+      }
+
+      if (buttons.snooze15) {
+        primaryRow.push({ text: '⏰ +15m', callback_data: `snooze_15_${reminder.id}` });
+      }
+
+      if (primaryRow.length > 0) {
+        rows.push(primaryRow);
+      }
+
+      const secondaryRow: any[] = [];
+      if (buttons.edit !== false) {
+        secondaryRow.push({ text: '📝 Edit', callback_data: `edit_${reminder.id}` });
+      }
+      if (buttons.dismissMsg) {
+        secondaryRow.push({ text: '🗑 Dismiss', callback_data: `dismiss_${reminder.id}` });
+      }
+      if (buttons.deleteTask !== false) {
+        secondaryRow.push({ text: '❌ Delete', callback_data: `delete_${reminder.id}` });
+      }
+      if (secondaryRow.length > 0) {
+        rows.push(secondaryRow);
+      }
+
+      if (buttons.openApp) {
+        rows.push([{ text: '🚀 Open Remigram', web_app: { url: webAppUrl } }]);
+      }
+
+      return { inline_keyboard: rows.length > 0 ? rows : [[{ text: '📝 Edit', callback_data: `edit_${reminder.id}` }]] };
     }
 
     async function sendNotification(chatId: number, reminder: any): Promise<number | false> {
       try {
-        const message = formatNotification(reminder);
+        let userConfig: any = null;
+        try {
+          const { rows } = await db.query(`SELECT notification_config FROM user_settings WHERE user_id = $1`, [chatId]);
+          if (rows[0]?.notification_config) {
+            userConfig = typeof rows[0].notification_config === 'string' ? JSON.parse(rows[0].notification_config) : rows[0].notification_config;
+          }
+        } catch {}
+
+        const message = formatNotification(reminder, userConfig);
+        const keyboard = getKeyboard(reminder, userConfig);
         const msg = await bot.telegram.sendMessage(chatId, message, {
           parse_mode: 'HTML',
-          reply_markup: {
-            inline_keyboard: [
-              [
-                { text: '📝 Edit', callback_data: `edit_${reminder.id}` },
-                { text: '🟡 In Progress', callback_data: `status_progress_${reminder.id}` },
-                { text: '❌ Delete', callback_data: `delete_${reminder.id}` }
-              ]
-            ]
-          }
+          reply_markup: keyboard
         });
         return msg.message_id;
       } catch (error) {

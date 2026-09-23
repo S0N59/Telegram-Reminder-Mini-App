@@ -1,0 +1,6404 @@
+/* ==========================================================================
+   TELEGRAM POST EDITOR — REMIGRAM LIQUID GLASS THEME & TELEGRAM CANVAS
+   ========================================================================== */
+
+.telegram-post-editor-page {
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100vh - 120px);
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 6px 90px;
+  box-sizing: border-box;
+}
+
+/* ── Top Safe Area Frosted Guard ── */
+.editor-top-safe-guard {
+  display: none;
+}
+
+@media (max-width: 900px) {
+  .editor-top-safe-guard {
+    display: block;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: max(
+      env(safe-area-inset-top, 0px),
+      var(--tg-content-safe-area-inset-top, 0px),
+      var(--app-top-safe-area, 0px),
+      64px
+    );
+    background: rgba(8, 8, 10, 0.76);
+    backdrop-filter: blur(28px) saturate(180%);
+    -webkit-backdrop-filter: blur(28px) saturate(180%);
+    z-index: 180;
+    pointer-events: none;
+    mask-image: linear-gradient(to bottom, black 65%, transparent 100%);
+    -webkit-mask-image: linear-gradient(to bottom, black 65%, transparent 100%);
+  }
+}
+
+/* ── Top Navigation Bar ── */
+.editor-top-nav.docs-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 4px 10px;
+  border-bottom: none;
+  margin-bottom: 4px;
+  gap: 6px;
+}
+
+.top-nav-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+/* ── Back Button — Sleek Liquid Glass Circle ── */
+.editor-back-btn-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 0.5px solid rgba(255, 255, 255, 0.14);
+  color: #ffffff;
+  cursor: pointer;
+  transition: all 0.16s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+  flex-shrink: 0;
+}
+
+.editor-back-btn-icon:hover {
+  background: rgba(255, 255, 255, 0.16);
+  border-color: rgba(255, 255, 255, 0.25);
+  transform: translateY(-1px);
+}
+
+.editor-back-btn-icon:active {
+  transform: scale(0.92);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* ── Channel Selector Pill ── */
+.editor-channel-picker-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 36px;
+  padding: 0 12px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 0.5px solid rgba(255, 255, 255, 0.14);
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.16s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  flex-shrink: 0;
+}
+
+.editor-channel-picker-btn:hover {
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.22);
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
+.editor-channel-picker-btn:active {
+  transform: scale(0.94);
+}
+
+.editor-channel-picker-btn:not(.has-channel) {
+  background: rgba(255, 255, 255, 0.05);
+  border: 0.5px dashed rgba(255, 255, 255, 0.24);
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.editor-channel-picker-btn:not(.has-channel):hover {
+  background: rgba(36, 129, 204, 0.12);
+  border-color: rgba(56, 189, 248, 0.45);
+  color: #38bdf8;
+}
+
+.editor-channel-picker-btn.has-channel {
+  background: rgba(36, 129, 204, 0.16);
+  border-color: rgba(36, 129, 204, 0.35);
+  color: #38bdf8;
+}
+
+.editor-channel-picker-btn.has-channel:hover {
+  background: rgba(36, 129, 204, 0.24);
+  border-color: rgba(36, 129, 204, 0.5);
+}
+
+/* ── Primary Publish Button — Telegram Blue ── */
+.editor-publish-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 36px;
+  padding: 0 16px;
+  border-radius: 18px;
+  background: linear-gradient(135deg, #2481cc 0%, #1a6db0 100%);
+  border: 0.5px solid rgba(255, 255, 255, 0.18);
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 2px 12px rgba(36, 129, 204, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  transition: all 0.16s cubic-bezier(0.16, 1, 0.3, 1);
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.editor-publish-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #2b93e6 0%, #207dc9 100%);
+  box-shadow: 0 4px 16px rgba(36, 129, 204, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  transform: translateY(-1px);
+}
+
+.editor-publish-btn:active:not(:disabled) {
+  transform: scale(0.95);
+  box-shadow: 0 1px 6px rgba(36, 129, 204, 0.25);
+}
+
+.editor-publish-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.publish-btn-text {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+/* ── Action Circle Buttons (More & Clear Post) — Sleek Liquid Glass ── */
+.editor-more-btn-icon,
+.editor-clear-btn-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 0.5px solid rgba(255, 255, 255, 0.14);
+  color: rgba(255, 255, 255, 0.85);
+  cursor: pointer;
+  transition: all 0.16s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+  flex-shrink: 0;
+  padding: 0;
+  margin: 0;
+  outline: none;
+}
+
+.editor-more-btn-icon:hover {
+  background: rgba(255, 255, 255, 0.16);
+  border-color: rgba(255, 255, 255, 0.25);
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
+.editor-more-btn-icon:active {
+  transform: scale(0.92);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.editor-clear-btn-icon:hover {
+  background: rgba(255, 59, 48, 0.18);
+  border-color: rgba(255, 59, 48, 0.38);
+  color: #ff6b64;
+  transform: translateY(-1px);
+}
+
+.editor-clear-btn-icon:active {
+  transform: scale(0.92);
+  background: rgba(255, 59, 48, 0.24);
+}
+
+.clear-confirm-modal {
+  max-width: 380px;
+  padding: 20px;
+}
+
+.clear-confirm-icon-badge {
+  background: rgba(255, 59, 48, 0.16) !important;
+  border-color: rgba(255, 59, 48, 0.35) !important;
+  color: #ff6b64 !important;
+  flex-shrink: 0;
+}
+
+.clear-confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.clear-confirm-actions .link-btn-cancel {
+  min-height: 38px;
+  border-radius: 10px;
+  padding: 8px 16px;
+}
+
+.clear-confirm-danger-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 38px;
+  border: none;
+  border-radius: 10px;
+  padding: 8px 16px;
+  background: #ff3b30;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.clear-confirm-danger-btn:hover {
+  background: #e0342b;
+}
+
+.clear-confirm-danger-btn:active {
+  transform: scale(0.97);
+}
+
+/* ── Top Nav Right Actions ── */
+.top-nav-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+/* ── Preview Button — Sleek Minimalist Pill ── */
+.mobile-preview-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 36px;
+  padding: 0 12px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 0.5px solid rgba(255, 255, 255, 0.14);
+  color: #ffffff;
+  font-size: 12.5px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.16s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.preview-btn-label,
+.nav-action-label {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: inherit;
+}
+
+.mobile-only {
+  display: none;
+}
+
+.mobile-preview-toggle-btn:hover {
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.22);
+  transform: translateY(-1px);
+}
+
+.mobile-preview-toggle-btn:active {
+  transform: scale(0.94);
+}
+
+.mobile-preview-count {
+  font-size: 11px;
+  font-weight: 700;
+  background: rgba(255, 255, 255, 0.12);
+  padding: 2px 6px;
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.85);
+  line-height: 1.2;
+}
+
+.mobile-preview-count.over-limit {
+  background: rgba(255, 59, 48, 0.25);
+  color: #ff3b30;
+}
+
+.docs-more-menu-container {
+  position: relative;
+}
+
+.docs-menu-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 400;
+}
+
+.docs-popover-menu {
+  position: absolute;
+  top: 42px;
+  right: 0;
+  width: 220px;
+  background: rgba(26, 28, 34, 0.96);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 0.5px solid rgba(255, 255, 255, 0.14);
+  border-radius: 14px;
+  padding: 6px;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.6);
+  z-index: 500;
+  display: flex;
+  flex-direction: column;
+}
+
+.docs-popover-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.45);
+  padding: 6px 10px 4px;
+  letter-spacing: 0.05em;
+}
+
+.docs-popover-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.12s ease;
+  text-align: left;
+}
+
+.docs-popover-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+}
+
+.docs-popover-item.danger {
+  color: #ff3b30;
+}
+
+.docs-popover-item.danger:hover {
+  background: rgba(255, 59, 48, 0.12);
+}
+
+.docs-popover-divider {
+  height: 0.5px;
+  background: rgba(255, 255, 255, 0.08);
+  margin: 4px 0;
+}
+
+/* ── Document Page Sheet (Google Docs Style) ── */
+.docs-document-sheet {
+  background: var(--bg-card, rgba(20, 22, 28, 0.8));
+  border: 0.5px solid var(--border-subtle, rgba(255, 255, 255, 0.1));
+  border-radius: var(--radius-lg, 18px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.docs-page-canvas {
+  padding: 20px 24px;
+  min-height: 420px;
+  cursor: text;
+}
+
+/* ── Top Sticky Formatting Toolbar Island ── */
+.editor-sticky-toolbar-island {
+  position: sticky;
+  top: 4px;
+  z-index: 250;
+  margin: 0 0 12px 0;
+  border-radius: 16px;
+  background: rgba(18, 22, 30, 0.94);
+  backdrop-filter: blur(28px) saturate(190%);
+  -webkit-backdrop-filter: blur(28px) saturate(190%);
+  border: 0.5px solid rgba(255, 255, 255, 0.13);
+  box-shadow: 0 10px 32px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  overflow: visible !important;
+}
+
+/* ── Formatting Toolbar Inside Island ── */
+.docs-formatting-toolbar {
+  display: flex;
+  align-items: center;
+  background: transparent;
+  padding: 6px 8px;
+  overflow: visible !important;
+  border: none;
+}
+
+.docs-formatting-toolbar.mobile-sticky-toolbar {
+  border: none;
+  padding: 6px 8px;
+  box-shadow: none;
+}
+
+.toolbar-scroll-track {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding: 2px 0;
+  width: 100%;
+}
+
+.toolbar-scroll-track::-webkit-scrollbar {
+  display: none;
+}
+
+.toolbar-btn-group {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  flex-shrink: 0;
+}
+
+.toolbar-v-divider {
+  width: 1px;
+  height: 22px;
+  background: rgba(255, 255, 255, 0.12);
+  margin: 0 5px;
+  flex-shrink: 0;
+}
+
+.docs-formatting-toolbar .toolbar-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: transparent;
+  border: 0.5px solid transparent;
+  color: rgba(255, 255, 255, 0.75);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.12s ease;
+  flex-shrink: 0;
+}
+
+.docs-formatting-toolbar .toolbar-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
+.docs-formatting-toolbar .toolbar-btn:disabled {
+  opacity: 0.25;
+  cursor: not-allowed;
+}
+
+.docs-formatting-toolbar .toolbar-btn:active:not(:disabled) {
+  transform: scale(0.92);
+}
+
+.docs-formatting-toolbar .toolbar-btn.active {
+  background: rgba(51, 144, 236, 0.24);
+  color: #50a7fb;
+  border-color: rgba(51, 144, 236, 0.45);
+}
+
+.docs-formatting-toolbar .toolbar-btn.spoiler-btn {
+  width: 48px;
+  gap: 3px;
+}
+
+.tg-tag {
+  font-size: 8.5px;
+  font-weight: 800;
+  background: #3390ec;
+  color: #ffffff;
+  padding: 1px 3px;
+  border-radius: 4px;
+  line-height: 10px;
+}
+
+.toolbar-counter-pill {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.4);
+  flex-shrink: 0;
+  padding-left: 12px;
+}
+
+.counter-chars.near-limit {
+  color: #ff9500;
+  font-weight: 600;
+}
+
+.counter-chars.over-limit {
+  color: #ff3b30;
+  font-weight: 700;
+}
+
+/* ── Lists inside Tiptap ── */
+.telegram-prose-editor ul.tiptap-bullet-list {
+  list-style-type: disc;
+  padding-left: 24px;
+  margin: 8px 0;
+}
+
+.telegram-prose-editor ol.tiptap-ordered-list {
+  list-style-type: decimal;
+  padding-left: 24px;
+  margin: 8px 0;
+}
+
+.telegram-prose-editor li {
+  margin-bottom: 4px;
+}
+
+/* ── Workspace Layout ── */
+.editor-workspace-layout {
+  display: grid;
+  gap: 16px;
+  width: 100%;
+}
+
+.editor-workspace-layout.desktop-mode {
+  grid-template-columns: 1.15fr 0.85fr;
+  align-items: start;
+}
+
+.editor-workspace-layout.mobile-mode {
+  grid-template-columns: 1fr;
+}
+
+/* ── Editor Card ── */
+.editor-main-card {
+  background: var(--bg-card, rgba(20, 20, 24, 0.75));
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 0.5px solid var(--border-subtle, rgba(255, 255, 255, 0.1));
+  border-radius: var(--radius-lg, 18px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+}
+
+/* ── Toolbar ── */
+.editor-toolbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 8px 12px;
+  background: rgba(16, 16, 20, 0.85);
+  border-bottom: 0.5px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
+}
+
+.toolbar-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.toolbar-divider {
+  width: 1px;
+  height: 20px;
+  background: var(--border-subtle, rgba(255, 255, 255, 0.12));
+  margin: 0 4px;
+}
+
+.toolbar-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  background: transparent;
+  border: 0.5px solid transparent;
+  color: var(--text-secondary, rgba(255, 255, 255, 0.7));
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.toolbar-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+}
+
+.toolbar-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.toolbar-btn.active {
+  background: var(--accent-color-light, rgba(200, 255, 0, 0.15));
+  color: var(--accent-color, #c8ff00);
+  border-color: rgba(200, 255, 0, 0.3);
+}
+
+.toolbar-btn.spoiler-btn {
+  width: 46px;
+}
+
+.btn-badge {
+  font-size: 9px;
+  font-weight: 700;
+  margin-left: 2px;
+  background: #3390ec;
+  color: #ffffff;
+  padding: 0 3px;
+  border-radius: 4px;
+  line-height: 12px;
+}
+
+.toolbar-stats {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 11px;
+  color: var(--text-tertiary, rgba(255, 255, 255, 0.4));
+}
+
+.stats-char-count.near-limit {
+  color: #ff9500;
+  font-weight: 600;
+}
+
+.stats-char-count.over-limit {
+  color: #ff3b30;
+  font-weight: 700;
+}
+
+/* ── Main Workspace Layout & Desktop Split Screen ── */
+.editor-workspace-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: 100%;
+}
+
+@media (min-width: 900px) {
+  .editor-workspace-layout.desktop-mode {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+    align-items: stretch;
+    min-height: calc(100vh - 220px);
+  }
+
+  .editor-workspace-layout.desktop-mode .editor-main-card.docs-document-sheet {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: calc(100vh - 220px);
+    overflow: hidden;
+    background: rgba(18, 18, 22, 0.75);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 18px;
+  }
+
+  .editor-workspace-layout.desktop-mode .editor-scrollable-area {
+    flex: 1;
+    min-height: calc(100vh - 300px);
+    max-height: calc(100vh - 240px);
+    overflow-y: auto;
+    padding: 20px 24px;
+  }
+
+  .editor-workspace-layout.desktop-mode .editor-preview-card {
+    height: 100%;
+    min-height: calc(100vh - 220px);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: rgba(18, 18, 22, 0.75);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 18px;
+  }
+
+  .editor-workspace-layout.desktop-mode .telegram-preview-container {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .editor-workspace-layout.desktop-mode .tg-canvas-pattern {
+    flex: 1;
+    min-height: calc(100vh - 340px);
+    max-height: calc(100vh - 300px);
+    overflow-y: auto;
+  }
+}
+
+/* ── Editor Scrollable Area ── */
+.editor-scrollable-area {
+  min-height: 380px;
+  max-height: 600px;
+  overflow-y: auto;
+  padding: 16px 20px;
+  cursor: text;
+}
+
+.telegram-prose-editor {
+  min-height: 350px;
+  outline: none;
+  font-family: var(--font-family, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--text-primary, #ffffff);
+}
+
+.telegram-prose-editor p {
+  margin-bottom: 0.75em;
+}
+
+.telegram-prose-editor b,
+.telegram-prose-editor strong {
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.telegram-prose-editor i,
+.telegram-prose-editor em {
+  font-style: italic;
+}
+
+.telegram-prose-editor u {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.telegram-prose-editor s,
+.telegram-prose-editor strike {
+  text-decoration: line-through;
+  opacity: 0.85;
+}
+
+.telegram-prose-editor .editor-spoiler-text {
+  background: rgba(255, 255, 255, 0.15);
+  border: 0.5px dashed #3390ec;
+  border-radius: 4px;
+  padding: 1px 5px;
+  color: #8ac0f6;
+  cursor: pointer;
+}
+
+.telegram-prose-editor code {
+  font-family: 'SFMono-Regular', Consolas, Menlo, Monaco, monospace;
+  font-size: 13.5px;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 2px 6px;
+  border-radius: 5px;
+  color: #ff9500;
+}
+
+.telegram-prose-editor .tiptap-code-block {
+  background: rgba(10, 10, 14, 0.9);
+  border: 0.5px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 12px 16px;
+  margin: 12px 0;
+  font-family: 'SFMono-Regular', Consolas, Menlo, Monaco, monospace;
+  font-size: 13px;
+  color: #f0f0f0;
+  overflow-x: auto;
+}
+
+.telegram-prose-editor .tiptap-code-block code {
+  background: transparent;
+  padding: 0;
+  color: inherit;
+}
+
+.telegram-prose-editor .tiptap-blockquote {
+  border-left: 3.5px solid #3390ec;
+  background: rgba(51, 144, 236, 0.08);
+  margin: 10px 0;
+  padding: 8px 14px;
+  border-radius: 0 10px 10px 0;
+  color: rgba(255, 255, 255, 0.9);
+  font-style: italic;
+}
+
+.telegram-prose-editor .tiptap-link {
+  color: #3390ec;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+/* ── Headings (Telegram Rich Messages) ── */
+.telegram-prose-editor h1,
+.tg-bubble-html-content h1 {
+  font-size: 20px;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 14px 0 6px;
+  line-height: 1.3;
+}
+
+.telegram-prose-editor h2,
+.tg-bubble-html-content h2 {
+  font-size: 17px;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 12px 0 4px;
+  line-height: 1.35;
+}
+
+/* ── Task Checklist (Telegram Rich Messages) ── */
+.telegram-prose-editor ul[data-type="taskList"],
+.telegram-prose-editor .tg-task-list-node,
+.tg-bubble-html-content ul.tg-task-list {
+  list-style: none !important;
+  padding-left: 0 !important;
+  margin: 8px 0;
+}
+
+.telegram-prose-editor li[data-type="taskItem"],
+.telegram-prose-editor .tg-task-item-node,
+.tg-bubble-html-content ul.tg-task-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 5px;
+  list-style: none !important;
+}
+
+.telegram-prose-editor li[data-type="taskItem"] input[type="checkbox"],
+.tg-bubble-html-content ul.tg-task-list input[type="checkbox"] {
+  accent-color: #3390ec;
+  width: 17px;
+  height: 17px;
+  margin-top: 3px;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.telegram-prose-editor li[data-type="taskItem"] div {
+  flex: 1;
+}
+
+/* ── Tables (Telegram Rich Messages) ── */
+.telegram-prose-editor table,
+.telegram-prose-editor .tg-table-node,
+.tg-bubble-html-content table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 12px 0;
+  border: 0.5px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  overflow: hidden;
+  font-size: 13.5px;
+}
+
+.telegram-prose-editor th,
+.telegram-prose-editor td,
+.tg-bubble-html-content th,
+.tg-bubble-html-content td {
+  border: 0.5px solid rgba(255, 255, 255, 0.12);
+  padding: 6px 10px;
+  text-align: left;
+}
+
+.telegram-prose-editor th,
+.tg-bubble-html-content th {
+  background: rgba(51, 144, 236, 0.18);
+  color: #72b9f8;
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.telegram-prose-editor td,
+.tg-bubble-html-content td {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.toolbar-btn.table-action-btn {
+  width: auto;
+  padding: 0 6px;
+  gap: 3px;
+  background: rgba(51, 144, 236, 0.15);
+  color: #64b5f6;
+  border: 0.5px solid rgba(51, 144, 236, 0.3);
+}
+
+/* Mobile Char Strip */
+.mobile-char-strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px;
+  background: rgba(16, 16, 20, 0.9);
+  border-top: 0.5px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
+  font-size: 11px;
+  color: var(--text-tertiary, rgba(255, 255, 255, 0.45));
+}
+
+.mobile-char-strip .over-limit {
+  color: #ff3b30;
+  font-weight: 700;
+}
+
+/* ── Floating Bubble Menu ── */
+.floating-bubble-menu {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 5px 8px;
+  background: rgba(25, 25, 30, 0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 0.5px solid rgba(255, 255, 255, 0.18);
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+
+.bubble-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 6px;
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.8);
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.bubble-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+}
+
+.bubble-btn.active {
+  background: var(--accent-color-light, rgba(200, 255, 0, 0.2));
+  color: var(--accent-color, #c8ff00);
+}
+
+.bubble-btn.bubble-spoiler {
+  color: #8ac0f6;
+}
+
+.bubble-divider {
+  width: 1px;
+  height: 18px;
+  background: rgba(255, 255, 255, 0.15);
+  margin: 0 4px;
+}
+
+/* ── Telegram Live Preview Card ── */
+.editor-preview-card {
+  background: var(--bg-card, rgba(20, 20, 24, 0.75));
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 0.5px solid var(--border-subtle, rgba(255, 255, 255, 0.1));
+  border-radius: var(--radius-lg, 18px);
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+}
+
+.telegram-preview-container {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.tg-preview-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: rgba(18, 25, 34, 0.9);
+  border-bottom: 0.5px solid rgba(255, 255, 255, 0.08);
+}
+
+.tg-channel-profile {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.tg-channel-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #3390ec, #1f74cf);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 14px;
+  color: #ffffff;
+}
+
+.tg-channel-avatar img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.tg-channel-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.tg-channel-title {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.tg-channel-meta {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+/* ── Modern Segmented Export Capsule in Preview Header ── */
+.tg-export-segmented-bar {
+  display: inline-flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.05);
+  border: 0.5px solid rgba(255, 255, 255, 0.1);
+  border-radius: 9px;
+  padding: 2px;
+  gap: 1px;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.tg-export-segment {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 24px;
+  padding: 0 8px;
+  border-radius: 6px;
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.12s ease;
+  white-space: nowrap;
+}
+
+.tg-export-segment:hover {
+  background: rgba(255, 255, 255, 0.09);
+  color: #ffffff;
+}
+
+.tg-export-segment:active {
+  transform: scale(0.95);
+}
+
+.tg-export-segment.copied {
+  background: rgba(34, 197, 94, 0.2) !important;
+  color: #4ade80 !important;
+  font-weight: 600;
+}
+
+.tg-export-segment.tg-segment-json {
+  color: rgba(56, 189, 248, 0.85);
+}
+
+.tg-export-segment.tg-segment-json:hover {
+  background: rgba(56, 189, 248, 0.12);
+  color: #38bdf8;
+}
+
+/* Telegram Canvas Wallpaper */
+.tg-canvas-pattern {
+  background-color: #0f1621;
+  background-image: radial-gradient(#1e2c3d 1px, transparent 1px);
+  background-size: 16px 16px;
+  min-height: 380px;
+  padding: 26px 20px;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+}
+
+.tg-message-row {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: 580px;
+  margin: 0 auto;
+}
+
+/* Authentic Telegram Channel Post Bubble */
+.tg-post-bubble {
+  background: #212d3b;
+  border-radius: 14px;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.32);
+  width: 100%;
+  padding: 14px 16px 12px;
+  position: relative;
+  word-break: break-word;
+  box-sizing: border-box;
+}
+
+.tg-bubble-body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  font-size: 14.5px;
+  line-height: 1.45;
+  color: #f5f5f5;
+}
+
+.tg-preview-empty-text {
+  color: rgba(255, 255, 255, 0.4);
+  font-style: italic;
+  font-size: 13.5px;
+}
+
+.tg-bubble-html-content p {
+  margin-bottom: 6px;
+}
+
+.tg-bubble-html-content p:last-child {
+  margin-bottom: 0;
+}
+
+.tg-bubble-html-content b,
+.tg-bubble-html-content strong {
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.tg-bubble-html-content i,
+.tg-bubble-html-content em {
+  font-style: italic;
+}
+
+.tg-bubble-html-content u {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.tg-bubble-html-content s,
+.tg-bubble-html-content strike {
+  text-decoration: line-through;
+  opacity: 0.8;
+}
+
+.tg-bubble-html-content code {
+  font-family: 'SFMono-Regular', Consolas, Menlo, monospace;
+  font-size: 13px;
+  background: rgba(0, 0, 0, 0.25);
+  padding: 2px 5px;
+  border-radius: 4px;
+  color: #e59344;
+}
+
+.tg-bubble-html-content pre {
+  background: #17212b;
+  border: 0.5px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin: 6px 0;
+  font-family: 'SFMono-Regular', Consolas, Menlo, monospace;
+  font-size: 12.5px;
+  color: #8be9fd;
+  overflow-x: auto;
+}
+
+.tg-bubble-html-content pre code {
+  background: transparent;
+  padding: 0;
+  color: inherit;
+}
+
+.tg-bubble-html-content blockquote {
+  border-left: 3px solid #64b5f6;
+  background: rgba(100, 181, 246, 0.08);
+  margin: 6px 0;
+  padding: 6px 10px;
+  border-radius: 0 6px 6px 0;
+  color: #e3f2fd;
+  font-style: italic;
+}
+
+/* Telegram Preview Headings — official scale: H1 smallest, H6 largest */
+.tg-preview-heading {
+  margin: 6px 0 10px 0;
+  line-height: 1.35;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+/* Telegram Preview Expandable Quote */
+.tg-preview-expandable-wrap {
+  border-left: 3px solid #64b5f6;
+  background: rgba(100, 181, 246, 0.08);
+  border-radius: 4px 10px 10px 4px;
+  padding: 10px 14px 8px;
+  margin: 10px 0;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease;
+  user-select: none;
+}
+
+.tg-preview-expandable-wrap:hover {
+  background: rgba(100, 181, 246, 0.13);
+  border-left-color: #90caf9;
+}
+
+.tg-preview-expandable-wrap .tg-expandable-body {
+  margin: 0;
+  padding: 0;
+  font-size: 14px;
+  line-height: 1.45;
+  color: #e2e8f0;
+  font-style: normal;
+}
+
+.tg-preview-expandable-wrap .tg-expandable-body.collapsed {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.tg-preview-expandable-wrap .tg-expandable-body.expanded {
+  display: block;
+}
+
+.tg-preview-expandable-wrap .tg-expandable-toggle {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #64b5f6;
+  user-select: none;
+}
+
+.tg-preview-expandable-wrap .tg-expandable-chevron {
+  font-size: 10px;
+}
+
+/* Telegram Preview Task Checklist */
+.tg-preview-task-list {
+  list-style: none;
+  padding: 0;
+  margin: 8px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.tg-task-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 14px;
+  color: #e2e8f0;
+  line-height: 1.4;
+}
+
+/* Telegram delivers the checklist as plain text prefixed with ☑ / ☐, so a
+   checked item must read exactly like an unchecked one. */
+.tg-task-item.is-checked {
+  color: inherit;
+  text-decoration: none;
+}
+
+.tg-task-checkbox {
+  color: #38bdf8;
+  font-weight: bold;
+  user-select: none;
+}
+
+/* Telegram Preview Editorial Pull Quote */
+.tg-preview-pullquote {
+  display: flex;
+  gap: 12px;
+  margin: 12px 0;
+  padding: 10px 14px;
+  background: rgba(0, 210, 255, 0.08);
+  border-radius: 8px;
+  border-left: 3px solid #00d2ff;
+}
+
+.tg-pullquote-body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.tg-pullquote-text {
+  font-size: 14.5px;
+  font-style: italic;
+  color: #e0f2fe;
+}
+
+.tg-pullquote-author {
+  font-size: 12px;
+  color: #7dd3fc;
+  font-weight: 500;
+}
+
+/* Telegram Preview Map & Citation */
+.tg-preview-map {
+  padding: 8px 12px;
+  margin: 8px 0;
+  background: rgba(239, 68, 68, 0.1);
+  border-radius: 8px;
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  font-size: 13px;
+}
+
+.tg-map-badge {
+  font-weight: 600;
+  color: #f87171;
+}
+
+.tg-map-meta {
+  font-size: 11px;
+  color: #cbd5e1;
+  margin-top: 2px;
+}
+
+/* Footnotes go out as a normal text line: "<b>[1]</b> text [link]" */
+.tg-preview-ref {
+  margin: 4px 0 6px;
+  color: inherit;
+}
+
+.tg-ref-badge {
+  color: #38bdf8;
+  font-weight: 600;
+}
+
+.tg-bubble-html-content hr,
+.tg-preview-divider {
+  border: none;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.16);
+  margin: 12px 0;
+  border-radius: 1px;
+}
+
+.tg-bubble-html-content ul:has(li[checkbox]),
+.tg-preview-task-list {
+  list-style: none;
+  padding-left: 0;
+  margin: 8px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.tg-bubble-html-content li[checkbox] {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.tg-bubble-html-content li[checkbox]::before {
+  content: '☐';
+  color: #38bdf8;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.tg-bubble-html-content li[checkbox][checked]::before {
+  content: '☑';
+}
+
+.tg-bubble-html-content aside,
+.tg-preview-pullquote {
+  margin: 10px 0;
+  padding: 10px 14px;
+  border-left: 3px solid #00d2ff;
+  background: rgba(0, 210, 255, 0.08);
+  border-radius: 0 10px 10px 0;
+}
+
+.tg-bubble-html-content aside cite,
+.tg-preview-pullquote cite {
+  display: block;
+  margin-top: 6px;
+  font-size: 12px;
+  color: #94a3b8;
+  font-style: italic;
+}
+
+.tg-bubble-html-content a {
+  color: #64b5f6;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* Telegram Interactive Spoiler Animation */
+.tg-preview-spoiler {
+  background: #121820;
+  background-image: repeating-linear-gradient(45deg, rgba(255,255,255,0.06), rgba(255,255,255,0.06) 4px, transparent 4px, transparent 8px);
+  color: transparent;
+  user-select: none;
+  cursor: pointer;
+  padding: 1px 4px;
+  border-radius: 4px;
+  transition: all 0.25s ease;
+}
+
+.tg-preview-spoiler.revealed {
+  background: transparent;
+  color: inherit;
+  user-select: auto;
+}
+
+.tg-bubble-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 4px;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.tg-footer-views {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.tg-preview-bottom-stats {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  padding: 8px 12px;
+  background: rgba(16, 22, 30, 0.95);
+  border-top: 0.5px solid rgba(255, 255, 255, 0.08);
+}
+
+.tg-stats-col {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+}
+
+.tg-stat-label {
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.tg-stat-val {
+  color: #ffffff;
+  font-weight: 600;
+}
+
+/* ── Mobile Preview Sheet Modal ── */
+.mobile-preview-sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+
+.mobile-preview-sheet-content {
+  background: #141b24;
+  border-radius: 20px 20px 0 0;
+  border-top: 0.5px solid rgba(255, 255, 255, 0.15);
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.6);
+}
+
+.sheet-drag-handle {
+  width: 36px;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.25);
+  border-radius: 2px;
+  margin: 10px auto 4px;
+}
+
+.sheet-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px 12px;
+  border-bottom: 0.5px solid rgba(255, 255, 255, 0.08);
+}
+
+.sheet-title-col {
+  display: flex;
+  flex-direction: column;
+}
+
+.sheet-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.sheet-subtitle {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.sheet-close-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  border: none;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.sheet-body {
+  overflow-y: auto;
+  flex: 1;
+}
+
+/* ── Link Modal ── */
+.link-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.link-modal-card {
+  background: rgba(26, 26, 32, 0.95);
+  border: 0.5px solid rgba(255, 255, 255, 0.15);
+  border-radius: 18px;
+  padding: 18px;
+  width: 100%;
+  max-width: 420px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
+}
+
+.link-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.link-modal-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.link-modal-icon {
+  color: #3390ec;
+}
+
+.link-modal-close-btn {
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+}
+
+.link-modal-context {
+  font-size: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 6px 10px;
+  border-radius: 8px;
+  margin-bottom: 12px;
+  display: flex;
+  gap: 6px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.link-context-label {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.link-context-text {
+  color: #ffffff;
+  font-style: italic;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.link-url-input {
+  width: 100%;
+  background: rgba(14, 14, 18, 0.8);
+  border: 0.5px solid rgba(255, 255, 255, 0.15);
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 14px;
+  color: #ffffff;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.link-url-input:focus {
+  border-color: #3390ec;
+  box-shadow: 0 0 0 2px rgba(51, 144, 236, 0.2);
+}
+
+.link-modal-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 16px;
+}
+
+.link-btn-remove {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(255, 59, 48, 0.12);
+  border: 0.5px solid rgba(255, 59, 48, 0.3);
+  color: #ff3b30;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.link-modal-right-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.link-btn-cancel {
+  background: rgba(255, 255, 255, 0.08);
+  border: 0.5px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.7);
+  border-radius: 8px;
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.link-btn-apply {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: #3390ec;
+  border: none;
+  color: #ffffff;
+  border-radius: 8px;
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.link-btn-apply:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.mention-date-modal .link-btn-cancel,
+.mention-date-modal .link-btn-apply {
+  min-height: 36px;
+  border-radius: 10px;
+  padding: 8px 16px;
+}
+
+.mention-date-modal .link-btn-apply {
+  background: rgba(14, 165, 233, 0.22);
+  border: 0.5px solid rgba(14, 165, 233, 0.45);
+  color: #7dd3fc;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.mention-date-modal .link-btn-apply:disabled {
+  opacity: 0.35;
+  color: rgba(125, 211, 252, 0.7);
+}
+
+/* ── Responsive Queries ── */
+@media (max-width: 600px) {
+  .telegram-post-editor-page {
+    padding: 0 4px 80px;
+  }
+
+  .editor-top-nav.docs-header {
+    padding: 6px 2px 8px;
+    gap: 4px;
+  }
+
+  .editor-sticky-toolbar-island {
+    margin: 0 0 8px 0;
+    border-radius: 14px;
+  }
+
+  .docs-formatting-toolbar .toolbar-btn {
+    width: 36px;
+    height: 36px;
+  }
+
+  .editor-scrollable-area {
+    min-height: 300px;
+    max-height: calc(100vh - 200px);
+    padding: 14px 16px 70px;
+  }
+}
+
+/* ?? Channel Picker Button in Top Bar ?? */
+.editor-channel-picker-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 38px;
+  padding: 0 10px;
+  border-radius: 19px;
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 0.5px solid rgba(255, 255, 255, 0.14);
+  color: #e2e8f0;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+  flex-shrink: 0;
+  max-width: 130px;
+}
+
+.editor-channel-picker-btn .channel-picker-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.editor-channel-picker-btn:hover {
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.22);
+}
+
+.editor-channel-picker-btn.has-channel {
+  background: rgba(14, 165, 233, 0.16);
+  border-color: rgba(14, 165, 233, 0.35);
+  color: #38bdf8;
+}
+
+/* ?? Publish Button ?? */
+.editor-publish-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 38px;
+  padding: 0 13px;
+  border-radius: 19px;
+  background: linear-gradient(135deg, #0ea5e9, #2563eb);
+  color: #ffffff;
+  border: none;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 3px 14px rgba(14, 165, 233, 0.4);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  flex-shrink: 0;
+}
+
+.editor-publish-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 5px 18px rgba(14, 165, 233, 0.55);
+}
+
+.editor-publish-btn:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.editor-publish-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ?? Publish Toast ?? */
+.editor-publish-toast {
+  position: fixed;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10000;
+  padding: 10px 20px;
+  border-radius: 20px;
+  font-size: 13.5px;
+  font-weight: 600;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  pointer-events: none;
+}
+
+.editor-publish-toast.success {
+  background: rgba(34, 197, 94, 0.9);
+  color: #ffffff;
+  border: 0.5px solid rgba(255, 255, 255, 0.3);
+}
+
+.editor-publish-toast.error {
+  background: rgba(239, 68, 68, 0.9);
+  color: #ffffff;
+  border: 0.5px solid rgba(255, 255, 255, 0.3);
+}
+
+/* ?? Channel Selector Modal ?? */
+.channel-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.channel-modal-content {
+  background: rgba(24, 24, 28, 0.92);
+  backdrop-filter: blur(32px);
+  -webkit-backdrop-filter: blur(32px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 24px;
+  width: 100%;
+  max-width: 440px;
+  padding: 22px;
+  color: #f1f5f9;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+  max-height: 85vh;
+  overflow-y: auto;
+}
+
+.channel-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.channel-modal-title-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.channel-modal-icon-badge {
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  background: rgba(14, 165, 233, 0.16);
+  border: 1px solid rgba(14, 165, 233, 0.3);
+  color: #38bdf8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.channel-modal-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.channel-modal-sub {
+  margin: 2px 0 0;
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+.channel-modal-close-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: none;
+  color: #94a3b8;
+  width: 32px;
+  height: 32px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.channel-modal-close-btn:hover {
+  background: rgba(255, 255, 255, 0.16);
+  color: #ffffff;
+}
+
+/* Hint Card */
+.channel-modal-hint-card {
+  background: rgba(14, 165, 233, 0.08);
+  border: 1px solid rgba(14, 165, 233, 0.2);
+  border-radius: 14px;
+  padding: 12px 14px;
+  margin-bottom: 16px;
+  font-size: 12px;
+  color: #cbd5e1;
+}
+
+.channel-modal-hint-card .hint-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #38bdf8;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.channel-modal-hint-card .hint-list {
+  margin: 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.channel-modal-hint-card code {
+  background: rgba(0, 0, 0, 0.3);
+  padding: 2px 5px;
+  border-radius: 4px;
+  color: #38bdf8;
+  font-family: monospace;
+}
+
+/* Form */
+.channel-link-form {
+  margin-bottom: 16px;
+}
+
+.channel-input-wrap {
+  display: flex;
+  gap: 8px;
+}
+
+.channel-text-input {
+  flex: 1;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 14px;
+  padding: 10px 14px;
+  color: #ffffff;
+  font-size: 13px;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.channel-text-input:focus {
+  border-color: #0ea5e9;
+  box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.25);
+}
+
+.channel-link-submit-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0 16px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #0ea5e9, #2563eb);
+  color: #ffffff;
+  border: none;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.channel-link-submit-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Alerts */
+.channel-modal-alert {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  font-size: 12px;
+  margin-bottom: 14px;
+}
+
+.channel-modal-alert.error {
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #fca5a5;
+}
+
+.channel-modal-alert.success {
+  background: rgba(34, 197, 94, 0.15);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  color: #86efac;
+}
+
+/* Destinations List */
+.channel-modal-list-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.channel-modal-list-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  font-weight: 600;
+  color: #94a3b8;
+  margin-bottom: 2px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.channels-count-badge {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 2px 7px;
+  border-radius: 10px;
+  font-size: 11px;
+}
+
+.channel-item-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.channel-item-card:hover {
+  background: rgba(255, 255, 255, 0.09);
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
+.channel-item-card.active {
+  background: rgba(14, 165, 233, 0.12);
+  border-color: rgba(14, 165, 233, 0.35);
+}
+
+.channel-item-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+}
+
+.channel-item-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 15px;
+}
+
+.channel-item-avatar.channel {
+  background: rgba(14, 165, 233, 0.2);
+  color: #38bdf8;
+}
+
+.channel-item-avatar.group {
+  background: rgba(168, 85, 247, 0.2);
+  color: #c084fc;
+}
+
+.channel-item-avatar.draft {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.channel-item-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.channel-item-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #ffffff;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.channel-item-handle {
+  font-size: 11.5px;
+  color: #94a3b8;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.channel-item-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.channel-unlink-btn {
+  background: transparent;
+  border: none;
+  color: #64748b;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.channel-unlink-btn:hover {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+}
+
+.channel-radio-indicator {
+  width: 18px;
+  height: 18px;
+  border-radius: 9px;
+  border: 1.5px solid rgba(255, 255, 255, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.channel-item-card.active .channel-radio-indicator {
+  border-color: #0ea5e9;
+}
+
+.channel-radio-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 5px;
+  background: #0ea5e9;
+}
+
+/* ?? KaTeX Math in Preview ?? */
+.tg-katex-block {
+  margin: 12px 0;
+  text-align: center;
+  overflow-x: auto;
+  padding: 6px 0;
+}
+
+.tg-katex-inline {
+  display: inline-block;
+  padding: 0 2px;
+}
+
+/* ?? Expandable Blockquote in Preview ?? */
+.tg-preview-expandable-wrap {
+  margin: 10px 0;
+  border-left: 3px solid #0ea5e9;
+  background: rgba(14, 165, 233, 0.08);
+  border-radius: 4px 10px 10px 4px;
+  overflow: hidden;
+}
+
+.tg-expandable-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 13px;
+  color: #38bdf8;
+  user-select: none;
+}
+
+.tg-expandable-toggle:hover {
+  background: rgba(14, 165, 233, 0.12);
+}
+
+.tg-expandable-chevron {
+  font-size: 10px;
+}
+
+.tg-expandable-body {
+  margin: 0 !important;
+  padding: 8px 12px 12px !important;
+  border-left: none !important;
+  background: transparent !important;
+}
+
+/* ?? Highlight Mark in Editor & Preview ?? */
+.tg-highlight-mark,
+mark {
+  background: rgba(234, 179, 8, 0.35) !important;
+  color: #fef08a !important;
+  border-radius: 3px;
+  padding: 1px 4px;
+}
+
+/* ?? Media Attachment Button in Toolbar ?? */
+.toolbar-btn.media-attach-btn {
+  width: auto !important;
+  padding: 0 10px !important;
+  border-radius: 14px !important;
+}
+
+.toolbar-btn.media-attach-btn.has-items {
+  background: rgba(14, 165, 233, 0.2) !important;
+  color: #38bdf8 !important;
+  border: 1px solid rgba(14, 165, 233, 0.4) !important;
+}
+
+/* ?? Media Collage in Preview ?? */
+.tg-bubble-media-collage {
+  display: grid;
+  gap: 4px;
+  margin: -10px -14px 10px -14px;
+  border-top-left-radius: 16px;
+  border-top-right-radius: 16px;
+  overflow: hidden;
+}
+
+.tg-bubble-media-collage.count-1 {
+  grid-template-columns: 1fr;
+}
+
+.tg-bubble-media-collage.count-2 {
+  grid-template-columns: 1fr 1fr;
+}
+
+.tg-bubble-media-collage.count-3,
+.tg-bubble-media-collage.count-4 {
+  grid-template-columns: 1fr 1fr;
+}
+
+.tg-media-collage-item {
+  width: 100%;
+  max-height: 280px;
+  overflow: hidden;
+  background: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tg-media-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.tg-media-video {
+  width: 100%;
+  max-height: 280px;
+}
+
+.tg-media-audio-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  background: rgba(255, 255, 255, 0.08);
+  width: 100%;
+}
+
+.tg-audio-play-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 18px;
+  background: #0ea5e9;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.tg-audio-info {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.tg-audio-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.tg-audio-url {
+  font-size: 11px;
+  color: #94a3b8;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ?? Inline Buttons in Preview ?? */
+.tg-post-inline-keyboard {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-top: 8px;
+  max-width: 520px;
+}
+
+.tg-inline-keyboard-row {
+  display: flex;
+  gap: 5px;
+}
+
+.tg-inline-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 0.5px solid rgba(255, 255, 255, 0.18);
+  color: #ffffff;
+  font-size: 12.5px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.tg-inline-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.tg-inline-btn-icon {
+  opacity: 0.6;
+}
+
+/* ?? Media & Buttons Modal Styles ?? */
+.media-buttons-modal {
+  max-width: 480px;
+}
+
+.media-modal-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: 10px;
+}
+
+.media-tab-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.06);
+  color: #94a3b8;
+  border: none;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.media-tab-btn.active {
+  background: rgba(14, 165, 233, 0.2);
+  color: #38bdf8;
+  border: 1px solid rgba(14, 165, 233, 0.35);
+}
+
+.media-type-selector {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.media-type-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.05);
+  color: #cbd5e1;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.media-type-btn.active {
+  background: rgba(14, 165, 233, 0.22);
+  color: #38bdf8;
+  border-color: rgba(14, 165, 233, 0.45);
+}
+
+.attached-media-list,
+.attached-buttons-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 14px;
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+.empty-media-hint {
+  font-size: 12px;
+  color: #64748b;
+  text-align: center;
+  padding: 16px 0;
+}
+
+.attached-media-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.attached-media-thumb-wrap {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.media-thumb-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.media-thumb-placeholder {
+  color: #38bdf8;
+}
+
+.attached-media-info {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  margin: 0 10px;
+  overflow: hidden;
+}
+
+.media-item-type {
+  font-size: 11px;
+  font-weight: 700;
+  color: #38bdf8;
+}
+
+.media-item-url {
+  font-size: 11px;
+  color: #94a3b8;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.button-row-preview {
+  display: flex;
+  gap: 8px;
+}
+
+.button-preview-chip {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.button-chip-label {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.button-chip-url {
+  font-size: 11px;
+  color: #64748b;
+  margin: 0 8px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.button-chip-remove {
+  background: transparent;
+  border: none;
+  color: #ef4444;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+}
+
+/* ==========================================================================
+   ENHANCED TOOLBAR & HEADINGS SUITE (MOBILE CATEGORIES & DESKTOP RIBBON)
+   ========================================================================== */
+
+/* ── Authentic Telegram HTML Content with Pre-Wrap ── */
+/* The serializer emits real block elements, so collapsing whitespace keeps the
+   preview free of the phantom blank lines that pre-wrap used to introduce. */
+.tg-bubble-html-content {
+  white-space: normal !important;
+  word-break: break-word;
+  line-height: 1.5;
+  font-size: 14.5px;
+  color: #f5f5f5;
+}
+
+.tg-bubble-html-content pre,
+.tg-bubble-html-content pre code {
+  white-space: pre !important;
+}
+
+.tg-bubble-html-content p {
+  margin: 0 0 6px;
+}
+
+/* ── Headings in Editor & Live Preview (Telegram: H1 shrinks, H6 grows) ── */
+.telegram-prose-editor h1,
+.tg-bubble-html-content h1,
+.tg-bubble-html-content .tg-preview-heading.tg-h1 {
+  font-size: 26px !important;
+  font-weight: 700 !important;
+  color: #ffffff !important;
+  margin: 16px 0 8px !important;
+  line-height: 1.22 !important;
+  letter-spacing: -0.02em;
+}
+
+.telegram-prose-editor h2,
+.tg-bubble-html-content h2,
+.tg-bubble-html-content .tg-preview-heading.tg-h2 {
+  font-size: 22px !important;
+  font-weight: 700 !important;
+  color: #ffffff !important;
+  margin: 14px 0 6px !important;
+  line-height: 1.25 !important;
+}
+
+.telegram-prose-editor h3,
+.tg-bubble-html-content h3,
+.tg-bubble-html-content .tg-preview-heading.tg-h3 {
+  font-size: 19px !important;
+  font-weight: 700 !important;
+  color: #ffffff !important;
+  margin: 13px 0 6px !important;
+  line-height: 1.28 !important;
+}
+
+.telegram-prose-editor h4,
+.tg-bubble-html-content h4,
+.tg-bubble-html-content .tg-preview-heading.tg-h4 {
+  font-size: 17px !important;
+  font-weight: 700 !important;
+  color: #ffffff !important;
+  margin: 12px 0 6px !important;
+  line-height: 1.3 !important;
+}
+
+.telegram-prose-editor h5,
+.tg-bubble-html-content h5,
+.tg-bubble-html-content .tg-preview-heading.tg-h5 {
+  font-size: 15px !important;
+  font-weight: 700 !important;
+  color: #ffffff !important;
+  margin: 11px 0 6px !important;
+  line-height: 1.35 !important;
+}
+
+.telegram-prose-editor h6,
+.tg-bubble-html-content h6,
+.tg-bubble-html-content .tg-preview-heading.tg-h6 {
+  font-size: 13.5px !important;
+  font-weight: 700 !important;
+  color: #ffffff !important;
+  margin: 10px 0 6px !important;
+  line-height: 1.35 !important;
+}
+
+.telegram-prose-editor h1:first-child,
+.telegram-prose-editor h2:first-child,
+.telegram-prose-editor h3:first-child,
+.tg-bubble-html-content .tg-preview-heading:first-child {
+  margin-top: 2px !important;
+}
+
+.tg-preview-bullet-list,
+.tg-preview-ordered-list {
+  margin: 6px 0 10px;
+  padding-left: 20px;
+}
+
+.tg-preview-task-list {
+  list-style: none;
+  padding-left: 0;
+  margin: 6px 0 10px;
+}
+
+.tg-preview-task-list .tg-task-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.tg-preview-task-list .tg-task-checkbox {
+  font-size: 15px;
+  line-height: 1.2;
+  color: #38bdf8;
+  user-select: none;
+}
+
+
+.tg-preview-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  margin: 10px 0;
+}
+
+/* ── Mobile Smart Categorized Toolbar ── */
+.mobile-smart-toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 10px;
+  background: rgba(18, 18, 24, 0.95);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-radius: 16px;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
+  border: 0.5px solid rgba(255, 255, 255, 0.1);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.mobile-toolbar-header-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  justify-content: space-between;
+}
+
+.mobile-quick-history {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.mobile-quick-history .mini-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+}
+
+.mobile-category-tabs {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 3px 4px;
+  border-radius: 12px;
+  border: 0.5px solid rgba(255, 255, 255, 0.08);
+  flex: 1;
+  justify-content: space-around;
+  min-width: 0;
+}
+
+.category-tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 8px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.65);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.16s ease;
+  white-space: nowrap;
+}
+
+.category-tab-btn:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.category-tab-btn.active {
+  background: #0ea5e9;
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(14, 165, 233, 0.4);
+}
+
+.category-tab-btn.has-active:not(.active) {
+  color: #38bdf8;
+  background: rgba(14, 165, 233, 0.12);
+}
+
+.mobile-media-quick-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.07);
+  border: 0.5px solid rgba(255, 255, 255, 0.12);
+  color: #e2e8f0;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.15s ease;
+}
+
+.mobile-media-quick-btn.has-items {
+  background: linear-gradient(135deg, rgba(14, 165, 233, 0.3), rgba(168, 85, 247, 0.3));
+  border-color: rgba(168, 85, 247, 0.4);
+  color: #ffffff;
+}
+
+.mobile-media-quick-btn .media-badge-count {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: #38bdf8;
+  color: #000000;
+  font-size: 9.5px;
+  font-weight: 800;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.4);
+}
+
+/* ── Shelf (Row 2 of Mobile Toolbar) ── */
+.mobile-toolbar-shelf {
+  display: flex;
+  align-items: center;
+  padding-top: 5px;
+  border-top: 0.5px solid rgba(255, 255, 255, 0.07);
+  width: 100%;
+}
+
+.mobile-toolbar-shelf .shelf-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding: 2px 0;
+}
+
+.mobile-toolbar-shelf .shelf-group::-webkit-scrollbar {
+  display: none;
+}
+
+.mobile-toolbar-shelf .shelf-labeled-btn {
+  width: auto;
+  min-width: 54px;
+  height: 35px;
+  padding: 0 9px;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.06);
+  border: 0.5px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.mobile-toolbar-shelf .shelf-labeled-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+}
+
+.mobile-toolbar-shelf .shelf-labeled-btn.active {
+  background: rgba(14, 165, 233, 0.22);
+  border-color: rgba(14, 165, 233, 0.4);
+  color: #38bdf8;
+}
+
+.mobile-toolbar-shelf .shelf-btn-text {
+  font-size: 10.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* ── Desktop Studio Ribbon ── */
+.desktop-ribbon {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  background: rgba(20, 20, 26, 0.92);
+  backdrop-filter: blur(28px);
+  -webkit-backdrop-filter: blur(28px);
+  border-radius: 16px;
+  padding: 6px 12px;
+  border: 0.5px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+  box-sizing: border-box;
+}
+
+.desktop-ribbon-content {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  flex-wrap: wrap;
+}
+
+.ribbon-cluster {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.desktop-ribbon .toolbar-btn {
+  width: 35px;
+  height: 35px;
+  border-radius: 9px;
+  color: rgba(255, 255, 255, 0.75);
+  transition: all 0.15s ease;
+}
+
+.desktop-ribbon .toolbar-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
+.desktop-ribbon .toolbar-btn.active {
+  background: rgba(14, 165, 233, 0.2);
+  border-color: rgba(14, 165, 233, 0.4);
+  color: #38bdf8;
+}
+
+.desktop-ribbon .toolbar-counter-pill {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 5px 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 20px;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.5);
+  border: 0.5px solid rgba(255, 255, 255, 0.08);
+  flex-shrink: 0;
+  margin-left: 10px;
+}
+
+/* ==========================================================================
+   STREAMLINED COMPACT TOOLBAR & UNIFIED LINKS + BUTTONS MODAL
+   ========================================================================== */
+
+/* ── Streamlined Top Nav Bar ── */
+.editor-top-nav.docs-header {
+  padding: 4px 6px 8px !important;
+}
+
+.editor-persistence-pill.compact {
+  padding: 4px 6px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+}
+
+/* ── Compact Single-Row Mobile Toolbar (Height 40px) ── */
+.mobile-compact-toolbar {
+  display: flex !important;
+  align-items: center !important;
+  background: rgba(18, 18, 24, 0.94) !important;
+  backdrop-filter: blur(24px) !important;
+  -webkit-backdrop-filter: blur(24px) !important;
+  border-radius: 14px !important;
+  padding: 4px 6px !important;
+  border: 0.5px solid rgba(255, 255, 255, 0.1) !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.45) !important;
+  height: 44px !important;
+  box-sizing: border-box !important;
+  overflow: hidden !important;
+}
+
+.mobile-compact-toolbar .toolbar-scroll-track {
+  display: flex !important;
+  align-items: center !important;
+  gap: 3px !important;
+  overflow-x: auto !important;
+  -webkit-overflow-scrolling: touch !important;
+  scrollbar-width: none !important;
+  width: 100% !important;
+  padding: 0 2px !important;
+}
+
+.mobile-compact-toolbar .toolbar-scroll-track::-webkit-scrollbar {
+  display: none !important;
+}
+
+.mobile-compact-toolbar .toolbar-btn {
+  width: 34px !important;
+  height: 34px !important;
+  min-width: 34px !important;
+  border-radius: 9px !important;
+  color: rgba(255, 255, 255, 0.78) !important;
+}
+
+.mobile-compact-toolbar .toolbar-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.1) !important;
+  color: #ffffff !important;
+}
+
+.mobile-compact-toolbar .toolbar-btn.active {
+  background: rgba(14, 165, 233, 0.22) !important;
+  border-color: rgba(14, 165, 233, 0.45) !important;
+  color: #38bdf8 !important;
+}
+
+.mobile-compact-toolbar .toolbar-v-divider {
+  width: 1px !important;
+  height: 18px !important;
+  background: rgba(255, 255, 255, 0.12) !important;
+  margin: 0 4px !important;
+  flex-shrink: 0 !important;
+}
+
+/* Badge Count on Toolbar Buttons (Links, Media) */
+.toolbar-btn {
+  position: relative;
+}
+
+.toolbar-badge-count {
+  position: absolute;
+  top: 1px;
+  right: 1px;
+  background: #38bdf8;
+  color: #04101e;
+  font-size: 9px;
+  font-weight: 800;
+  min-width: 14px;
+  height: 14px;
+  border-radius: 7px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 3px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+  pointer-events: none;
+}
+
+.toolbar-btn-label {
+  font-size: 11px;
+  font-weight: 600;
+  margin-left: 4px;
+}
+
+/* ── Unified Link & Buttons Modal Styling ── */
+.link-mode-tabs {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 3px;
+  border-radius: 12px;
+  border: 0.5px solid rgba(255, 255, 255, 0.08);
+  margin-bottom: 14px;
+}
+
+.link-mode-tab {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 7px 12px;
+  border-radius: 9px;
+  border: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.65);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.16s ease;
+}
+
+.link-mode-tab:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.link-mode-tab.active {
+  background: #0ea5e9;
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(14, 165, 233, 0.4);
+}
+
+.link-tab-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.link-modal-context.hint {
+  background: rgba(14, 165, 233, 0.08);
+  border-left-color: #38bdf8;
+}
+
+.link-inputs-vertical {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.add-inline-btn-submit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  height: 38px;
+  background: rgba(14, 165, 233, 0.18);
+  border: 1px solid rgba(14, 165, 233, 0.35);
+  border-radius: 10px;
+  color: #38bdf8;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.add-inline-btn-submit:hover:not(:disabled) {
+  background: rgba(14, 165, 233, 0.3);
+  color: #ffffff;
+}
+
+.add-inline-btn-submit:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.inline-buttons-list-wrap {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 0.5px solid rgba(255, 255, 255, 0.08);
+}
+
+.inline-buttons-list-title {
+  display: block;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.6);
+  margin-bottom: 8px;
+}
+
+.empty-buttons-hint {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.35);
+  font-style: italic;
+  padding: 8px 0;
+}
+
+.inline-buttons-chips-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 180px;
+  overflow-y: auto;
+}
+
+.button-chip-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(255, 255, 255, 0.06);
+  border: 0.5px solid rgba(255, 255, 255, 0.1);
+  border-radius: 9px;
+  padding: 6px 10px;
+  gap: 8px;
+}
+
+.button-chip-left {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.button-chip-label {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.button-chip-url {
+  font-size: 10.5px;
+  color: #38bdf8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.button-chip-remove {
+  background: transparent;
+  border: none;
+  color: rgba(239, 68, 68, 0.7);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  padding: 4px;
+  border-radius: 6px;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.button-chip-remove:hover {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.12);
+}
+
+/* ==========================================================================
+   STABLE COMPACT TOOLBAR WITH COLLAPSIBLE TOOLS DRAWER
+   ========================================================================== */
+
+.desktop-ribbon {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
+  width: 100% !important;
+  height: auto !important;
+  overflow: visible !important;
+  gap: 0 !important;
+  padding: 6px 10px !important;
+}
+
+.mobile-compact-toolbar {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
+  width: 100% !important;
+  min-height: 44px !important;
+  height: auto !important;
+  overflow: visible !important;
+  gap: 0 !important;
+  padding: 4px 6px !important;
+}
+
+.toolbar-main-row {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  width: 100% !important;
+  gap: 6px !important;
+  box-sizing: border-box !important;
+}
+
+.toolbar-core-track {
+  display: flex !important;
+  align-items: center !important;
+  gap: 3px !important;
+  flex-wrap: nowrap !important;
+  overflow-x: auto !important;
+  -webkit-overflow-scrolling: touch !important;
+  scrollbar-width: none !important;
+}
+
+.toolbar-core-track::-webkit-scrollbar {
+  display: none !important;
+}
+
+.toolbar-more-toggle-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 10px !important;
+  width: auto !important;
+  min-width: 40px !important;
+  gap: 4px !important;
+  border-radius: 9px !important;
+  background: rgba(255, 255, 255, 0.07) !important;
+  border: 0.5px solid rgba(255, 255, 255, 0.12) !important;
+  color: rgba(255, 255, 255, 0.9) !important;
+  cursor: pointer !important;
+  user-select: none !important;
+  transition: all 0.15s ease !important;
+  position: relative !important;
+}
+
+.toolbar-more-toggle-btn:hover {
+  background: rgba(255, 255, 255, 0.13) !important;
+  color: #ffffff !important;
+}
+
+.toolbar-more-toggle-btn.active {
+  background: rgba(14, 165, 233, 0.22) !important;
+  border-color: rgba(14, 165, 233, 0.5) !important;
+  color: #38bdf8 !important;
+}
+
+.toolbar-more-toggle-btn.has-active-child {
+  border-color: rgba(56, 189, 248, 0.4) !important;
+}
+
+.toolbar-active-dot {
+  width: 6px !important;
+  height: 6px !important;
+  border-radius: 50% !important;
+  background: #38bdf8 !important;
+  box-shadow: 0 0 6px rgba(56, 189, 248, 0.8) !important;
+  position: absolute !important;
+  top: 4px !important;
+  right: 4px !important;
+}
+
+/* ── Collapsible Shelf Drawer ── */
+.toolbar-expanded-shelf {
+  display: flex !important;
+  align-items: center !important;
+  flex-wrap: wrap !important;
+  gap: 8px !important;
+  padding: 8px 10px !important;
+  margin-top: 6px !important;
+  background: rgba(14, 14, 20, 0.96) !important;
+  border-radius: 12px !important;
+  border: 0.5px solid rgba(255, 255, 255, 0.12) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.55) !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  animation: shelfSlideDown 0.18s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+@keyframes shelfSlideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.shelf-group {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 3px !important;
+  background: rgba(255, 255, 255, 0.04) !important;
+  padding: 3px 6px !important;
+  border-radius: 9px !important;
+  border: 0.5px solid rgba(255, 255, 255, 0.06) !important;
+}
+
+.shelf-group-label {
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  color: rgba(255, 255, 255, 0.42) !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.6px !important;
+  padding: 0 4px !important;
+  user-select: none !important;
+}
+
+.shelf-v-divider {
+  width: 1px !important;
+  height: 20px !important;
+  background: rgba(255, 255, 255, 0.1) !important;
+  margin: 0 2px !important;
+  flex-shrink: 0 !important;
+}
+
+.toolbar-expanded-shelf .toolbar-btn {
+  width: 32px !important;
+  height: 32px !important;
+  min-width: 32px !important;
+  border-radius: 8px !important;
+}
+
+.toolbar-expanded-shelf .toolbar-btn.table-action-btn {
+  width: auto !important;
+  padding: 0 6px !important;
+  gap: 3px !important;
+}
+
+/* ── Prominent Media Button (Larger, more visible) ── */
+.toolbar-btn.prominent-media-btn {
+  width: 44px !important;
+  min-width: 44px !important;
+  height: 35px !important;
+  background: rgba(14, 165, 233, 0.14) !important;
+  border: 1px solid rgba(14, 165, 233, 0.35) !important;
+  color: #38bdf8 !important;
+  border-radius: 10px !important;
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.toolbar-btn.prominent-media-btn:hover {
+  background: rgba(14, 165, 233, 0.25) !important;
+  border-color: #38bdf8 !important;
+  color: #ffffff !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.35) !important;
+}
+
+.toolbar-btn.prominent-media-btn.has-items {
+  background: rgba(14, 165, 233, 0.28) !important;
+  border-color: #38bdf8 !important;
+  box-shadow: 0 0 14px rgba(56, 189, 248, 0.4) !important;
+}
+
+/* ── Three Columns Toggle Button ── */
+.toolbar-btn.three-columns-toggle {
+  width: 38px !important;
+  min-width: 38px !important;
+  height: 35px !important;
+  padding: 0 !important;
+  border-radius: 10px !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  border: 0.5px solid rgba(255, 255, 255, 0.14) !important;
+  color: rgba(255, 255, 255, 0.92) !important;
+}
+
+.toolbar-btn.three-columns-toggle:hover {
+  background: rgba(255, 255, 255, 0.15) !important;
+  color: #ffffff !important;
+}
+
+.toolbar-btn.three-columns-toggle.active {
+  background: rgba(14, 165, 233, 0.24) !important;
+  border-color: rgba(56, 189, 248, 0.5) !important;
+  color: #38bdf8 !important;
+}
+
+/* ── Minimalist Shelf (Pure icons, ergonomic) ── */
+.minimalist-shelf {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 6px !important;
+  padding: 6px 8px !important;
+  border-radius: 13px !important;
+}
+
+.minimalist-shelf .shelf-group {
+  padding: 2px 3px !important;
+  gap: 2px !important;
+  background: rgba(255, 255, 255, 0.035) !important;
+  border-radius: 9px !important;
+  border: 0.5px solid rgba(255, 255, 255, 0.06) !important;
+}
+
+.minimalist-shelf .toolbar-btn {
+  width: 33px !important;
+  height: 33px !important;
+  min-width: 33px !important;
+}
+
+/* ── App-Style Glowing Button (Matches Remigram DEV Publish Style) ── */
+.shelf-app-style-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 5px !important;
+  background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%) !important;
+  color: #ffffff !important;
+  font-size: 11.5px !important;
+  font-weight: 600 !important;
+  padding: 5px 12px !important;
+  border-radius: 10px !important;
+  border: none !important;
+  cursor: pointer !important;
+  box-shadow: 0 2px 10px rgba(14, 165, 233, 0.4) !important;
+  transition: all 0.15s ease !important;
+  margin-left: auto !important;
+  flex-shrink: 0 !important;
+  user-select: none !important;
+}
+
+.shelf-app-style-btn:hover {
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 14px rgba(14, 165, 233, 0.6) !important;
+}
+
+.shelf-app-style-btn:active {
+  transform: translateY(0) !important;
+}
+
+/* ==========================================================================
+   PERFECTLY HARMONIOUS ERGONOMIC TOOLBAR & QUIET DRAFT STATUS
+   ========================================================================== */
+
+/* ── Force Exact Identical Proportions for ALL Toolbar Buttons ── */
+.toolbar-btn,
+.mobile-compact-toolbar .toolbar-btn,
+.desktop-ribbon .toolbar-btn,
+.toolbar-sub-row .toolbar-btn,
+.toolbar-btn.media-attach-btn,
+.toolbar-btn.prominent-media-btn,
+.toolbar-btn.toolbar-toggle-btn,
+.toolbar-btn.three-columns-toggle {
+  width: 33px !important;
+  height: 33px !important;
+  min-width: 33px !important;
+  max-width: 33px !important;
+  border-radius: 9px !important;
+  padding: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  color: rgba(255, 255, 255, 0.78) !important;
+  background: transparent !important;
+  border: 0.5px solid transparent !important;
+  box-shadow: none !important;
+  transform: none !important;
+  transition: all 0.15s ease !important;
+}
+
+.toolbar-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.1) !important;
+  color: #ffffff !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+.toolbar-btn.active {
+  background: rgba(14, 165, 233, 0.22) !important;
+  border-color: rgba(14, 165, 233, 0.45) !important;
+  color: #38bdf8 !important;
+}
+
+/* ── Seamless Sub-Row Added Inside the Same Island ── */
+.toolbar-sub-row {
+  display: flex !important;
+  align-items: center !important;
+  gap: 2px !important;
+  padding-top: 5px !important;
+  margin-top: 4px !important;
+  border-top: 0.5px solid rgba(255, 255, 255, 0.08) !important;
+  flex-wrap: nowrap !important;
+  overflow-x: auto !important;
+  scrollbar-width: none !important;
+  animation: subRowSlide 0.16s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.toolbar-sub-row::-webkit-scrollbar {
+  display: none !important;
+}
+
+@keyframes subRowSlide {
+  from {
+    opacity: 0;
+    transform: translateY(-3px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ── Subtle, Quiet Draft Indicator (Replaces loud green dot) ── */
+.editor-draft-status {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  font-size: 10px !important;
+  font-weight: 500 !important;
+  user-select: none !important;
+  padding: 3px 6px !important;
+  border-radius: 6px !important;
+  margin-left: 2px !important;
+  transition: all 0.2s ease !important;
+}
+
+.draft-status-saving {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  color: rgba(56, 189, 248, 0.75) !important;
+}
+
+.draft-status-saved {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 3px !important;
+  color: rgba(255, 255, 255, 0.3) !important;
+}
+
+.draft-status-text {
+  font-size: 10px !important;
+  letter-spacing: 0.2px !important;
+}
+
+/* ==========================================================================
+   PERFECT ZERO-SCROLL FIT ON MOBILE & CRISP MEDIA INPUTS
+   ========================================================================== */
+
+/* ══════════════════════════════════════════════════════════════════════════
+   REMIGRAM STUDIO ISLAND TOOLBAR: Multi-Compartment Architecture
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.docs-formatting-toolbar {
+  width: 100% !important;
+  max-width: 100% !important;
+  padding: 4px 6px !important;
+  box-sizing: border-box !important;
+  overflow: visible !important;
+}
+
+/* ── Base Uniform Toolbar Button ── */
+.toolbar-btn {
+  width: 29px !important;
+  height: 29px !important;
+  min-width: 29px !important;
+  max-width: 29px !important;
+  border-radius: 7px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  background: transparent;
+  border: 0.5px solid transparent;
+  color: rgba(255, 255, 255, 0.72);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+}
+
+.toolbar-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.09);
+  color: #ffffff;
+}
+
+.toolbar-btn:active:not(:disabled) {
+  transform: scale(0.92);
+}
+
+.toolbar-btn.active {
+  background: #2481cc !important;
+  border-color: #38bdf8 !important;
+  color: #ffffff !important;
+  box-shadow: 0 1px 6px rgba(36, 129, 204, 0.4) !important;
+}
+
+.toolbar-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.toolbar-btn.has-attachments {
+  color: #38bdf8 !important;
+}
+
+.toolbar-v-divider {
+  width: 1px !important;
+  height: 14px !important;
+  margin: 0 2px !important;
+  background: rgba(255, 255, 255, 0.1) !important;
+  flex-shrink: 0 !important;
+}
+
+/* ── Heading Dropdown Component ── */
+.heading-dropdown-container {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.toolbar-btn.heading-dropdown-trigger {
+  width: auto !important;
+  min-width: 40px !important;
+  max-width: 56px !important;
+  height: 29px !important;
+  padding: 0 6px !important;
+  gap: 3px !important;
+  border-radius: 7px !important;
+  background: rgba(255, 255, 255, 0.05) !important;
+  border: 0.5px solid rgba(255, 255, 255, 0.1) !important;
+  color: rgba(255, 255, 255, 0.85) !important;
+}
+
+.toolbar-btn.heading-dropdown-trigger:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+  color: #ffffff !important;
+}
+
+.toolbar-btn.heading-dropdown-trigger.active {
+  background: rgba(36, 129, 204, 0.22) !important;
+  border-color: rgba(56, 189, 248, 0.45) !important;
+  color: #38bdf8 !important;
+}
+
+.heading-dropdown-label {
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: -0.2px;
+  user-select: none;
+}
+
+.heading-chevron {
+  color: rgba(255, 255, 255, 0.5);
+  transition: transform 0.18s ease;
+  flex-shrink: 0;
+}
+
+.heading-chevron.rotate-180 {
+  transform: rotate(180deg);
+}
+
+.heading-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 10000;
+  min-width: 154px;
+  background: rgba(18, 22, 30, 0.96);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 0.5px solid rgba(255, 255, 255, 0.13);
+  border-radius: 12px;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  padding: 5px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.heading-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 8px;
+  border-radius: 8px;
+  background: transparent;
+  border: none;
+  color: #e2e8f0;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.14s ease;
+  font-size: 12px;
+}
+
+.heading-menu-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+}
+
+.heading-menu-item.active {
+  background: rgba(36, 129, 204, 0.22);
+  color: #38bdf8;
+  font-weight: 600;
+}
+
+.heading-item-icon {
+  color: rgba(255, 255, 255, 0.5);
+  flex-shrink: 0;
+}
+
+.heading-menu-item.active .heading-item-icon {
+  color: #38bdf8;
+}
+
+.heading-item-title {
+  flex: 1;
+  font-weight: 500;
+}
+
+.heading-title-h1 {
+  font-weight: 800;
+  font-size: 13px;
+}
+
+.heading-title-h2 {
+  font-weight: 700;
+  font-size: 12.5px;
+}
+
+.heading-title-h3 {
+  font-weight: 600;
+  font-size: 12px;
+}
+
+.heading-item-shortcut,
+.heading-item-tag {
+  font-size: 10px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.35);
+  padding: 1px 4px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.heading-menu-divider {
+  height: 0.5px;
+  background: rgba(255, 255, 255, 0.08);
+  margin: 3px 2px;
+}
+
+/* ── Desktop Toolbar Ribbon ── */
+.desktop-toolbar-ribbon {
+  width: 100% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 3px !important;
+  flex-wrap: wrap !important;
+}
+
+.toolbar-compartment {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 2px !important;
+  padding: 2px 4px !important;
+  border-radius: 9px !important;
+  background: rgba(255, 255, 255, 0.035) !important;
+  border: 0.5px solid rgba(255, 255, 255, 0.06) !important;
+  flex-shrink: 0 !important;
+}
+
+.toolbar-compartment.is-contextual {
+  background: rgba(14, 165, 233, 0.1) !important;
+  border-color: rgba(56, 189, 248, 0.28) !important;
+}
+
+.contextual-label {
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: rgba(56, 189, 248, 0.85);
+  padding: 0 2px 0 4px;
+}
+
+.desktop-toolbar-ribbon .toolbar-counter-pill {
+  margin-left: auto !important;
+}
+
+/* ── Mobile Island Mode ── */
+.mobile-island-wrapper {
+  width: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 0 !important;
+}
+
+.mobile-island-primary-row {
+  width: 100% !important;
+  display: flex !important;
+  align-items: center !important;
+}
+
+.mobile-primary-track {
+  width: 100% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 1px !important;
+}
+
+/* ── Mobile Primary Row Capsule Pills ── */
+.mobile-primary-history-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  background: rgba(255, 255, 255, 0.04);
+  padding: 1.5px 2px;
+  border-radius: 8px;
+  border: 0.5px solid rgba(255, 255, 255, 0.07);
+  flex-shrink: 0;
+}
+
+.mobile-primary-history-pill .toolbar-btn {
+  width: 25px !important;
+  height: 26px !important;
+  min-width: 25px !important;
+  max-width: 25px !important;
+  border-radius: 6px !important;
+  padding: 0 !important;
+}
+
+.mobile-primary-text-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 1.5px 3px;
+  border-radius: 9px;
+  border: 0.5px solid rgba(255, 255, 255, 0.09);
+  flex-shrink: 0;
+}
+
+.mobile-primary-text-pill .toolbar-btn {
+  width: 26px !important;
+  height: 26px !important;
+  min-width: 26px !important;
+  max-width: 26px !important;
+  border-radius: 6px !important;
+  padding: 0 !important;
+}
+
+/* Expand Button (+) on Mobile */
+.toolbar-btn.toolbar-btn-expand {
+  width: 32px !important;
+  height: 29px !important;
+  min-width: 32px !important;
+  max-width: 32px !important;
+  border-radius: 8px !important;
+  background: rgba(36, 129, 204, 0.2) !important;
+  border: 0.5px solid rgba(56, 189, 248, 0.42) !important;
+  color: #38bdf8 !important;
+  box-shadow: 0 1px 6px rgba(36, 129, 204, 0.25) !important;
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.toolbar-btn.toolbar-btn-expand:hover {
+  background: rgba(36, 129, 204, 0.32) !important;
+  color: #ffffff !important;
+}
+
+.toolbar-btn.toolbar-btn-expand.is-expanded {
+  background: rgba(255, 255, 255, 0.12) !important;
+  border-color: rgba(255, 255, 255, 0.25) !important;
+  color: #f1f5f9 !important;
+}
+
+.expand-toggle-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.26s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+}
+
+.expand-toggle-icon.is-rotated {
+  transform: rotate(45deg) !important;
+}
+
+/* Button Micro-Interactions on Mobile */
+.mobile-island-wrapper .toolbar-btn:active {
+  transform: scale(0.91) !important;
+  transition: transform 0.06s ease !important;
+}
+
+.mobile-island-wrapper .toolbar-btn {
+  transition: all 0.16s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ── Mobile Expanded Departments Panel ── */
+@keyframes mobileIslandExpand {
+  0% {
+    opacity: 0;
+    transform: translateY(-6px) scaleY(0.97);
+    max-height: 0;
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scaleY(1);
+    max-height: 380px;
+  }
+}
+
+@keyframes deptRowSlideIn {
+  0% {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.mobile-expanded-departments {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: 8px;
+  margin-top: 6px;
+  border-top: 0.5px solid rgba(255, 255, 255, 0.08);
+  animation: mobileIslandExpand 0.26s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  transform-origin: top center;
+}
+
+.dept-row-text {
+  animation: deptRowSlideIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) 0.02s backwards;
+}
+
+.dept-row-blocks {
+  animation: deptRowSlideIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) 0.05s backwards;
+}
+
+.dept-row-inserts {
+  animation: deptRowSlideIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) 0.08s backwards;
+}
+
+.dept-row-contextual {
+  animation: deptRowSlideIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) 0.11s backwards;
+}
+
+.mobile-department-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 3px 6px;
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.035);
+  border: 0.5px solid rgba(255, 255, 255, 0.06);
+}
+
+.mobile-department-row.is-contextual {
+  background: rgba(36, 129, 204, 0.08);
+  border-color: rgba(56, 189, 248, 0.22);
+}
+
+/* Department Label Badges - Unified Monotone Dark Theme */
+.mobile-dept-label-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3.5px;
+  padding: 2.5px 5.5px;
+  border-radius: 6px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  flex-shrink: 0;
+  min-width: 48px;
+  user-select: none;
+  background: rgba(255, 255, 255, 0.05);
+  border: 0.5px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.75);
+  transition: all 0.16s ease;
+}
+
+.mobile-dept-label-badge svg {
+  color: rgba(255, 255, 255, 0.55);
+  transition: color 0.16s ease;
+}
+
+.dept-badge-monotone {
+  background: rgba(255, 255, 255, 0.05);
+  border: 0.5px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.mobile-department-row:hover .mobile-dept-label-badge {
+  background: rgba(36, 129, 204, 0.14);
+  border-color: rgba(56, 189, 248, 0.3);
+  color: #38bdf8;
+}
+
+.mobile-department-row:hover .mobile-dept-label-badge svg {
+  color: #38bdf8;
+}
+
+.mobile-department-row.is-contextual .mobile-dept-label-badge {
+  background: rgba(36, 129, 204, 0.14);
+  border-color: rgba(56, 189, 248, 0.3);
+  color: #38bdf8;
+}
+
+.mobile-department-row.is-contextual .mobile-dept-label-badge svg {
+  color: #38bdf8;
+}
+
+/* Subgroups & Dividers inside rows */
+.dept-subgroup {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.dept-subgroup-pill {
+  background: rgba(255, 255, 255, 0.05);
+  padding: 1px 2px;
+  border-radius: 7px;
+  border: 0.5px solid rgba(255, 255, 255, 0.08);
+}
+
+.dept-v-divider {
+  width: 0.5px;
+  height: 14px;
+  background: rgba(255, 255, 255, 0.14);
+  margin: 0 1.5px;
+  flex-shrink: 0;
+}
+
+.mobile-dept-icons {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-wrap: nowrap;
+  flex: 1;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.mobile-dept-icons::-webkit-scrollbar {
+  display: none;
+}
+
+.mobile-dept-icons .toolbar-btn {
+  width: 25px !important;
+  height: 25px !important;
+  min-width: 25px !important;
+  max-width: 25px !important;
+  border-radius: 6px !important;
+  padding: 0 !important;
+}
+
+.mobile-code-lang-select {
+  height: 25px;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.4);
+  border: 0.5px solid rgba(255, 255, 255, 0.12);
+  color: #38bdf8;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 0 6px;
+  outline: none;
+  cursor: pointer;
+}
+
+/* ── Media Modal Input & Button CRISP VISIBILITY ── */
+.media-tab-content {
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+.media-type-selector {
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  background: rgba(255, 255, 255, 0.06) !important;
+  padding: 4px !important;
+  border-radius: 12px !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  margin-bottom: 12px !important;
+}
+
+.media-type-btn {
+  flex: 1 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+  padding: 8px 10px !important;
+  border-radius: 9px !important;
+  border: none !important;
+  background: transparent !important;
+  color: rgba(255, 255, 255, 0.65) !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  transition: all 0.16s ease !important;
+}
+
+.media-type-btn:hover {
+  color: #ffffff !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+}
+
+.media-type-btn.active {
+  background: rgba(14, 165, 233, 0.22) !important;
+  color: #7dd3fc !important;
+  border: 0.5px solid rgba(14, 165, 233, 0.45) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
+}
+
+.media-input-row {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+.media-url-input {
+  flex: 1 !important;
+  height: 44px !important;
+  background: rgba(0, 0, 0, 0.5) !important;
+  border: 1px solid rgba(255, 255, 255, 0.22) !important;
+  border-radius: 12px !important;
+  padding: 0 14px !important;
+  font-size: 13px !important;
+  color: #ffffff !important;
+  outline: none !important;
+  box-sizing: border-box !important;
+  transition: all 0.2s ease !important;
+}
+
+.media-url-input:focus {
+  border-color: #0ea5e9 !important;
+  background: rgba(0, 0, 0, 0.7) !important;
+  box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.3) !important;
+}
+
+.media-url-input::placeholder {
+  color: rgba(255, 255, 255, 0.38) !important;
+  font-size: 12px !important;
+}
+
+.add-media-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+  height: 44px !important;
+  padding: 0 18px !important;
+  border-radius: 12px !important;
+  background: linear-gradient(135deg, #0ea5e9, #0284c7) !important;
+  color: #ffffff !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  border: none !important;
+  cursor: pointer !important;
+  flex-shrink: 0 !important;
+  box-shadow: 0 2px 8px rgba(14, 165, 233, 0.35) !important;
+  transition: all 0.15s ease !important;
+}
+
+.add-media-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #38bdf8, #0ea5e9) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 12px rgba(14, 165, 233, 0.5) !important;
+}
+
+.add-media-btn:disabled {
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: rgba(255, 255, 255, 0.3) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  cursor: not-allowed !important;
+  box-shadow: none !important;
+}
+
+/* ── Media Modal Spoiler Toggle Switch ── */
+.media-spoiler-toggle-row {
+  margin-top: 14px !important;
+  margin-bottom: 22px !important;
+  width: 100% !important;
+}
+
+.media-spoiler-switch-btn {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  width: 100% !important;
+  padding: 10px 14px !important;
+  background: rgba(255, 255, 255, 0.04) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 12px !important;
+  cursor: pointer !important;
+  color: #e2e8f0 !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.media-spoiler-switch-btn:hover {
+  background: rgba(255, 255, 255, 0.07) !important;
+  border-color: rgba(255, 255, 255, 0.18) !important;
+}
+
+.media-spoiler-switch-btn.active {
+  background: rgba(14, 165, 233, 0.12) !important;
+  border-color: rgba(14, 165, 233, 0.45) !important;
+  color: #38bdf8 !important;
+}
+
+.media-spoiler-switch-left {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+}
+
+.media-spoiler-switch-btn.active .spoiler-icon {
+  color: #38bdf8 !important;
+}
+
+.media-custom-toggle-pill {
+  width: 38px !important;
+  height: 22px !important;
+  border-radius: 11px !important;
+  background: rgba(255, 255, 255, 0.16) !important;
+  position: relative !important;
+  transition: background 0.2s ease !important;
+  flex-shrink: 0 !important;
+}
+
+.media-custom-toggle-pill.active {
+  background: #0ea5e9 !important;
+  box-shadow: 0 0 10px rgba(14, 165, 233, 0.4) !important;
+}
+
+.media-custom-toggle-pill .toggle-thumb {
+  position: absolute !important;
+  top: 3px !important;
+  left: 3px !important;
+  width: 16px !important;
+  height: 16px !important;
+  border-radius: 50% !important;
+  background: #ffffff !important;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35) !important;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.media-custom-toggle-pill.active .toggle-thumb {
+  transform: translateX(16px) !important;
+}
+
+/* ── Code block language selector in toolbar ── */
+.toolbar-code-lang-select {
+  height: 29px !important;
+  background: rgba(14, 165, 233, 0.15) !important;
+  border: 1px solid rgba(14, 165, 233, 0.4) !important;
+  color: #38bdf8 !important;
+  border-radius: 7px !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  padding: 0 6px !important;
+  outline: none !important;
+  cursor: pointer !important;
+  flex-shrink: 0 !important;
+  transition: all 0.15s ease !important;
+}
+
+.toolbar-code-lang-select:hover {
+  background: rgba(14, 165, 233, 0.25) !important;
+  border-color: #38bdf8 !important;
+}
+
+.toolbar-code-lang-select option {
+  background: #18222d !important;
+  color: #ffffff !important;
+}
+
+/* ── Expandable blockquote inside Tiptap Editor Canvas ── */
+.telegram-prose-editor .tiptap-blockquote.is-expandable {
+  position: relative !important;
+  border-left-color: #a855f7 !important;
+  background: rgba(168, 85, 247, 0.08) !important;
+}
+
+.telegram-prose-editor .tiptap-blockquote.is-expandable::before {
+  content: '▾ EXPANDABLE QUOTE';
+  display: block;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: #c084fc;
+  margin-bottom: 4px;
+  opacity: 0.85;
+}
+
+/* ── Telegram Preview Codeblock with Header ── */
+.tg-preview-codeblock-wrap {
+  margin: 8px 0;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #17212b;
+  border: 0.5px solid rgba(255, 255, 255, 0.1);
+}
+
+.tg-codeblock-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 10px;
+  background: rgba(0, 0, 0, 0.25);
+  border-bottom: 0.5px solid rgba(255, 255, 255, 0.06);
+}
+
+.tg-codeblock-lang {
+  font-size: 10px;
+  font-weight: 700;
+  color: #38bdf8;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.tg-codeblock-copy-btn {
+  font-size: 10.5px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.6);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+  transition: all 0.15s ease;
+}
+
+.tg-codeblock-copy-btn:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.tg-preview-codeblock-wrap pre {
+  margin: 0 !important;
+  border: none !important;
+  border-radius: 0 !important;
+  padding: 8px 12px !important;
+  background: transparent !important;
+}
+
+/* Telegram 10.1 KaTeX Math Block & Inline */
+.tg-katex-block {
+  display: block;
+  margin: 10px 0;
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  overflow-x: auto;
+  text-align: center;
+}
+
+.tg-katex-inline {
+  display: inline-block;
+  vertical-align: middle;
+  padding: 0 3px;
+}
+
+/* Telegram Native Highlight / Mark */
+mark,
+.tg-bubble-body mark,
+.tiptap mark {
+  background: rgba(255, 214, 10, 0.28) !important;
+  color: inherit !important;
+  border-radius: 3px;
+  padding: 1px 4px;
+}
+
+/* Telegram Native Tables */
+.tg-bubble-body table,
+.tg-preview-table-wrap table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 8px 0;
+  font-size: 13.5px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.tg-bubble-body th,
+.tg-preview-table-wrap th {
+  background: rgba(255, 255, 255, 0.08);
+  font-weight: 600;
+  text-align: left;
+  padding: 7px 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  border-right: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.tg-bubble-body td,
+.tg-preview-table-wrap td {
+  padding: 6px 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  border-right: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.tg-bubble-body tr:last-child td,
+.tg-preview-table-wrap tr:last-child td {
+  border-bottom: none;
+}
+
+/* ══════════════════════════════════════════════════════════
+   Telegram iOS RichTextEditor Parity Styles
+   ══════════════════════════════════════════════════════════ */
+
+/* Telegram iOS StyleSheet Serif Type Scale (H1 24pt, H2 21pt, H3 19pt) */
+.tiptap h1,
+.tg-bubble-body h1 {
+  font-family: -apple-system-ui-serif, Georgia, 'Times New Roman', serif;
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1.15;
+  margin: 14px 0 6px 0;
+  letter-spacing: -0.02em;
+}
+
+.tiptap h2,
+.tg-bubble-body h2 {
+  font-family: -apple-system-ui-serif, Georgia, 'Times New Roman', serif;
+  font-size: 21px;
+  font-weight: 600;
+  line-height: 1.2;
+  margin: 12px 0 5px 0;
+  letter-spacing: -0.015em;
+}
+
+.tiptap h3,
+.tg-bubble-body h3 {
+  font-family: -apple-system-ui-serif, Georgia, 'Times New Roman', serif;
+  font-size: 19px;
+  font-weight: 600;
+  line-height: 1.25;
+  margin: 10px 0 4px 0;
+  letter-spacing: -0.01em;
+}
+
+/* Dynamic Telegram Spoiler Dust Animation */
+.tg-spoiler,
+.tg-preview-spoiler {
+  background-color: rgba(120, 120, 128, 0.28);
+  color: transparent !important;
+  border-radius: 4px;
+  padding: 1px 4px;
+  position: relative;
+  cursor: pointer;
+  user-select: none;
+  background-image: radial-gradient(circle, rgba(255, 255, 255, 0.45) 10%, transparent 20%),
+                    radial-gradient(circle, rgba(255, 255, 255, 0.3) 15%, transparent 25%);
+  background-size: 8px 8px, 12px 12px;
+  background-position: 0 0, 4px 4px;
+  animation: tgSpoilerDustShimmer 1.8s linear infinite;
+  transition: filter 0.2s ease, background-color 0.2s ease, color 0.2s ease;
+}
+
+@keyframes tgSpoilerDustShimmer {
+  0% { background-position: 0 0, 4px 4px; }
+  50% { background-position: 4px -4px, -4px 8px; }
+  100% { background-position: 8px 0, 4px 16px; }
+}
+
+.tg-preview-spoiler.revealed,
+.tg-spoiler.revealed {
+  background-color: transparent !important;
+  background-image: none !important;
+  color: inherit !important;
+  animation: none !important;
+}
+
+/* Table Floating Toolbar (iOS-style glassmorphism) */
+.table-floating-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(26, 32, 44, 0.95);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 12px;
+  padding: 5px 8px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.05);
+}
+
+.table-toolbar-group {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.table-toolbar-label {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: #94a3b8;
+  padding: 0 4px;
+}
+
+.table-toolbar-btn {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  background: rgba(255, 255, 255, 0.06);
+  color: #f1f5f9;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  padding: 4px 6px;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.table-toolbar-btn:hover {
+  background: rgba(56, 189, 248, 0.2);
+  border-color: rgba(56, 189, 248, 0.35);
+  color: #38bdf8;
+}
+
+.table-toolbar-btn.delete-action:hover {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: rgba(239, 68, 68, 0.35);
+  color: #ef4444;
+}
+
+.table-toolbar-btn.delete-table-btn {
+  color: #f87171;
+  background: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.2);
+}
+
+.table-toolbar-btn.delete-table-btn:hover {
+  background: rgba(239, 68, 68, 0.25);
+  border-color: rgba(239, 68, 68, 0.4);
+}
+
+.table-toolbar-divider {
+  width: 1px;
+  height: 18px;
+  background: rgba(255, 255, 255, 0.12);
+  margin: 0 3px;
+}
+
+/* Telegram Emoji Picker Dropdown */
+.tg-emoji-picker-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 10px;
+  margin-top: 6px;
+  width: 280px;
+  max-height: 250px;
+  background: rgba(26, 32, 44, 0.96);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 14px;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.tg-emoji-picker-header {
+  padding: 8px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.tg-emoji-title {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.tg-emoji-picker-scroll {
+  overflow-y: auto;
+  padding: 8px 10px;
+  max-height: 200px;
+}
+
+.tg-emoji-group {
+  margin-bottom: 10px;
+}
+
+.tg-emoji-group-title {
+  font-size: 10.5px;
+  font-weight: 500;
+  color: #64748b;
+  margin-bottom: 4px;
+}
+
+.tg-emoji-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 4px;
+}
+
+.tg-emoji-btn {
+  background: transparent;
+  border: none;
+  font-size: 18px;
+  padding: 4px 0;
+  cursor: pointer;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.12s ease, background 0.12s ease;
+}
+
+.tg-emoji-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: scale(1.2);
+}
+
+/* Telegram Selection Pill */
+.tg-selection-pill {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  background: rgba(26, 32, 44, 0.95);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 12px;
+  padding: 4px 6px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+}
+
+.bubble-cluster {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+/* Media Spoiler Overlay in Preview */
+.tg-preview-media-item {
+  position: relative;
+  overflow: hidden;
+  border-radius: 8px;
+}
+
+.tg-preview-media-spoiler-cover {
+  position: absolute;
+  inset: 0;
+  background: rgba(30, 41, 59, 0.7);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  cursor: pointer;
+  z-index: 5;
+  transition: opacity 0.25s ease;
+  background-image: radial-gradient(circle, rgba(255, 255, 255, 0.35) 10%, transparent 20%),
+                    radial-gradient(circle, rgba(255, 255, 255, 0.2) 15%, transparent 25%);
+  background-size: 10px 10px, 14px 14px;
+  animation: tgSpoilerDustShimmer 2.2s linear infinite;
+}
+
+.tg-preview-media-spoiler-cover.revealed {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* ── Telegram Rich Messages & Progressive Disclosure Styles ── */
+
+.insert-block-dropdown-container {
+  position: relative;
+  display: inline-flex;
+}
+
+.insert-block-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0 !important;
+  color: #38bdf8 !important;
+  background: rgba(56, 189, 248, 0.08) !important;
+  border: 1px solid rgba(56, 189, 248, 0.2) !important;
+  border-radius: 8px !important;
+  transition: all 0.15s ease;
+}
+
+.insert-block-btn:hover,
+.insert-block-btn.active {
+  background: rgba(56, 189, 248, 0.18) !important;
+  border-color: rgba(56, 189, 248, 0.4) !important;
+  color: #7dd3fc !important;
+}
+
+.dropdown-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 99;
+}
+
+.insert-block-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  min-width: 230px;
+  max-height: 380px;
+  overflow-y: auto;
+  background: #182232;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  padding: 6px;
+  z-index: 100;
+}
+
+.insert-menu-section-title {
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  color: #64748b;
+  padding: 8px 8px 4px;
+}
+
+.insert-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 7px 10px;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  color: #e2e8f0;
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.insert-menu-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+}
+
+.insert-menu-item svg {
+  color: #38bdf8;
+  flex-shrink: 0;
+}
+
+.toggle-btn-label {
+  font-size: 12px;
+  font-weight: 500;
+  margin-right: 2px;
+}
+
+.btn-label-mini {
+  font-size: 11px;
+  font-weight: 500;
+  margin-left: 3px;
+}
+
+/* Pull Quote Styling */
+.tiptap-pull-quote,
+.tg-pull-quote {
+  border-left: 3px solid #00d2ff !important;
+  background: rgba(0, 210, 255, 0.04);
+  padding: 12px 18px !important;
+  margin: 14px 0 !important;
+  border-radius: 4px 12px 12px 4px;
+  font-size: 1.08em;
+  font-style: italic;
+  color: #e0f2fe;
+}
+
+.telegram-prose-editor .tiptap-pull-quote::before {
+  content: 'PULL QUOTE';
+  display: block;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  font-style: normal;
+  color: #67e8f9;
+  margin-bottom: 6px;
+  opacity: 0.8;
+}
+
+.tg-preview-pullquote {
+  display: flex;
+  gap: 12px;
+  background: rgba(0, 210, 255, 0.06);
+  border: 1px solid rgba(0, 210, 255, 0.15);
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin: 10px 0;
+}
+
+.tg-pullquote-bar {
+  width: 4px;
+  background: #00d2ff;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.tg-pullquote-body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.tg-pullquote-text {
+  font-size: 14px;
+  font-style: italic;
+  line-height: 1.45;
+  color: #f0fdf4;
+}
+
+.tg-pullquote-author {
+  font-size: 12px;
+  color: #38bdf8;
+  font-weight: 500;
+}
+
+/* Details / Collapsible Content */
+.tiptap-details-block,
+.tg-preview-details {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 10px;
+  padding: 10px 14px;
+  margin: 10px 0;
+}
+
+.tiptap-details-summary,
+.tg-preview-details summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: #38bdf8;
+  outline: none;
+  user-select: none;
+}
+
+.tiptap-details-content,
+.tg-details-body {
+  padding-top: 8px;
+  color: #cbd5e1;
+}
+
+/* Math Block */
+.tiptap-math-block,
+.tg-katex-block {
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin: 10px 0;
+  text-align: center;
+  font-family: 'KaTeX_Main', serif;
+  overflow-x: auto;
+}
+
+/* Location Map Block */
+.tiptap-map-block,
+.tg-preview-map {
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin: 10px 0;
+}
+
+.tiptap-map-badge,
+.tg-map-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #38bdf8;
+  margin-bottom: 4px;
+}
+
+.tiptap-map-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.tiptap-map-address,
+.tg-map-meta {
+  font-size: 12px;
+  color: #94a3b8;
+  margin-top: 2px;
+}
+
+.tiptap-map-coords {
+  font-size: 11px;
+  color: #64748b;
+  font-family: monospace;
+  margin-top: 4px;
+}
+
+/* Footnotes & References */
+.tiptap-reference-block,
+
+.tg-ref-citation {
+  color: #38bdf8;
+  font-weight: 600;
+  font-size: 10.5px;
+  cursor: pointer;
+  padding: 0 2px;
+}
+
+.tg-ref-badge {
+  color: #38bdf8;
+  font-weight: 700;
+  font-size: 11px;
+}
+
+.tg-ref-link {
+  color: #38bdf8;
+  text-decoration: underline;
+}
+
+/* JSON Pill in Preview Header */
+.tg-copy-pill.tg-json-pill {
+  background: rgba(0, 210, 255, 0.12) !important;
+  border-color: rgba(0, 210, 255, 0.3) !important;
+}
+
+.tg-copy-pill.tg-json-pill:hover {
+  background: rgba(0, 210, 255, 0.22) !important;
+}
+
+/* ── Senior Frontend Responsive Adaptations & Mobile Sheet Architecture ── */
+@media (max-width: 900px) {
+  .hidden-mobile {
+    display: none !important;
+  }
+
+  .telegram-post-editor-page {
+    min-height: 100dvh !important;
+    padding: 0 4px max(24px, env(safe-area-inset-bottom)) !important;
+  }
+
+  /* One compact row: back, channel, publish, preview, clear, more */
+  .editor-top-nav.docs-header {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+    gap: 4px !important;
+    padding: 2px 2px 4px !important;
+    min-width: 0 !important;
+    overflow: hidden !important;
+  }
+
+  .top-nav-left,
+  .top-nav-right {
+    display: flex !important;
+    align-items: center !important;
+    min-width: 0 !important;
+    width: auto !important;
+  }
+
+  .top-nav-left {
+    flex: 1 1 auto !important;
+    gap: 4px !important;
+    overflow: hidden !important;
+  }
+
+  .top-nav-right {
+    flex: 0 0 auto !important;
+    gap: 4px !important;
+  }
+
+  .top-nav-right .docs-more-menu-container {
+    width: auto !important;
+    min-width: 0 !important;
+    flex: 0 0 auto !important;
+  }
+
+  .editor-back-btn-icon {
+    width: 32px !important;
+    height: 32px !important;
+  }
+
+  .top-nav-right .editor-publish-btn,
+  .top-nav-right .mobile-preview-toggle-btn,
+  .top-nav-right .editor-clear-btn-icon,
+  .top-nav-right .editor-more-btn-icon {
+    width: 32px !important;
+    min-width: 32px !important;
+    max-width: 32px !important;
+    height: 32px !important;
+    padding: 0 !important;
+    border-radius: 50% !important;
+    display: inline-flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 0 !important;
+    flex-shrink: 0 !important;
+  }
+
+  .top-nav-right .nav-action-label,
+  .top-nav-right .mobile-only {
+    display: none !important;
+  }
+
+  .top-nav-right .mobile-preview-count {
+    display: none !important;
+  }
+
+  .editor-clear-btn-icon {
+    color: #ff8a84 !important;
+  }
+
+  /* Island & Toolbar Sizing for Mobile Screens */
+  .editor-sticky-toolbar-island {
+    position: sticky !important;
+    top: max(
+      env(safe-area-inset-top, 0px),
+      var(--tg-content-safe-area-inset-top, 0px),
+      var(--app-top-safe-area, 0px),
+      70px
+    ) !important;
+    z-index: 250;
+    padding: 0 !important;
+    margin: 0 0 6px 0 !important;
+  }
+
+  html.tg-webapp .editor-sticky-toolbar-island,
+  html.tg-mobile .editor-sticky-toolbar-island,
+  html.tg-fullscreen .editor-sticky-toolbar-island {
+    top: max(
+      env(safe-area-inset-top, 0px),
+      var(--tg-content-safe-area-inset-top, 0px),
+      var(--app-top-safe-area, 0px),
+      84px
+    ) !important;
+  }
+
+  .docs-formatting-toolbar {
+    padding: 3px 4px !important;
+  }
+
+  .toolbar-main-row {
+    width: 100% !important;
+  }
+
+  /* Ergonomic mobile toolbar track with smooth touch momentum scrolling */
+  .toolbar-core-track {
+    width: 100% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    gap: 3px !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+    overscroll-behavior-x: contain !important;
+    padding: 2px 2px !important;
+  }
+
+  .toolbar-core-track::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  .toolbar-btn-group {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 2px !important;
+    flex-shrink: 0 !important;
+  }
+
+  .toolbar-btn {
+    min-width: 34px !important;
+    width: 34px !important;
+    height: 34px !important;
+    padding: 0 !important;
+    justify-content: center !important;
+    border-radius: 9px !important;
+    flex-shrink: 0 !important;
+  }
+
+  .toolbar-btn svg {
+    width: 16px !important;
+    height: 16px !important;
+  }
+
+  .toolbar-v-divider {
+    width: 1px !important;
+    height: 16px !important;
+    margin: 0 3px !important;
+    flex-shrink: 0 !important;
+  }
+
+  .editor-channel-picker-btn {
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    padding: 0 8px !important;
+    height: 32px !important;
+    gap: 4px !important;
+    border-radius: 16px !important;
+  }
+
+  .editor-channel-picker-btn .channel-picker-label {
+    display: block !important;
+    max-width: none !important;
+    min-width: 0 !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+    font-size: 12px !important;
+    font-weight: 600 !important;
+  }
+
+  .editor-draft-status {
+    flex: 0 0 auto !important;
+    padding: 0 !important;
+    gap: 0 !important;
+  }
+
+  .tg-export-actions {
+    gap: 4px !important;
+  }
+
+  .tg-copy-pill {
+    padding: 4px 8px !important;
+    min-width: 28px !important;
+    justify-content: center !important;
+  }
+
+  /* Force Insert Block Menu to be a Bottom Sheet on Mobile */
+  .insert-block-container {
+    position: fixed !important;
+    top: auto !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    max-height: 80vh !important;
+    border-radius: 20px 20px 0 0 !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.16) !important;
+    box-shadow: 0 -12px 36px rgba(0, 0, 0, 0.7) !important;
+    z-index: 10000 !important;
+  }
+
+  /* Modals on Mobile: Keep within viewport and avoid keyboard clipping */
+  .channel-modal-content,
+  .link-modal-card {
+    max-height: 85vh !important;
+    overflow-y: auto !important;
+    width: calc(100vw - 20px) !important;
+    max-width: 420px !important;
+    margin: 0 auto !important;
+  }
+}
+
+/* Responsive Preview Tables and Formulas */
+.tg-bubble-body table,
+.tg-post-bubble table {
+  max-width: 100% !important;
+  overflow-x: auto !important;
+  display: block !important;
+  border-collapse: collapse !important;
+  margin: 6px 0 !important;
+}
+
+.tg-katex-block {
+  overflow-x: auto !important;
+  max-width: 100% !important;
+  padding: 4px 0 !important;
+  scrollbar-width: none !important;
+}
+
+.tg-katex-block::-webkit-scrollbar {
+  display: none !important;
+}
+
+/* ══════════════════════════════════════════════════════════
+   Insert «+» Menu — same glass-island language as the toolbar
+   ══════════════════════════════════════════════════════════ */
+.insert-block-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(4, 7, 12, 0.55);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.insert-block-container {
+  background: rgba(18, 22, 30, 0.94);
+  backdrop-filter: blur(28px) saturate(190%);
+  -webkit-backdrop-filter: blur(28px) saturate(190%);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.insert-block-container.is-desktop-popover {
+  width: 360px;
+  max-height: 520px;
+  border: 0.5px solid rgba(255, 255, 255, 0.13);
+  border-radius: 16px;
+  box-shadow: 0 10px 32px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.insert-block-container.is-mobile-sheet {
+  position: fixed !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  max-height: 78vh !important;
+  border-radius: 20px 20px 0 0;
+  border-top: 0.5px solid rgba(255, 255, 255, 0.14);
+  box-shadow: 0 -14px 40px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  z-index: 10000;
+  padding-bottom: max(16px, env(safe-area-inset-bottom));
+}
+
+.insert-block-sheet-header {
+  padding: 12px 14px 10px;
+  border-bottom: 0.5px solid rgba(255, 255, 255, 0.07);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.sheet-drag-handle {
+  width: 36px;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 2px;
+  align-self: center;
+}
+
+.sheet-title-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.insert-block-container .sheet-title-col {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.sheet-title {
+  font-size: 14.5px;
+  font-weight: 700;
+  color: #f8fafc;
+  letter-spacing: -0.01em;
+}
+
+.insert-block-container .sheet-subtitle {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.4);
+  line-height: 1.25;
+}
+
+.sheet-close-btn {
+  background: rgba(255, 255, 255, 0.07);
+  border: 0.5px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.65);
+  width: 26px;
+  height: 26px;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.15s ease;
+}
+
+.sheet-close-btn:hover {
+  background: rgba(255, 255, 255, 0.13);
+  color: #ffffff;
+}
+
+/* ── Integrated Quick Formatting Shelf inside Hub ── */
+.sheet-quick-formatting {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 4px 0 2px;
+}
+
+.quick-format-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.quick-format-row::-webkit-scrollbar {
+  display: none;
+}
+
+.quick-format-pill-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px 4px 2px 2px;
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.045);
+  border: 0.5px solid rgba(255, 255, 255, 0.07);
+  flex-shrink: 0;
+}
+
+.quick-format-pill-group.contextual-group {
+  background: rgba(14, 165, 233, 0.1);
+  border-color: rgba(56, 189, 248, 0.28);
+}
+
+.quick-group-label {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.35);
+  padding: 0 4px 0 5px;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.quick-format-pill-group.contextual-group .quick-group-label {
+  color: rgba(56, 189, 248, 0.85);
+}
+
+.quick-format-btn {
+  width: 25px;
+  height: 25px;
+  min-width: 25px;
+  border-radius: 6px;
+  background: transparent;
+  border: 0.5px solid transparent;
+  color: rgba(255, 255, 255, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.14s ease;
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 0;
+  margin: 0;
+}
+
+.quick-format-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
+.quick-format-btn:active {
+  transform: scale(0.92);
+}
+
+.quick-format-btn.active {
+  background: #2481cc;
+  color: #ffffff;
+  border-color: #38bdf8;
+  box-shadow: 0 1px 6px rgba(36, 129, 204, 0.4);
+}
+
+.quick-code-select {
+  height: 23px;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.45);
+  border: 0.5px solid rgba(255, 255, 255, 0.12);
+  color: #38bdf8;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 0 6px;
+  outline: none;
+  cursor: pointer;
+}
+
+/* ── Dark Glass Search Input in + Sheet ── */
+.sheet-search-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(0, 0, 0, 0.32);
+  border: 0.5px solid rgba(255, 255, 255, 0.1);
+  border-radius: 11px;
+  padding: 7px 10px;
+  transition: border-color 0.18s ease, background 0.18s ease;
+}
+
+.sheet-search-row:focus-within {
+  border-color: rgba(56, 189, 248, 0.5);
+  background: rgba(0, 0, 0, 0.45);
+}
+
+.sheet-search-row .search-icon {
+  color: rgba(255, 255, 255, 0.35);
+  flex-shrink: 0;
+}
+
+.sheet-search-input {
+  background: transparent !important;
+  border: none !important;
+  color: #f8fafc !important;
+  font-size: 13px !important;
+  outline: none !important;
+  width: 100% !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+
+.sheet-search-input::placeholder {
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.search-clear-btn {
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.45);
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+}
+
+.insert-block-scroll-list {
+  padding: 6px 8px 10px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  max-height: 400px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.14) transparent;
+}
+
+.insert-block-scroll-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.insert-block-scroll-list::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.14);
+  border-radius: 3px;
+}
+
+.is-mobile-sheet .insert-block-scroll-list {
+  max-height: calc(78vh - 110px);
+}
+
+.insert-block-scroll-list .sheet-category-group + .sheet-category-group {
+  margin-top: 8px;
+}
+
+.insert-menu-section-title {
+  font-size: 9.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.7px;
+  color: rgba(255, 255, 255, 0.32);
+  padding: 8px 8px 5px;
+  user-select: none;
+}
+
+.insert-block-scroll-list .insert-menu-item {
+  --item-accent: #38bdf8;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  width: 100%;
+  padding: 8px 9px;
+  border-radius: 11px;
+  background: transparent;
+  border: 0.5px solid transparent;
+  color: #f1f5f9;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.14s ease, border-color 0.14s ease, transform 0.14s ease;
+  margin-bottom: 1px;
+}
+
+.insert-block-scroll-list .insert-menu-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.insert-block-scroll-list .insert-menu-item:active {
+  transform: scale(0.985);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.menu-item-icon-wrap {
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.045);
+  border: 0.5px solid rgba(255, 255, 255, 0.08);
+  color: color-mix(in srgb, var(--item-accent) 72%, #e2e8f0);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.14s ease, border-color 0.14s ease;
+}
+
+.insert-menu-item:hover .menu-item-icon-wrap {
+  background: rgba(14, 165, 233, 0.16);
+  border-color: rgba(14, 165, 233, 0.32);
+}
+
+.menu-item-text-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+
+.menu-item-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #f1f5f9;
+  line-height: 1.25;
+}
+
+.menu-item-desc {
+  font-size: 10.5px;
+  color: rgba(255, 255, 255, 0.4);
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.menu-item-badge {
+  flex-shrink: 0;
+  min-width: 19px;
+  height: 19px;
+  padding: 0 6px;
+  border-radius: 10px;
+  background: rgba(14, 165, 233, 0.18);
+  color: #7dd3fc;
+  border: 0.5px solid rgba(14, 165, 233, 0.28);
+  font-size: 10.5px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sheet-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 34px 16px;
+  color: rgba(255, 255, 255, 0.35);
+  font-size: 12.5px;
+  text-align: center;
+}
+
+/* ══════════════════════════════════════════════════════════
+   Telegram Emoji Picker — reached through the «+» menu
+   ══════════════════════════════════════════════════════════ */
+.tg-emoji-picker-container {
+  background: rgba(18, 22, 30, 0.96);
+  backdrop-filter: blur(28px) saturate(190%);
+  -webkit-backdrop-filter: blur(28px) saturate(190%);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.tg-emoji-picker-container.is-desktop-popover {
+  width: 320px;
+  max-height: 440px;
+  border: 0.5px solid rgba(255, 255, 255, 0.13);
+  border-radius: 16px;
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.tg-emoji-picker-container.is-mobile-sheet {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  max-height: 60vh;
+  border-radius: 20px 20px 0 0;
+  border-top: 0.5px solid rgba(255, 255, 255, 0.14);
+  box-shadow: 0 -14px 40px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  z-index: 10000;
+  padding-bottom: max(16px, env(safe-area-inset-bottom));
+}
+
+.tg-emoji-picker-header {
+  padding: 12px 14px 10px;
+  border-bottom: 0.5px solid rgba(255, 255, 255, 0.07);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.tg-emoji-header-left {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.tg-emoji-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #f8fafc;
+}
+
+.tg-emoji-picker-scroll {
+  padding: 8px 10px 12px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  max-height: 320px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.14) transparent;
+}
+
+.is-mobile-sheet .tg-emoji-picker-scroll {
+  max-height: calc(60vh - 80px);
+}
+
+.tg-emoji-group + .tg-emoji-group {
+  margin-top: 8px;
+}
+
+.tg-emoji-group-title {
+  font-size: 9.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.7px;
+  color: rgba(255, 255, 255, 0.32);
+  padding: 6px 4px 6px;
+  user-select: none;
+}
+
+.tg-emoji-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 3px;
+}
+
+.tg-emoji-btn {
+  aspect-ratio: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  line-height: 1;
+  background: transparent;
+  border: 0.5px solid transparent;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.13s ease, transform 0.13s ease;
+}
+
+.tg-emoji-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.tg-emoji-btn:active {
+  transform: scale(0.9);
+}
+
+.tg-emoji-thumb {
+  width: 26px;
+  height: 26px;
+  object-fit: contain;
+  pointer-events: none;
+}
+
+.editor-tg-emoji {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.editor-tg-emoji.has-thumb {
+  display: inline-block;
+  width: 1.2em;
+  height: 1.2em;
+  vertical-align: -0.15em;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  color: transparent;
+  overflow: hidden;
+}
+
+.tg-preview-custom-emoji {
+  display: inline-flex;
+  align-items: center;
+  vertical-align: -0.2em;
+}
+
+.tg-preview-custom-emoji img {
+  width: 1.25em;
+  height: 1.25em;
+  object-fit: contain;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   Table floating toolbar — mobile layout
+   On narrow screens the bar spans the viewport and wraps onto
+   a second line so no control is ever clipped off-screen.
+   ═══════════════════════════════════════════════════════════ */
+.table-floating-toolbar {
+  flex-wrap: nowrap;
+  box-sizing: border-box;
+}
+
+.table-floating-toolbar.is-mobile {
+  flex-wrap: wrap;
+  justify-content: center;
+  row-gap: 6px;
+  padding: 7px 8px;
+  border-radius: 14px;
+}
+
+.table-floating-toolbar.is-mobile .table-toolbar-group {
+  flex: 0 1 auto;
+  gap: 4px;
+}
+
+.table-floating-toolbar.is-mobile .table-toolbar-divider {
+  display: none;
+}
+
+.table-floating-toolbar.is-mobile .table-toolbar-label {
+  font-size: 10px;
+  padding: 0 2px;
+}
+
+.table-floating-toolbar.is-mobile .table-toolbar-btn {
+  padding: 7px 8px;
+  font-size: 11px;
+  min-height: 32px;
+  white-space: nowrap;
+}
+
+@media (max-width: 400px) {
+  .table-floating-toolbar.is-mobile .table-toolbar-label span {
+    display: none;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   Blockquote node view — expandable toggle chip
+   ═══════════════════════════════════════════════════════════ */
+.telegram-prose-editor .blockquote-head,
+.telegram-prose-editor .pull-quote-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 5px;
+  user-select: none;
+}
+
+.telegram-prose-editor .blockquote-mode-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+  padding: 2px 9px;
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  font-style: normal;
+  color: rgba(255, 255, 255, 0.55);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.telegram-prose-editor .blockquote-mode-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.telegram-prose-editor .blockquote-mode-btn.is-active {
+  background: rgba(168, 85, 247, 0.18);
+  border-color: rgba(168, 85, 247, 0.4);
+  color: #c084fc;
+}
+
+.telegram-prose-editor .blockquote-body > *:last-child,
+.telegram-prose-editor .pull-quote-body > *:last-child {
+  margin-bottom: 0;
+}
+
+.telegram-prose-editor .tiptap-blockquote.is-selected,
+.telegram-prose-editor .tiptap-pull-quote.is-selected,
+.telegram-prose-editor .tiptap-math-node.is-selected .math-node-inner {
+  box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.45);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   Pull quote node view — inline author field
+   ═══════════════════════════════════════════════════════════ */
+.telegram-prose-editor .pull-quote-badge,
+.telegram-prose-editor .math-node-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  font-style: normal;
+  color: #67e8f9;
+  opacity: 0.85;
+}
+
+.telegram-prose-editor .pull-quote-remove {
+  display: inline-flex;
+  align-items: center;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  padding: 3px;
+  color: rgba(255, 255, 255, 0.35);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.telegram-prose-editor .pull-quote-remove:hover {
+  background: rgba(239, 68, 68, 0.16);
+  color: #f87171;
+}
+
+.telegram-prose-editor .pull-quote-foot {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  padding-top: 7px;
+  border-top: 1px dashed rgba(0, 210, 255, 0.2);
+}
+
+.telegram-prose-editor .pull-quote-dash {
+  color: rgba(0, 210, 255, 0.6);
+  font-size: 13px;
+}
+
+.telegram-prose-editor .pull-quote-author-input {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #a5f3fc;
+  font-size: 12.5px;
+  font-style: italic;
+  font-family: inherit;
+  padding: 2px 0;
+}
+
+.telegram-prose-editor .pull-quote-author-input::placeholder {
+  color: rgba(255, 255, 255, 0.28);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   Math block node view — KaTeX render + formula editor
+   ═══════════════════════════════════════════════════════════ */
+.telegram-prose-editor .tiptap-math-node {
+  margin: 12px 0;
+}
+
+.telegram-prose-editor .math-node-inner {
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(139, 92, 246, 0.28);
+  border-radius: 10px;
+  padding: 8px 12px 10px;
+  transition: border-color 0.15s ease;
+}
+
+.telegram-prose-editor .tiptap-math-node.is-editing .math-node-inner {
+  border-color: rgba(139, 92, 246, 0.6);
+}
+
+.telegram-prose-editor .math-node-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+  user-select: none;
+}
+
+.telegram-prose-editor .math-node-badge {
+  color: #c4b5fd;
+}
+
+.telegram-prose-editor .math-node-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.telegram-prose-editor .math-node-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 7px;
+  padding: 4px 8px;
+  font-size: 10.5px;
+  font-weight: 600;
+  font-family: inherit;
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.telegram-prose-editor .math-node-btn:hover {
+  background: rgba(139, 92, 246, 0.2);
+  border-color: rgba(139, 92, 246, 0.4);
+  color: #ddd6fe;
+}
+
+.telegram-prose-editor .math-node-btn.is-primary {
+  background: rgba(139, 92, 246, 0.28);
+  border-color: rgba(139, 92, 246, 0.5);
+  color: #ede9fe;
+}
+
+.telegram-prose-editor .math-node-btn.is-danger:hover {
+  background: rgba(239, 68, 68, 0.18);
+  border-color: rgba(239, 68, 68, 0.4);
+  color: #f87171;
+}
+
+.telegram-prose-editor .math-node-render {
+  text-align: center;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 4px 0;
+  cursor: pointer;
+  border-radius: 6px;
+}
+
+.telegram-prose-editor .math-node-render:hover {
+  background: rgba(139, 92, 246, 0.06);
+}
+
+.telegram-prose-editor .math-node-empty {
+  font-size: 12.5px;
+  font-style: italic;
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.telegram-prose-editor .math-node-input {
+  width: 100%;
+  box-sizing: border-box;
+  resize: vertical;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  border-radius: 8px;
+  padding: 8px 10px;
+  color: #e9d5ff;
+  font-family: 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace;
+  font-size: 12.5px;
+  line-height: 1.5;
+  outline: none;
+}
+
+.telegram-prose-editor .math-node-input:focus {
+  border-color: rgba(139, 92, 246, 0.65);
+}
+
+.telegram-prose-editor .math-node-live {
+  margin-top: 8px;
+  padding: 8px 6px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.03);
+  text-align: center;
+  overflow-x: auto;
+}
+
+.telegram-prose-editor .math-node-editor-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.heading-level-btn {
+  min-width: 30px;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.2px;
+}
+
+.math-snippet-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+.math-snippet-btn {
+  min-width: 32px;
+  height: 28px;
+  padding: 0 7px;
+  border: 1px solid rgba(139, 92, 246, 0.28);
+  border-radius: 7px;
+  background: rgba(139, 92, 246, 0.12);
+  color: #ede9fe;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.math-snippet-btn:hover,
+.math-snippet-btn:active {
+  background: rgba(139, 92, 246, 0.28);
+  border-color: rgba(139, 92, 246, 0.5);
+}
+
+.tg-preview-task-list,
+.tg-bubble-html-content ul.tg-preview-task-list {
+  list-style: none !important;
+  padding-left: 2px !important;
+  margin: 8px 0 !important;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.tg-preview-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  list-style: none;
+  font-size: 15px;
+  line-height: 1.35;
+  color: #f1f5f9;
+}
+
+.tg-check-box {
+  width: 16px;
+  height: 16px;
+  margin-top: 2px;
+  border: 1.6px solid rgba(255, 255, 255, 0.55);
+  border-radius: 3px;
+  background: transparent;
+  flex-shrink: 0;
+  box-sizing: border-box;
+  position: relative;
+}
+
+.tg-preview-check.is-checked .tg-check-box {
+  background: #3390ec;
+  border-color: #3390ec;
+}
+
+.tg-preview-check.is-checked .tg-check-box::after {
+  content: '';
+  position: absolute;
+  left: 4px;
+  top: 1px;
+  width: 4px;
+  height: 8px;
+  border: solid #fff;
+  border-width: 0 1.8px 1.8px 0;
+  transform: rotate(45deg);
+}
+
+.tg-preview-fn {
+  font-size: 0.72em;
+  font-weight: 700;
+  vertical-align: super;
+  color: #7dd3fc;
+}
+
+.telegram-prose-editor .tg-ref-citation,
+.telegram-prose-editor sup[data-ref-id] {
+  font-size: 0.72em;
+  font-weight: 700;
+  color: #7dd3fc;
+}
+
+.tg-preview-footnote {
+  display: flex;
+  justify-content: center;
+  margin: 12px 0 4px;
+}
+
+.tg-footnote-quote {
+  display: inline-block;
+  max-width: 92%;
+  background: #2b313a;
+  color: #e8eef5;
+  border-radius: 12px;
+  padding: 8px 14px;
+  font-size: 13.5px;
+  line-height: 1.4;
+  text-align: center;
+}
+
+.tg-footnote-quote::before {
+  content: '“ ';
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.tg-footnote-quote::after {
+  content: ' ”';
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.telegram-prose-editor .tiptap-details-node,
+.telegram-prose-editor .tiptap-details-block,
+.tg-preview-details-block {
+  margin: 10px 0;
+}
+
+.telegram-prose-editor .tiptap-details-block > p:first-child {
+  color: #6eb1ff;
+  font-weight: 500;
+  margin-bottom: 8px;
+}
+
+.telegram-prose-editor .tiptap-details-block > p:first-child::before {
+  content: '› ';
+  font-weight: 700;
+}
+
+.telegram-prose-editor .tiptap-pull-quote > p:last-child {
+  margin-top: 8px;
+  font-size: 13px;
+  color: #a5f3fc;
+}
+
+.telegram-prose-editor .tiptap-pull-quote > p:last-child::before {
+  content: '— ';
+}
+
+.telegram-prose-editor .details-summary-row,
+.tg-details-summary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #6eb1ff;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  user-select: none;
+}
+
+.tg-details-chevron {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-right: 1.6px solid #6eb1ff;
+  border-bottom: 1.6px solid #6eb1ff;
+  transform: rotate(-45deg);
+  margin-right: 4px;
+  flex-shrink: 0;
+}
+
+.tg-preview-details-block.is-open .tg-details-chevron {
+  transform: rotate(45deg);
+  margin-top: -2px;
+}
+
+.tg-preview-details-block .tg-details-body {
+  display: none;
+  margin-top: 10px;
+  color: #e8eef5;
+  font-size: 15px;
+  line-height: 1.45;
+}
+
+.tg-preview-details-block.is-open .tg-details-body {
+  display: block;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   Media modal — upload from device
+   ═══════════════════════════════════════════════════════════ */
+.media-upload-dropzone {
+  width: 100%;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  padding: 16px 14px;
+  margin-bottom: 10px;
+  background: rgba(56, 189, 248, 0.06);
+  border: 1.5px dashed rgba(56, 189, 248, 0.38);
+  border-radius: 12px;
+  color: #38bdf8;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.16s ease;
+}
+
+.media-upload-dropzone:hover:not(:disabled) {
+  background: rgba(56, 189, 248, 0.12);
+  border-color: rgba(56, 189, 248, 0.6);
+}
+
+.media-upload-dropzone:active:not(:disabled) {
+  transform: scale(0.99);
+}
+
+.media-upload-dropzone:disabled {
+  cursor: progress;
+  opacity: 0.85;
+}
+
+.media-upload-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #e0f2fe;
+  text-align: center;
+}
+
+.media-upload-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10.5px;
+  color: rgba(255, 255, 255, 0.42);
+  text-align: center;
+}
+
+.media-upload-spinner {
+  animation: media-upload-spin 0.9s linear infinite;
+}
+
+@keyframes media-upload-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.media-upload-error {
+  margin: -4px 0 10px;
+  padding: 8px 11px;
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 9px;
+  color: #fca5a5;
+  font-size: 11.5px;
+  line-height: 1.45;
+}
+
+.media-input-divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 2px 0 10px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.26);
+}
+
+.media-input-divider::before,
+.media-input-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.media-card-file-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  background: rgba(16, 185, 129, 0.18);
+  color: #34d399;
+  padding: 1px 5px;
+  border-radius: 4px;
+}

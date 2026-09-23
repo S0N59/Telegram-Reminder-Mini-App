@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { motion } from 'framer-motion';
 import { WelcomeScreen } from './components/WelcomeScreen';
 import { ReminderForm } from './components/ReminderForm';
 import { ReminderList } from './components/ReminderList';
@@ -6,15 +7,21 @@ import { Settings, type AccentColor } from './components/Settings';
 import { CalendarView } from './components/CalendarView';
 import { Friends } from './components/Friends';
 import { BottomNav, type TabType } from './components/BottomNav';
+import { StudioHub } from './components/StudioHub';
+import { ErrorBoundary } from './components/ErrorBoundary';
+import { AIReminderInput } from './components/AIReminderInput';
+import { AIConfirmSheet } from './components/AIConfirmSheet';
 import { initTelegramWebApp, getTelegramWebApp } from './utils/telegram';
 import { setupThemeListener } from './utils/theme';
 import { saveReminder, getReminders, deleteReminder, updateReminder, subscribeToReminders, createReminder } from './utils/reminder';
-import { fetchUserSettings, saveUserSettings } from './utils/settingsAPI';
+import { fetchUserSettings, saveUserSettings, type NotificationConfig } from './utils/settingsAPI';
 import { startReminderScheduler, stopReminderScheduler } from './utils/reminderScheduler';
 import type { ReminderFormData, Reminder } from './types/reminder';
-import type { BotContact } from './utils/reminderStorage';
+import { fetchContactsAPI, getCachedContacts, type BotContact } from './utils/reminderStorage';
+import type { AIReminderIntent } from './utils/aiParser';
 import { translations, type Language } from './i18n';
 import './App.css';
+
 
 // Accent color values
 const accentColorValues: Record<AccentColor, { main: string; light: string; text: string }> = {
@@ -55,10 +62,14 @@ function App() {
   const [reRemindInterval, setReRemindInterval] = useState<number>(savedSettings.reRemindInterval);
   const [reRemindEnabled, setReRemindEnabled] = useState<boolean>(savedSettings.reRemindEnabled ?? true);
   const [monochromePriority, setMonochromePriority] = useState<boolean>(savedSettings.monochromePriority);
-  const [showWelcomeScreen, setShowWelcomeScreen] = useState<boolean>(true);
-  const [activeTab, setActiveTab] = useState<TabType>('inbox');
-  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
   const webApp = getTelegramWebApp();
+  const urlParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+  const startParam = webApp?.initDataUnsafe?.start_param || urlParams?.get('start') || urlParams?.get('tab') || '';
+  const isDirectStudio = startParam === 'studio' || startParam === 'editor' || urlParams?.get('tab') === 'studio';
+
+  const [showWelcomeScreen, setShowWelcomeScreen] = useState<boolean>(() => !isDirectStudio);
+  const [activeTab, setActiveTab] = useState<TabType>(() => isDirectStudio ? 'studio' : 'inbox');
+  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
   const user = webApp?.initDataUnsafe?.user;
   const [reminders, setReminders] = useState<Reminder[]>([]);
   const [editingReminder, setEditingReminder] = useState<Reminder | null>(null);
@@ -68,8 +79,25 @@ function App() {
   const [notionDatabaseId, setNotionDatabaseId] = useState<string | undefined>();
   const [totalCreated, setTotalCreated] = useState<number>(0);
   const [totalDeleted, setTotalDeleted] = useState<number>(0);
+  const [notificationConfig, setNotificationConfig] = useState<NotificationConfig | null>(null);
+  const [showProfileActivity, setShowProfileActivity] = useState<boolean>(false);
+  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+  const [isInStudioEditor, setIsInStudioEditor] = useState<boolean>(false);
+  const [createMode, setCreateMode] = useState<'manual' | 'ai'>('manual');
+  const [aiIntent, setAiIntent] = useState<AIReminderIntent | null>(null);
+  const [contacts, setContacts] = useState<BotContact[]>(() => user?.id ? getCachedContacts(user.id) : []);
 
   const t = translations[language];
+
+  useEffect(() => {
+    if (user?.id) {
+      const cached = getCachedContacts(user.id);
+      if (cached.length > 0) setContacts(cached);
+      fetchContactsAPI(user.id).then(data => {
+        if (Array.isArray(data) && data.length > 0) setContacts(data);
+      }).catch(() => {});
+    }
+  }, [user?.id]);
 
   useEffect(() => {
     initTelegramWebApp();
@@ -82,13 +110,14 @@ function App() {
     };
     loadReminders();
 
-    // Load Notion settings
+    // Load Notion and user settings
     const loadSettings = async () => {
       const settings = await fetchUserSettings();
       if (settings.notionToken) setNotionToken(settings.notionToken);
       if (settings.notionDatabaseId) setNotionDatabaseId(settings.notionDatabaseId);
       if (settings.totalCreated !== undefined) setTotalCreated(settings.totalCreated);
       if (settings.totalDeleted !== undefined) setTotalDeleted(settings.totalDeleted);
+      if (settings.notificationConfig !== undefined) setNotificationConfig(settings.notificationConfig);
     };
     loadSettings();
 
@@ -137,9 +166,32 @@ function App() {
 
   const handleSave = async (data: ReminderFormData) => {
     try {
-      const newReminder = createReminder(data, user?.id);
-      await saveReminder(newReminder);
-      setTotalCreated(prev => prev + 1);
+      if (data.recipients && data.recipients.length > 0) {
+        const batchGroupId = data.recipients.length > 1
+          ? 'grp_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7)
+          : undefined;
+
+        // Create one reminder per recipient with shared groupId
+        for (const recipient of data.recipients) {
+          const isSelf = recipient.chatId === user?.id;
+          const newReminder = createReminder(
+            {
+              ...data,
+              // If "myself" selected — no assignedTo (regular self-reminder)
+              assignedTo: isSelf ? '' : recipient.username,
+              assignedToChatId: isSelf ? undefined : recipient.chatId,
+              creatorName: isSelf ? undefined : data.creatorName,
+              groupId: batchGroupId,
+            },
+            user?.id
+          );
+          await saveReminder(newReminder);
+        }
+      } else {
+        const newReminder = createReminder(data, user?.id);
+        await saveReminder(newReminder);
+      }
+      setTotalCreated(prev => prev + (data.recipients?.length || 1));
       setShowWelcomeScreen(false);
       setActiveTab('inbox');
     } catch (error) {
@@ -208,18 +260,21 @@ function App() {
     if (showWelcomeScreen) return 'Remigram';
     switch (activeTab) {
       case 'inbox': return 'Inbox';
+      case 'studio': return 'Studio';
       case 'activity': return 'Activity';
-      case 'create': return editingReminder ? 'Edit Reminder' : 'Create Reminder';
+      case 'create': return editingReminder ? 'Edit Reminder' : createMode === 'ai' ? 'AI Assistant' : 'Create Reminder';
       case 'friends': return 'Friends';
-      case 'settings': return 'Settings';
+      case 'settings': return showProfileActivity ? 'Profile Activity' : 'Settings';
     }
   };
 
-  const TAB_ORDER: TabType[] = ['inbox', 'activity', 'create', 'friends', 'settings'];
+  const TAB_ORDER: TabType[] = ['inbox', 'studio', 'create', 'friends', 'settings'];
   const touchStartX = useRef<number>(0);
   const touchStartY = useRef<number>(0);
+  const isTouchIgnored = useRef<boolean>(false);
 
   const switchTab = (tab: TabType) => {
+    setShowProfileActivity(false);
     if (showWelcomeScreen) {
       setShowWelcomeScreen(false);
     } else if (tab === activeTab) {
@@ -240,9 +295,24 @@ function App() {
   const handleTouchStart = (e: React.TouchEvent) => {
     touchStartX.current = e.touches[0].clientX;
     touchStartY.current = e.touches[0].clientY;
+
+    const target = e.target as HTMLElement | null;
+    if (
+      target?.closest?.(
+        '[data-no-swipe], .toolbar-scroll-track, .docs-formatting-toolbar, .editor-sticky-toolbar-island, .telegram-post-editor-page, .tiptap-content-wrapper, .tiptap, input, textarea, select'
+      )
+    ) {
+      isTouchIgnored.current = true;
+    } else {
+      isTouchIgnored.current = false;
+    }
   };
 
   const handleTouchEnd = (e: React.TouchEvent) => {
+    if (isTouchIgnored.current) {
+      return;
+    }
+
     const deltaX = e.changedTouches[0].clientX - touchStartX.current;
     const deltaY = e.changedTouches[0].clientY - touchStartY.current;
 
@@ -265,17 +335,19 @@ function App() {
   };
 
   return (
-    <div className={`app theme-${accentColor}`}>
-      <div className="app-header">
-        <div className="header-content">
-          <h1>{getPageTitle()}</h1>
-          {!showWelcomeScreen && activeTab === 'create' && editingReminder && (
-            <button className="header-action-btn" onClick={handleCancelEdit} aria-label="Close">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-            </button>
-          )}
+    <div className={`app theme-${accentColor} ${isInStudioEditor ? 'in-editor-mode' : ''}`}>
+      {!isInStudioEditor && (
+        <div className="app-header">
+          <div className="header-content">
+            <h1>{getPageTitle()}</h1>
+            {!showWelcomeScreen && activeTab === 'create' && editingReminder && (
+              <button className="header-action-btn" onClick={handleCancelEdit} aria-label="Close">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+              </button>
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       <div
         className="app-content"
@@ -283,38 +355,43 @@ function App() {
         onTouchEnd={handleTouchEnd}
       >
         {showWelcomeScreen ? (
-          <WelcomeScreen
-            reminders={reminders}
-            user={user}
-            accentColor={accentColor}
-            monochromePriority={monochromePriority}
-            onNavigateToInbox={() => {
-              setShowWelcomeScreen(false);
-              setActiveTab('inbox');
-            }}
-            onNavigateToCreate={() => {
-              setShowWelcomeScreen(false);
-              setEditingReminder(null);
-              setActiveTab('create');
-            }}
-            onNavigateToActivity={() => {
-              setShowWelcomeScreen(false);
-              setActiveTab('activity');
-            }}
-            onEdit={(r) => {
-              setShowWelcomeScreen(false);
-              handleEdit(r);
-            }}
-            onDelete={handleDelete}
-            onStatusChange={async (id, status) => {
-              const done = status === 'done';
-              await updateReminder(id, { status, done });
-              setReminders(prev => prev.map(r => r.id === id ? { ...r, status, done } as Reminder : r));
-            }}
-          />
+          <ErrorBoundary name="WelcomeScreen">
+            <WelcomeScreen
+              reminders={reminders}
+              user={user}
+              accentColor={accentColor}
+              monochromePriority={monochromePriority}
+              onNavigateToInbox={() => {
+                setShowWelcomeScreen(false);
+                setActiveTab('inbox');
+              }}
+              onNavigateToCreate={() => {
+                setShowWelcomeScreen(false);
+                setEditingReminder(null);
+                setActiveTab('create');
+              }}
+              onNavigateToActivity={() => {
+                setShowWelcomeScreen(false);
+                setShowProfileActivity(true);
+                setActiveTab('settings');
+              }}
+              onEdit={(r) => {
+                setShowWelcomeScreen(false);
+                handleEdit(r);
+              }}
+              onDelete={handleDelete}
+              onStatusChange={async (id, status) => {
+                const done = status === 'done';
+                await updateReminder(id, { status, done });
+                setReminders(prev => prev.map(r => r.id === id ? { ...r, status, done } as Reminder : r));
+              }}
+              onModalOpenChange={setIsModalOpen}
+            />
+          </ErrorBoundary>
         ) : (
           <>
             {activeTab === 'inbox' && (
+              <ErrorBoundary name="ReminderList">
               <ReminderList
                 reminders={reminders}
                 user={user}
@@ -330,52 +407,129 @@ function App() {
                   await updateReminder(id, { status, done });
                   setReminders(prev => prev.map(r => r.id === id ? { ...r, status, done } as Reminder : r));
                 }}
+                onModalOpenChange={setIsModalOpen}
               />
+              </ErrorBoundary>
             )}
 
-            {activeTab === 'activity' && (
-              <CalendarView
-                reminders={reminders}
+
+            {activeTab === 'studio' && (
+              <StudioHub
                 accentColor={accentColor}
-                onEdit={handleEdit}
-                onDelete={handleDelete}
-                onStatusChange={async (id, status) => {
-                  const done = status === 'done';
-                  await updateReminder(id, { status, done });
-                  setReminders(prev => prev.map(r => r.id === id ? { ...r, status, done } as Reminder : r));
-                }}
-                monochromePriority={monochromePriority}
-                strings={t}
-                stats={{
-                  totalCreated,
-                  totalDeleted,
-                  inProgress: reminders.filter(r => r.status === 'in_progress' && !r.done).length,
-                  todo: reminders.filter(r => (r.status === 'todo' || !r.status) && !r.done).length,
-                  done: reminders.filter(r => r.done).length,
-                  overdue: reminders.filter(r => {
-                    if (r.done) return false;
-                    const reminderTime = new Date(r.date + 'T' + r.time + ':00').getTime();
-                    return reminderTime <= new Date().getTime();
-                  }).length
-                }}
+                onEditorActiveChange={setIsInStudioEditor}
+                userId={user?.id}
               />
             )}
 
             {activeTab === 'create' && (
-              <div ref={formRef}>
-                <ReminderForm
-                  onSave={handleSave}
-                  onUpdate={handleUpdate}
-                  onCancelEdit={handleCancelEdit}
-                  editingReminder={editingReminder}
-                  strings={t}
-                  globalReRemindInterval={reRemindInterval}
-                  globalReRemindEnabled={reRemindEnabled}
-                  monochromePriority={monochromePriority}
-                  userId={user?.id}
-                  creatorName={user ? [user.first_name, user.last_name].filter(Boolean).join(' ') : undefined}
-                  preselectedFriend={preselectedFriend}
-                  onClearPreselectedFriend={() => setPreselectedFriend(null)}
+              <div ref={formRef} className="create-tab-page animate-fade-in">
+                {!editingReminder && (
+                  <div className="form-mode-switch" style={{ margin: '0 0 16px 0' }}>
+                    <button
+                      type="button"
+                      className={`mode-switch-btn ${createMode === 'manual' ? 'active' : ''}`}
+                      onClick={() => {
+                        try { webApp?.HapticFeedback?.selectionChanged?.(); } catch {}
+                        setCreateMode('manual');
+                      }}
+                    >
+                      {createMode === 'manual' && (
+                        <motion.div
+                          initial={{ opacity: 0, scale: 0.94 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          transition={{ duration: 0.18, ease: 'easeOut' }}
+                          className="mode-switch-active-pill"
+                        />
+                      )}
+                      <span className="mode-btn-content">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M12 20h9"></path>
+                          <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                        </svg>
+                        <span>Reminder</span>
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      className={`mode-switch-btn ${createMode === 'ai' ? 'active' : ''}`}
+                      onClick={() => {
+                        try { webApp?.HapticFeedback?.selectionChanged?.(); } catch {}
+                        setCreateMode('ai');
+                      }}
+                    >
+                      {createMode === 'ai' && (
+                        <motion.div
+                          initial={{ opacity: 0, scale: 0.94 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          transition={{ duration: 0.18, ease: 'easeOut' }}
+                          className="mode-switch-active-pill"
+                        />
+                      )}
+                      <span className="mode-btn-content">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M12 2a10 10 0 1 0 10 10" />
+                          <path d="M12 8v4l3 3" />
+                          <circle cx="19" cy="5" r="3" fill="currentColor" stroke="none" />
+                        </svg>
+                        <span>AI Assistant</span>
+                      </span>
+                    </button>
+                  </div>
+                )}
+
+                {createMode === 'manual' || editingReminder ? (
+                  <ReminderForm
+                    onSave={handleSave}
+                    onUpdate={handleUpdate}
+                    onCancelEdit={handleCancelEdit}
+                    editingReminder={editingReminder}
+                    strings={t}
+                    globalReRemindInterval={reRemindInterval}
+                    globalReRemindEnabled={reRemindEnabled}
+                    monochromePriority={monochromePriority}
+                    userId={user?.id}
+                    creatorName={user ? [user.first_name, user.last_name].filter(Boolean).join(' ') : undefined}
+                    preselectedFriend={preselectedFriend}
+                    onClearPreselectedFriend={() => setPreselectedFriend(null)}
+                  />
+                ) : (
+                  <AIReminderInput
+                    userId={user?.id}
+                    onResult={(intent) => {
+                      try { webApp?.HapticFeedback?.notificationOccurred?.('success'); } catch {}
+                      setAiIntent(intent);
+                    }}
+                  />
+                )}
+
+                {/* AI Confirmation Bottom Sheet */}
+                <AIConfirmSheet
+                  intent={aiIntent}
+                  contacts={contacts}
+                  currentUserId={user?.id}
+                  onConfirm={async (remindersList) => {
+                    setAiIntent(null);
+                    for (const rData of remindersList) {
+                      await handleSave(rData);
+                    }
+                  }}
+                  onEdit={(prefilled) => {
+                    setAiIntent(null);
+                    setCreateMode('manual');
+                    setEditingReminder({
+                      id: 'temp_ai_' + Date.now(),
+                      text: prefilled.text,
+                      date: prefilled.date,
+                      time: `${prefilled.hours}:${prefilled.minutes}`,
+                      createdAt: Date.now(),
+                      priority: prefilled.priority,
+                      repeat: prefilled.repeat,
+                      assignedTo: prefilled.assignedTo,
+                      assignedToChatId: prefilled.assignedToChatId,
+                      creatorName: prefilled.creatorName,
+                    });
+                  }}
+                  onClose={() => setAiIntent(null)}
                 />
               </div>
             )}
@@ -393,39 +547,102 @@ function App() {
             )}
 
             {activeTab === 'settings' && (
-              <Settings
-                accentColor={accentColor}
-                onAccentColorChange={setAccentColor}
-                reRemindInterval={reRemindInterval}
-                onReRemindIntervalChange={setReRemindInterval}
-                reRemindEnabled={reRemindEnabled}
-                onReRemindEnabledChange={setReRemindEnabled}
-                monochromePriority={monochromePriority}
-                onMonochromePriorityChange={setMonochromePriority}
-                userId={user?.id}
-                userName={user?.first_name}
-                userUsername={user?.username}
-                notionToken={notionToken}
-                notionDatabaseId={notionDatabaseId}
-                onSaveNotion={async (token, dbId) => {
-                  const ok = await saveUserSettings({ notionToken: token, notionDatabaseId: dbId });
-                  if (ok) {
-                    setNotionToken(token || undefined);
-                    setNotionDatabaseId(dbId || undefined);
-                  }
-                  return ok;
-                }}
-              />
+              showProfileActivity ? (
+                <div className="animate-fade-in">
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    padding: '8px 16px 12px',
+                    cursor: 'pointer',
+                    userSelect: 'none',
+                  }} onClick={() => setShowProfileActivity(false)}>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="15 18 9 12 15 6"></polyline>
+                    </svg>
+                    <span style={{ fontSize: '15px', fontWeight: 600, color: 'var(--tg-theme-text-color, #000)' }}>Back to Settings</span>
+                  </div>
+                  <CalendarView
+                    reminders={reminders}
+                    accentColor={accentColor}
+                    onEdit={handleEdit}
+                    onDelete={handleDelete}
+                    onStatusChange={async (id, status) => {
+                      const done = status === 'done';
+                      await updateReminder(id, { status, done });
+                      setReminders(prev => prev.map(r => r.id === id ? { ...r, status, done } as Reminder : r));
+                    }}
+                    monochromePriority={monochromePriority}
+                    strings={t}
+                    stats={{
+                      totalCreated,
+                      totalDeleted,
+                      inProgress: reminders.filter(r => r.status === 'in_progress' && !r.done).length,
+                      todo: reminders.filter(r => (r.status === 'todo' || !r.status) && !r.done).length,
+                      done: reminders.filter(r => r.done).length,
+                      overdue: reminders.filter(r => {
+                        if (r.done) return false;
+                        const reminderTime = new Date(r.date + 'T' + r.time + ':00').getTime();
+                        return reminderTime <= new Date().getTime();
+                      }).length
+                    }}
+                  />
+                </div>
+              ) : (
+                <Settings
+                  accentColor={accentColor}
+                  onAccentColorChange={setAccentColor}
+                  reRemindInterval={reRemindInterval}
+                  onReRemindIntervalChange={setReRemindInterval}
+                  reRemindEnabled={reRemindEnabled}
+                  onReRemindEnabledChange={setReRemindEnabled}
+                  monochromePriority={monochromePriority}
+                  onMonochromePriorityChange={setMonochromePriority}
+                  userId={user?.id}
+                  userName={user?.first_name}
+                  userUsername={user?.username}
+                  notionToken={notionToken}
+                  notionDatabaseId={notionDatabaseId}
+                  onSaveNotion={async (token, dbId) => {
+                    const ok = await saveUserSettings({ notionToken: token, notionDatabaseId: dbId });
+                    if (ok) {
+                      setNotionToken(token || undefined);
+                      setNotionDatabaseId(dbId || undefined);
+                    }
+                    return ok;
+                  }}
+                  notificationConfig={notificationConfig}
+                  onSaveNotificationConfig={async (newConfig) => {
+                    const ok = await saveUserSettings({ notificationConfig: newConfig });
+                    if (ok) {
+                      setNotificationConfig(newConfig);
+                    }
+                    return ok;
+                  }}
+                  onResetNotificationConfig={async () => {
+                    const ok = await saveUserSettings({ notificationConfig: null });
+                    if (ok) {
+                      setNotificationConfig(null);
+                    }
+                    return ok;
+                  }}
+                  onOpenActivity={() => setShowProfileActivity(true)}
+                />
+              )
             )}
           </>
         )}
       </div>
 
-      <BottomNav
-        activeTab={activeTab}
-        onTabChange={switchTab}
-        isKeyboardVisible={isKeyboardVisible}
-      />
+      {!isInStudioEditor && (
+        <BottomNav
+          activeTab={activeTab}
+          onTabChange={switchTab}
+          isKeyboardVisible={isKeyboardVisible}
+          isModalOpen={isModalOpen}
+        />
+      )}
+
     </div>
   );
 }

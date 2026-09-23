@@ -119,5 +119,75 @@ export const createReminder = (
     assignedTo: formData.assignedTo,
     assignedToChatId: formData.assignedToChatId,
     creatorName: formData.creatorName,
+    groupId: formData.groupId,
   };
 };
+
+// Collapses group reminders sharing the same groupId into a unified single card model
+export function unifyGroupReminders(rawReminders: Reminder[] = [], currentUserId?: number): Reminder[] {
+  if (!Array.isArray(rawReminders)) return [];
+  const groupMap = new Map<string, Reminder[]>();
+  const singleList: Reminder[] = [];
+
+  for (const r of rawReminders) {
+    if (!r) continue;
+    if (r.groupId) {
+      const list = groupMap.get(r.groupId) || [];
+      list.push(r);
+      groupMap.set(r.groupId, list);
+    } else {
+      singleList.push(r);
+    }
+  }
+
+  const result: Reminder[] = [...singleList];
+
+  groupMap.forEach((groupItems, groupId) => {
+    if (!groupItems || groupItems.length === 0) return;
+
+    // Find personal record of current user if present, else default to first
+    const myRecord = groupItems.find(r => 
+      r.assignedToChatId ? r.assignedToChatId === currentUserId : (r.userId === currentUserId && !r.assignedToChatId)
+    ) || groupItems[0];
+
+    const participants = groupItems.map(item => {
+      const isMe = currentUserId
+        ? (item.assignedToChatId ? item.assignedToChatId === currentUserId : (item.userId === currentUserId && !item.assignedToChatId))
+        : false;
+
+      const rawName = item.assignedTo ? item.assignedTo.replace(/^@/, '') : (item.creatorName || 'Friend');
+      const displayName = isMe ? 'You' : (rawName || 'Friend');
+
+      const isDone = item.done || item.status === 'done';
+      const status = (item.status || (isDone ? 'done' : 'todo')) as 'todo' | 'in_progress' | 'done';
+
+      return {
+        id: item.id,
+        userId: item.assignedToChatId || item.userId,
+        name: displayName,
+        username: item.assignedTo || '',
+        status,
+        done: isDone,
+        isMe,
+      };
+    });
+
+    // Entire group is done only if ALL participants have completed their part
+    const allDone = participants.length > 0 && participants.every(p => p.done || p.status === 'done');
+    const anyInProgress = participants.some(p => p.status === 'in_progress' || p.done);
+    const groupStatus = allDone ? 'done' : anyInProgress ? 'in_progress' : 'todo';
+
+    const unified: Reminder = {
+      ...myRecord,
+      groupId,
+      groupParticipants: participants,
+      status: groupStatus,
+      done: allDone,
+    };
+
+    result.push(unified);
+  });
+
+  return result;
+}
+

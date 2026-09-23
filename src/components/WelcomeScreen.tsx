@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { Reminder } from '../types/reminder';
+import { unifyGroupReminders } from '../utils/reminder';
 import { ReminderCard } from './ReminderCard';
 import { ReminderDetailModal } from './ReminderDetailModal';
 import { config } from '../config';
@@ -25,10 +26,11 @@ interface WelcomeScreenProps {
   onEdit: (reminder: Reminder) => void;
   onDelete: (id: string) => void;
   onStatusChange?: (id: string, status: 'todo' | 'in_progress' | 'done') => void;
+  onModalOpenChange?: (open: boolean) => void;
 }
 
 export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
-  reminders,
+  reminders = [],
   user,
   accentColor,
   monochromePriority,
@@ -38,9 +40,30 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
   onEdit,
   onDelete,
   onStatusChange,
+  onModalOpenChange,
 }) => {
   const [currentTime, setCurrentTime] = useState<Date>(new Date());
-  const [selectedDetailReminder, setSelectedDetailReminder] = useState<Reminder | null>(null);
+  const [selectedReminderId, setSelectedReminderId] = useState<string | null>(null);
+
+  const unifiedReminders = useMemo(() => {
+    return unifyGroupReminders(reminders, user?.id);
+  }, [reminders, user?.id]);
+
+  const selectedDetailReminder = useMemo(() => {
+    if (!selectedReminderId) return null;
+    return unifiedReminders.find(r => r.id === selectedReminderId) || null;
+  }, [unifiedReminders, selectedReminderId]);
+
+  // Notify parent when modal opens/closes so it can hide the bottom nav
+  const openDetailModal = (r: Reminder) => {
+    setSelectedReminderId(r.id);
+    onModalOpenChange?.(true);
+  };
+  const closeDetailModal = () => {
+    setSelectedReminderId(null);
+    onModalOpenChange?.(false);
+  };
+
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -52,6 +75,7 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
   const hours = currentTime.getHours();
   const minutes = String(currentTime.getMinutes()).padStart(2, '0');
   const timeFormatted = `${String(hours).padStart(2, '0')}:${minutes}`;
+
 
   const greeting = useMemo(() => {
     if (hours >= 5 && hours < 12) return 'Good morning';
@@ -75,12 +99,34 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
 
   const userName = user?.first_name || user?.username || 'there';
 
-  // Today's reminders
+  const getPriorityRank = (p?: string) => {
+    const lower = (p || '').toLowerCase();
+    if (lower === 'high') return 3;
+    if (lower === 'medium') return 2;
+    if (lower === 'low') return 1;
+    return 0;
+  };
+
+
+  // Today's reminders sorted by completion, priority, and time
   const todayReminders = useMemo(() => {
-    return reminders
-      .filter((r) => r.date === todayStr)
-      .sort((a, b) => a.time.localeCompare(b.time));
-  }, [reminders, todayStr]);
+    return unifiedReminders
+      .filter((r) => r && r.date === todayStr)
+      .sort((a, b) => {
+        // Active tasks before completed
+        const aDone = a.done || a.status === 'done';
+        const bDone = b.done || b.status === 'done';
+        if (aDone !== bDone) return aDone ? 1 : -1;
+
+        // High priority first
+        const prioDiff = getPriorityRank(b.priority) - getPriorityRank(a.priority);
+        if (prioDiff !== 0) return prioDiff;
+
+        return (a.time || '').localeCompare(b.time || '');
+      });
+  }, [unifiedReminders, todayStr]);
+
+
 
   const todayTotal = todayReminders.length;
   const todayDone = todayReminders.filter((r) => r.done || r.status === 'done').length;
@@ -88,8 +134,33 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
   const progressPercent = todayTotal > 0 ? Math.round((todayDone / todayTotal) * 100) : 0;
 
   const totalAllActive = useMemo(() => {
-    return reminders.filter((r) => !r.done && r.status !== 'done').length;
-  }, [reminders]);
+    return unifiedReminders.filter((r) => !r.done && r.status !== 'done').length;
+  }, [unifiedReminders]);
+
+  const formatDate = (dateStr: string): string => {
+    try {
+      const [y, m, d] = (dateStr || '').split('-').map(Number);
+      if (!y || !m || !d) return dateStr || '';
+      const dateObj = new Date(y, m - 1, d);
+      return dateObj.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+    } catch {
+      return dateStr || '';
+    }
+  };
+
+  const formatTimeUntil = (date: string, time: string): string => {
+    try {
+      const rDate = new Date(`${date}T${time}:00`);
+      const diff = rDate.getTime() - Date.now();
+      if (diff < 0) return 'Passed';
+      const mins = Math.ceil(diff / 60000);
+      if (mins < 60) return `in ${mins}m`;
+      const hrs = Math.floor(mins / 60);
+      return `in ${hrs}h ${mins % 60}m`;
+    } catch {
+      return '';
+    }
+  };
 
   return (
     <div className="welcome-screen-container">
@@ -181,20 +252,23 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
 
       {todayReminders.length > 0 ? (
         <div className="welcome-reminders-list">
-          <AnimatePresence>
-            {todayReminders.map((reminder) => (
-              <ReminderCard
-                key={reminder.id}
-                reminder={reminder}
-                onDelete={onDelete}
-                onEdit={onEdit}
-                onStatusChange={onStatusChange}
-                onOpenDetail={(r) => setSelectedDetailReminder(r)}
-                accentColor={accentColor}
-                monochromePriority={monochromePriority}
-              />
-            ))}
-          </AnimatePresence>
+          {todayReminders.map((reminder) => (
+            <ReminderCard
+              key={reminder.id}
+              reminder={reminder}
+              onDelete={onDelete}
+              onEdit={(r) => openDetailModal(r)}
+              onStatusChange={onStatusChange}
+              isPassed={new Date(`${reminder.date || ''}T${reminder.time || ''}:00`).getTime() <= Date.now()}
+              formatDate={formatDate}
+              formatTimeUntil={formatTimeUntil}
+              accentColor={accentColor}
+              monochromePriority={monochromePriority}
+              currentUserId={user?.id}
+            />
+          ))}
+
+
         </div>
       ) : (
         <motion.div
@@ -265,26 +339,25 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
       </button>
 
       {/* Detail Modal */}
-      {selectedDetailReminder && (
-        <ReminderDetailModal
-          reminder={selectedDetailReminder}
-          onClose={() => setSelectedDetailReminder(null)}
-          onEdit={(r) => {
-            setSelectedDetailReminder(null);
-            onEdit(r);
-          }}
-          onDelete={(id) => {
-            setSelectedDetailReminder(null);
-            onDelete(id);
-          }}
-          onStatusChange={(id, status) => {
-            if (onStatusChange) onStatusChange(id, status);
-            setSelectedDetailReminder((prev) => (prev ? { ...prev, status, done: status === 'done' } : null));
-          }}
-          accentColor={accentColor}
-          monochromePriority={monochromePriority}
-        />
-      )}
+      <ReminderDetailModal
+        reminder={selectedDetailReminder}
+        isOpen={!!selectedDetailReminder}
+        onClose={closeDetailModal}
+        onEdit={(r) => {
+          closeDetailModal();
+          onEdit(r);
+        }}
+        onDelete={(id) => {
+          closeDetailModal();
+          onDelete(id);
+        }}
+        onStatusChange={onStatusChange}
+        formatDate={formatDate}
+        formatTimeUntil={formatTimeUntil}
+        monochromePriority={monochromePriority}
+        currentUserId={user?.id}
+      />
     </div>
   );
 };
+

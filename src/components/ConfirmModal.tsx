@@ -1,3 +1,5 @@
+import React, { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import './ConfirmModal.css';
 
 interface ConfirmModalProps {
@@ -25,12 +27,23 @@ export const ConfirmModal = ({
   onCancel,
   isDestructive = true
 }: ConfirmModalProps) => {
+  useEffect(() => {
+    if (isOpen) {
+      document.body.classList.add('modal-open');
+    } else {
+      document.body.classList.remove('modal-open');
+    }
+    return () => {
+      document.body.classList.remove('modal-open');
+    };
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   const resolvedConfirm = confirmLabel || confirmText;
   const resolvedCancel = cancelLabel || cancelText;
 
-  return (
+  return createPortal(
     <div className="confirm-modal-overlay" onClick={onCancel}>
       <div className="confirm-modal animate-scale-in" onClick={e => e.stopPropagation()}>
         <h3>{title}</h3>
@@ -48,6 +61,8 @@ export const ConfirmModal = ({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
+

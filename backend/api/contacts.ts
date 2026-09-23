@@ -1,17 +1,18 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { getDb } from './db.js';
+import { requireTelegramUser, setApiCors } from '../lib/telegramAuth.js';
 
 export default async function handler(
   req: VercelRequest,
   res: VercelResponse
 ) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  setApiCors(res, 'GET, POST, OPTIONS');
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
+  const telegramUser = requireTelegramUser(req, res);
+  if (!telegramUser) return;
 
   const db = getDb();
 
@@ -24,7 +25,7 @@ export default async function handler(
         return res.status(400).json({ error: 'userId is required' });
       }
 
-      const parsedUserId = parseInt(userId as string);
+      const parsedUserId = telegramUser.id;
 
       // Fetch friend user IDs and their details using a JOIN
       const result = await db.query(`
@@ -61,7 +62,7 @@ export default async function handler(
         return res.status(400).json({ error: 'userId and targetUsername/targetUserId are required' });
       }
 
-      const currentUserId = parseInt(userId);
+      const currentUserId = telegramUser.id;
       let targetId = targetUserId ? parseInt(targetUserId) : null;
       let targetUser: any = null;
 

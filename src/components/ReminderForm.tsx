@@ -3,8 +3,8 @@ import type { ChangeEvent } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { ReminderFormData, Reminder, RepeatType, PriorityType } from '../types/reminder';
-import { getTelegramWebApp } from '../utils/telegram';
-import { fetchContactsAPI, addContactAPI, type BotContact } from '../utils/reminderStorage';
+import { getTelegramWebApp, getUserData } from '../utils/telegram';
+import { fetchContactsAPI, addContactAPI, getCachedContacts, type BotContact } from '../utils/reminderStorage';
 import { config } from '../config';
 import { TimeWheelPicker } from './TimeWheelPicker';
 import './ReminderForm.css';
@@ -105,10 +105,15 @@ export const ReminderForm = ({
   const [formData, setFormData] = useState<ReminderFormData>(getInitialFormData());
   const [recipientMode, setRecipientMode] = useState<'me' | 'friend'>('me');
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
-  const [contacts, setContacts] = useState<BotContact[]>([]);
-  const [contactsLoaded, setContactsLoaded] = useState(false);
+  const webApp = getTelegramWebApp();
+  const effectiveUserId = userId || getUserData()?.id;
+  const [contacts, setContacts] = useState<BotContact[]>(() => effectiveUserId ? getCachedContacts(effectiveUserId) : []);
+  const [contactsLoaded, setContactsLoaded] = useState(() => (effectiveUserId ? getCachedContacts(effectiveUserId).length > 0 : false));
   const [showContactPicker, setShowContactPicker] = useState(false);
   const [contactSearch, setContactSearch] = useState('');
+  // Multi-select: list of selected contacts
+  const [selectedContacts, setSelectedContacts] = useState<BotContact[]>([]);
+  // Legacy single contact (used for custom @username input only)
   const [selectedContact, setSelectedContact] = useState<BotContact | null>(null);
   const [customFriendInput, setCustomFriendInput] = useState('');
 
@@ -122,13 +127,30 @@ export const ReminderForm = ({
   const [calViewMonth, setCalViewMonth] = useState<number>(parseInt(today.month, 10) - 1); // 0-indexed
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const webApp = getTelegramWebApp();
+
+  // Background prefetch contacts so list is 100% instant (0ms delay) when opening picker
+  useEffect(() => {
+    if (effectiveUserId) {
+      const cached = getCachedContacts(effectiveUserId);
+      if (cached.length > 0) {
+        setContacts(cached);
+        setContactsLoaded(true);
+      }
+      fetchContactsAPI(effectiveUserId).then(data => {
+        if (Array.isArray(data) && data.length > 0) {
+          setContacts(data);
+          setContactsLoaded(true);
+        }
+      }).catch(() => {});
+    }
+  }, [effectiveUserId]);
 
   // Handle preselected friend from Friends tab
   useEffect(() => {
     if (preselectedFriend) {
       setRecipientMode('friend');
       setSelectedContact(preselectedFriend);
+      setSelectedContacts([preselectedFriend]);
       const displayName = preselectedFriend.username
         ? `@${preselectedFriend.username}`
         : [preselectedFriend.firstName, preselectedFriend.lastName].filter(Boolean).join(' ') || 'Friend';
@@ -166,14 +188,22 @@ export const ReminderForm = ({
         setCalViewYear(parseInt(year, 10));
         setCalViewMonth(parseInt(month, 10) - 1);
       }
-      if (editingReminder.assignedTo || editingReminder.assignedToChatId) {
+      if (editingReminder.assignedToChatId || editingReminder.assignedTo) {
         setRecipientMode('friend');
+        setSelectedContacts([{
+          userId: editingReminder.assignedToChatId || 0,
+          firstName: editingReminder.assignedTo || 'Friend',
+          lastName: '',
+          username: '',
+        }]);
       } else {
         setRecipientMode('me');
+        setSelectedContacts([]);
       }
     } else if (!preselectedFriend) {
       setFormData(getInitialFormData());
       setRecipientMode('me');
+      setSelectedContacts([]);
     }
   }, [editingReminder]);
 
@@ -256,30 +286,53 @@ export const ReminderForm = ({
     setFormData(prev => ({ ...prev, minutes: mStr }));
   };
 
-  const handleOpenContactPicker = useCallback(async () => {
+  const handleOpenContactPicker = useCallback(() => {
     setContactSearch('');
     setShowContactPicker(true);
-    if (userId) {
-      try {
-        const data = await fetchContactsAPI(userId);
-        setContacts(data);
+    if (effectiveUserId) {
+      const cached = getCachedContacts(effectiveUserId);
+      if (cached.length > 0) {
+        setContacts(cached);
         setContactsLoaded(true);
-      } catch (e) {
-        console.error('Failed to load contacts:', e);
       }
+      fetchContactsAPI(effectiveUserId).then(data => {
+        if (Array.isArray(data)) {
+          setContacts(data);
+          setContactsLoaded(true);
+        }
+      }).catch(e => {
+        console.error('Failed to refresh contacts:', e);
+      });
     }
-  }, [userId]);
+  }, [effectiveUserId]);
 
   const handleInviteFriend = useCallback(() => {
-    if (!userId) return;
-    const inviteLink = `https://t.me/${config.botUsername}?start=add_${userId}`;
+    const inviterId = effectiveUserId;
+    if (!inviterId) return;
+    const inviteLink = `https://t.me/${config.botUsername}?start=add_${inviterId}`;
     const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(inviteLink)}&text=${encodeURIComponent('Add me to your Reminder contacts on Remigram so we can send each other reminders!')}`;
     if (webApp) {
       webApp.openTelegramLink(shareUrl);
     } else {
       window.open(shareUrl, '_blank');
     }
-  }, [userId, webApp]);
+  }, [effectiveUserId, webApp]);
+
+  const handleToggleContact = useCallback((contact: BotContact) => {
+    setSelectedContacts(prev => {
+      const exists = prev.some(c => c.userId === contact.userId);
+      if (exists) {
+        return prev.filter(c => c.userId !== contact.userId);
+      } else {
+        return [...prev, contact];
+      }
+    });
+  }, []);
+
+  const handleConfirmContacts = useCallback(() => {
+    // Close picker — selectedContacts already holds the selection
+    setShowContactPicker(false);
+  }, []);
 
   const handleSelectContact = useCallback((contact: BotContact) => {
     setSelectedContact(contact);
@@ -330,6 +383,7 @@ export const ReminderForm = ({
 
   const handleClearContact = useCallback(() => {
     setSelectedContact(null);
+    setSelectedContacts([]);
     setFormData(prev => ({
       ...prev,
       assignedTo: '',
@@ -380,11 +434,23 @@ export const ReminderForm = ({
         date: dateStr
       };
 
-      if (recipientMode === 'me') {
+      if (selectedContacts.length === 0) {
         reminderData.assignedTo = '';
         reminderData.assignedToChatId = undefined;
-      } else if (reminderData.assignedToChatId && creatorName) {
-        (reminderData as any).creatorName = creatorName;
+        reminderData.recipients = undefined;
+      } else {
+        // Build recipients from selectedContacts (multi-select)
+        reminderData.recipients = selectedContacts.map(c => ({
+          username: c.username ? `@${c.username}` : [c.firstName, c.lastName].filter(Boolean).join(' ') || 'Friend',
+          chatId: c.userId,
+          name: [c.firstName, c.lastName].filter(Boolean).join(' ') || c.username || 'Friend',
+        }));
+        // Also set assignedTo/assignedToChatId for single-recipient compat
+        reminderData.assignedTo = reminderData.recipients[0]?.username || '';
+        reminderData.assignedToChatId = selectedContacts[0]?.userId;
+        if (creatorName) {
+          (reminderData as any).creatorName = creatorName;
+        }
       }
 
       if (editingReminder && onUpdate) {
@@ -395,8 +461,9 @@ export const ReminderForm = ({
 
       setFormData(getInitialFormData());
       setSelectedContact(null);
+      setSelectedContacts([]);
     }
-  }, [formData, onSave, onUpdate, editingReminder, creatorName, recipientMode, strings.invalidPastDate]);
+  }, [formData, onSave, onUpdate, editingReminder, creatorName, selectedContacts, strings.invalidPastDate]);
 
   // Formatted date label
   const formattedDateLabel = useMemo(() => {
@@ -477,89 +544,9 @@ export const ReminderForm = ({
 
   return (
     <div className="reminder-form-container animate-fade-in">
-      {/* 1. Top Segmented Control: For me | For friend with Liquid Glass sliding pill */}
-      <div className="form-mode-switch">
-        <button
-          type="button"
-          className={`mode-switch-btn ${recipientMode === 'me' ? 'active' : ''}`}
-          onClick={() => {
-            try {
-              webApp?.HapticFeedback?.selectionChanged?.();
-            } catch {}
-            setRecipientMode('me');
-            handleClearContact();
-          }}
-        >
-          {recipientMode === 'me' && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.94 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.18, ease: 'easeOut' }}
-              className="mode-switch-active-pill"
-            />
-          )}
-          <span className="mode-btn-content">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-              <circle cx="12" cy="7" r="4"></circle>
-            </svg>
-            <span>For me</span>
-          </span>
-        </button>
-        <button
-          type="button"
-          className={`mode-switch-btn ${recipientMode === 'friend' ? 'active' : ''}`}
-          onClick={() => {
-            try {
-              webApp?.HapticFeedback?.selectionChanged?.();
-            } catch {}
-            setRecipientMode('friend');
-            if (!formData.assignedTo) {
-              handleOpenContactPicker();
-            }
-          }}
-        >
-          {recipientMode === 'friend' && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.94 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.18, ease: 'easeOut' }}
-              className="mode-switch-active-pill"
-            />
-          )}
-          <span className="mode-btn-content">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-              <circle cx="9" cy="7" r="4"></circle>
-              <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-              <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-            </svg>
-            <span>For friend</span>
-          </span>
-        </button>
-      </div>
 
       <div className="form-card-group">
-        {/* 1. Field: Recipient (Only if For friend - placed at TOP) */}
-        {recipientMode === 'friend' && (
-          <div className="form-card-row form-recipient-card" onClick={handleOpenContactPicker}>
-            <label className="form-row-label">Recipient (Friend)</label>
-            <div className="form-row-interactive">
-              {formData.assignedTo ? (
-                <div className="selected-friend-chip">
-                  <span>{formData.assignedTo}</span>
-                </div>
-              ) : (
-                <span className="placeholder-text">Choose friend or type @username...</span>
-              )}
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="row-icon">
-                <polyline points="9 18 15 12 9 6"></polyline>
-              </svg>
-            </div>
-          </div>
-        )}
-
-        {/* 2. Field: What (Clean Liquid Glass Input Card) */}
+        {/* 1. Field: What (First!) */}
         <div className="form-card-row form-input-card">
           <label className="form-row-label">What do you want to remind?</label>
           <div className="form-textarea-interactive-box">
@@ -574,6 +561,65 @@ export const ReminderForm = ({
             />
           </div>
         </div>
+
+        {/* 2. Field: Recipients — always visible, optional */}
+        <div className="form-card-row form-recipient-card">
+            <div className="recipient-header-row">
+              <label className="form-row-label">Add friends <span className="form-row-label-hint">(optional)</span></label>
+              {selectedContacts.length > 0 && (
+                <button type="button" className="recipient-add-btn" onClick={handleOpenContactPicker}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
+                  </svg>
+                  Add
+                </button>
+              )}
+            </div>
+
+
+            {selectedContacts.length === 0 ? (
+              <button type="button" className="recipient-empty-btn" onClick={handleOpenContactPicker}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+                  <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                </svg>
+                <span>Choose friends...</span>
+              </button>
+            ) : (
+              <div className="recipient-chips-list">
+                {selectedContacts.map(c => {
+                  const name = [c.firstName, c.lastName].filter(Boolean).join(' ') || c.username || 'Friend';
+                  return (
+                    <div key={c.userId} className="recipient-chip">
+                      <div className="recipient-chip-avatar">
+                        <img
+                          src={`${config.backendUrl}/api/avatar?userId=${c.userId}`}
+                          alt={name}
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).style.display = 'none';
+                            (e.target as HTMLImageElement).parentElement!.innerText = name.charAt(0).toUpperCase();
+                          }}
+                        />
+                      </div>
+                      <span className="recipient-chip-name">{name}</span>
+                      <button
+                        type="button"
+                        className="recipient-chip-remove"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedContacts(prev => prev.filter(x => x.userId !== c.userId));
+                        }}
+                      >
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round">
+                          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
 
         {/* 4. Field: When Selector with Liquid Glass sliding pill */}
         <div className="form-card-row visual-when-card">
@@ -912,40 +958,107 @@ export const ReminderForm = ({
               <span>Share Invite Link</span>
             </button>
 
-            {/* Contact list with full scroll height */}
+            {/* Contact list with checkboxes */}
             <div className="contact-list">
-              {filteredContacts.length === 0 ? (
-                <div className="contact-empty">
-                  {contactsLoaded ? 'No connected friends found. Type an @username above or share your invite link!' : 'Loading friends...'}
-                </div>
-              ) : (
-                filteredContacts.map(contact => (
+              {/* "Me (myself)" — always first */}
+              {(() => {
+                const tgUser = getUserData();
+                const effectiveId = userId || tgUser?.id || 1;
+                const effectiveName = creatorName || (tgUser ? [tgUser.first_name, tgUser.last_name].filter(Boolean).join(' ') || tgUser.username : 'Me');
+                
+                // Check if search matches
+                if (contactSearch.trim()) {
+                  const q = contactSearch.toLowerCase();
+                  if (!effectiveName.toLowerCase().includes(q) && !'me'.includes(q) && !'myself'.includes(q)) {
+                    return null;
+                  }
+                }
+
+                const selfContact: BotContact = {
+                  userId: effectiveId,
+                  firstName: effectiveName,
+                  lastName: '',
+                  username: tgUser?.username || '',
+                };
+                const isSelfSelected = selectedContacts.some(c => c.userId === effectiveId);
+
+                return (
                   <div
-                    key={contact.userId}
-                    className="contact-item"
-                    onClick={() => handleSelectContact(contact)}
+                    className={`contact-item contact-item-self${isSelfSelected ? ' contact-item-selected' : ''}`}
+                    onClick={() => handleToggleContact(selfContact)}
                   >
-                    <div className="contact-item-avatar">
-                      <img
-                        src={`${config.backendUrl}/api/avatar?userId=${contact.userId}`}
-                        alt={contact.firstName || 'User'}
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).style.display = 'none';
-                          (e.target as HTMLImageElement).parentElement!.innerText = (contact.firstName || 'U').charAt(0).toUpperCase();
-                        }}
-                      />
+                    <div className="contact-item-avatar contact-avatar-self">
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/>
+                      </svg>
                     </div>
                     <div className="contact-item-info">
-                      <span className="contact-item-name">{[contact.firstName, contact.lastName].filter(Boolean).join(' ') || 'Friend'}</span>
-                      {contact.username && <span className="contact-item-username">@{contact.username}</span>}
+                      <span className="contact-item-name">{effectiveName}</span>
+                      <span className="contact-item-username contact-self-label">myself (Me)</span>
                     </div>
-                    <button type="button" className="contact-select-pill">
-                      Select
-                    </button>
+                    <div className={`contact-checkbox${isSelfSelected ? ' checked' : ''}`}>
+                      {isSelfSelected && (
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="20 6 9 17 4 12"/>
+                        </svg>
+                      )}
+                    </div>
                   </div>
-                ))
+                );
+              })()}
+
+              {filteredContacts.length === 0 && contactsLoaded ? (
+                <div className="contact-empty">
+                  No connected friends found. Type an @username above or share your invite link!
+                </div>
+              ) : !contactsLoaded && contacts.length === 0 ? (
+                <div className="contact-empty">Loading friends...</div>
+              ) : (
+                filteredContacts.map(contact => {
+                  const isSelected = selectedContacts.some(c => c.userId === contact.userId);
+                  return (
+                    <div
+                      key={contact.userId}
+                      className={`contact-item${isSelected ? ' contact-item-selected' : ''}`}
+                      onClick={() => handleToggleContact(contact)}
+                    >
+                      <div className="contact-item-avatar">
+                        <img
+                          src={`${config.backendUrl}/api/avatar?userId=${contact.userId}`}
+                          alt={contact.firstName || 'User'}
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).style.display = 'none';
+                            (e.target as HTMLImageElement).parentElement!.innerText = (contact.firstName || 'U').charAt(0).toUpperCase();
+                          }}
+                        />
+                      </div>
+                      <div className="contact-item-info">
+                        <span className="contact-item-name">{[contact.firstName, contact.lastName].filter(Boolean).join(' ') || 'Friend'}</span>
+                        {contact.username && <span className="contact-item-username">@{contact.username}</span>}
+                      </div>
+                      <div className={`contact-checkbox${isSelected ? ' checked' : ''}`}>
+                        {isSelected && (
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="20 6 9 17 4 12"/>
+                          </svg>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })
               )}
             </div>
+
+            {/* Done button — sticky at bottom */}
+            <button
+              type="button"
+              className="contact-done-btn"
+              onClick={handleConfirmContacts}
+            >
+              {selectedContacts.length > 0
+                ? `Done (${selectedContacts.length} selected)`
+                : 'Done'}
+            </button>
           </div>
         </div>,
         document.body

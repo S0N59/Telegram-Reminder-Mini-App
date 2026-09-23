@@ -19,21 +19,25 @@ export const Friends = ({ userId, onRemindFriend }: FriendsProps) => {
   const [statusMessage, setStatusMessage] = useState<{ text: string; type: 'success' | 'info' } | null>(null);
 
   const webApp = getTelegramWebApp();
+  const effectiveUserId = userId || webApp?.initDataUnsafe?.user?.id;
 
   const loadContacts = useCallback(async () => {
-    if (!userId) {
+    console.log('[Friends] loadContacts called, effectiveUserId:', effectiveUserId, typeof effectiveUserId);
+    if (!effectiveUserId) {
+      console.warn('[Friends] No userId provided, skipping contacts load');
       setLoading(false);
       return;
     }
     try {
-      const data = await fetchContactsAPI(userId);
+      const data = await fetchContactsAPI(effectiveUserId);
+      console.log('[Friends] Got contacts:', data?.length, 'for userId:', effectiveUserId);
       setContacts(data);
       setLoading(false);
     } catch (err) {
-      console.error('Error fetching contacts:', err);
+      console.error('[Friends] Error fetching contacts:', err, 'userId:', effectiveUserId);
       setLoading(false);
     }
-  }, [userId]);
+  }, [effectiveUserId]);
 
   useEffect(() => {
     loadContacts();
@@ -41,7 +45,11 @@ export const Friends = ({ userId, onRemindFriend }: FriendsProps) => {
 
   // Open Telegram native contact share sheet
   const handleInviteFriend = useCallback(() => {
-    const inviterId = userId || '';
+    const inviterId = effectiveUserId;
+    if (!inviterId) {
+      console.warn('[Friends] Cannot generate invite link: no user ID available');
+      return;
+    }
     const inviteLink = `https://t.me/${config.botUsername}?start=add_${inviterId}`;
     const text = '👋 Join me on Remigram to share reminders and stay organized together!';
     const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(inviteLink)}&text=${encodeURIComponent(text)}`;
@@ -51,7 +59,7 @@ export const Friends = ({ userId, onRemindFriend }: FriendsProps) => {
     } else {
       window.open(shareUrl, '_blank');
     }
-  }, [userId, webApp]);
+  }, [effectiveUserId, webApp]);
 
   // Direct add by username
   const handleAddDirectFriend = async () => {
@@ -60,9 +68,9 @@ export const Friends = ({ userId, onRemindFriend }: FriendsProps) => {
     setAddingLoading(true);
     setStatusMessage(null);
 
-    if (userId) {
+    if (effectiveUserId) {
       try {
-        const added = await addContactAPI(userId, cleanUsername);
+        const added = await addContactAPI(effectiveUserId, cleanUsername);
         if (added) {
           await loadContacts();
           setStatusMessage({
@@ -108,65 +116,67 @@ export const Friends = ({ userId, onRemindFriend }: FriendsProps) => {
 
   return (
     <div className="friends-page animate-fade-in">
-      {/* Primary Telegram Share & Invite Banner */}
-      <div className="friends-invite-hero-banner">
-        <div className="invite-hero-top">
-          <div className="invite-hero-icon">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-              <circle cx="8.5" cy="7" r="4"></circle>
-              <line x1="20" y1="8" x2="20" y2="14"></line>
-              <line x1="23" y1="11" x2="17" y2="11"></line>
-            </svg>
+      <div className="friends-top-actions-grid">
+        {/* Primary Telegram Share & Invite Banner */}
+        <div className="friends-invite-hero-banner">
+          <div className="invite-hero-top">
+            <div className="invite-hero-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                <circle cx="8.5" cy="7" r="4"></circle>
+                <line x1="20" y1="8" x2="20" y2="14"></line>
+                <line x1="23" y1="11" x2="17" y2="11"></line>
+              </svg>
+            </div>
+            <div className="invite-hero-text">
+              <h3>Invite Telegram Friends</h3>
+              <p>Send your personal link to connect friends and share reminders</p>
+            </div>
           </div>
-          <div className="invite-hero-text">
-            <h3>Invite Telegram Friends</h3>
-            <p>Send your personal link to connect friends and share reminders</p>
-          </div>
-        </div>
 
-        <button
-          type="button"
-          className="invite-hero-share-btn"
-          onClick={handleInviteFriend}
-        >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="18" cy="5" r="3"></circle>
-            <circle cx="6" cy="12" r="3"></circle>
-            <circle cx="18" cy="19" r="3"></circle>
-            <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
-            <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
-          </svg>
-          <span>Share Invite Link in Telegram</span>
-        </button>
-      </div>
-
-      {/* Direct Add Friend by @username */}
-      <div className="direct-add-card">
-        <span className="direct-add-title">Add by Username</span>
-        <div className="direct-add-input-row">
-          <input
-            type="text"
-            className="direct-add-input"
-            placeholder="Enter @username..."
-            value={directUsername}
-            onChange={(e) => setDirectUsername(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleAddDirectFriend()}
-          />
           <button
             type="button"
-            className="direct-add-btn"
-            onClick={handleAddDirectFriend}
-            disabled={!directUsername.trim() || addingLoading}
+            className="invite-hero-share-btn"
+            onClick={handleInviteFriend}
           >
-            {addingLoading ? 'Adding...' : 'Add'}
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="18" cy="5" r="3"></circle>
+              <circle cx="6" cy="12" r="3"></circle>
+              <circle cx="18" cy="19" r="3"></circle>
+              <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+              <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+            </svg>
+            <span>Share Invite Link in Telegram</span>
           </button>
         </div>
-        {statusMessage && (
-          <div className={`status-toast-msg ${statusMessage.type}`}>
-            {statusMessage.text}
+
+        {/* Direct Add Friend by @username */}
+        <div className="direct-add-card">
+          <span className="direct-add-title">Add by Username</span>
+          <div className="direct-add-input-row">
+            <input
+              type="text"
+              className="direct-add-input"
+              placeholder="Enter @username..."
+              value={directUsername}
+              onChange={(e) => setDirectUsername(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleAddDirectFriend()}
+            />
+            <button
+              type="button"
+              className="direct-add-btn"
+              onClick={handleAddDirectFriend}
+              disabled={!directUsername.trim() || addingLoading}
+            >
+              {addingLoading ? 'Adding...' : 'Add'}
+            </button>
           </div>
-        )}
+          {statusMessage && (
+            <div className={`status-toast-msg ${statusMessage.type}`}>
+              {statusMessage.text}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Search Bar */}

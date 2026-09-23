@@ -25,7 +25,12 @@ export default defineConfig({
   },
   preview: {
     host: '0.0.0.0',
-    allowedHosts: true
+    allowedHosts: true,
+    headers: {
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0'
+    }
   },
   build: {
     outDir: 'dist',

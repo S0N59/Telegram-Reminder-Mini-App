@@ -3,13 +3,15 @@ import { motion } from 'framer-motion';
 import { getTelegramWebApp } from '../utils/telegram';
 import './BottomNav.css';
 
-export type TabType = 'inbox' | 'activity' | 'create' | 'friends' | 'settings';
+export type TabType = 'inbox' | 'studio' | 'create' | 'friends' | 'settings' | 'activity';
 
 interface BottomNavProps {
   activeTab: TabType;
   onTabChange: (tab: TabType) => void;
   isKeyboardVisible?: boolean;
+  isModalOpen?: boolean;
 }
+
 
 interface TabItemConfig {
   id: TabType;
@@ -29,11 +31,14 @@ const TABS: TabItemConfig[] = [
     ),
   },
   {
-    id: 'activity',
-    label: 'Activity',
+    id: 'studio',
+    label: 'Studio',
     icon: () => (
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+        <rect x="3" y="3" width="7" height="7" rx="2"></rect>
+        <rect x="14" y="3" width="7" height="7" rx="2"></rect>
+        <rect x="14" y="14" width="7" height="7" rx="2"></rect>
+        <rect x="3" y="14" width="7" height="7" rx="2"></rect>
       </svg>
     ),
   },
@@ -75,11 +80,13 @@ export const BottomNav: React.FC<BottomNavProps> = ({
   activeTab,
   onTabChange,
   isKeyboardVisible = false,
+  isModalOpen = false,
 }) => {
   const webApp = getTelegramWebApp();
   const navRef = useRef<HTMLElement>(null);
 
-  if (isKeyboardVisible) return null;
+  if (isKeyboardVisible || isModalOpen) return null;
+
 
   const handleTabClick = (tab: TabType) => {
     if (tab === activeTab) return;

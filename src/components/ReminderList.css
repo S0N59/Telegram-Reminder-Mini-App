@@ -4,6 +4,9 @@
 
 .reminder-list-page {
   padding: 0 16px 24px;
+  max-width: 1080px;
+  margin: 0 auto;
+  width: 100%;
 }
 
 /* ============================================
@@ -18,6 +21,9 @@
   border-radius: 20px;
   padding: 14px 16px;
   margin-bottom: 14px;
+  max-width: 860px;
+  margin-left: auto;
+  margin-right: auto;
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -127,10 +133,13 @@
   backdrop-filter: blur(28px) saturate(180%);
   -webkit-backdrop-filter: blur(28px) saturate(180%);
   border: 0.5px solid var(--border-subtle);
-  border-radius: 20px;
-  padding: 4px;
-  margin-bottom: 16px;
-  gap: 4px;
+  border-radius: 18px;
+  padding: 3px;
+  margin-bottom: 20px;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+  gap: 2px;
   position: relative;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25), inset 0 0.5px 0 rgba(255, 255, 255, 0.12);
 }
@@ -140,13 +149,13 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  padding: 9px 12px;
+  gap: 4px;
+  padding: 8px 4px;
   border: none;
   background: transparent;
-  border-radius: 16px;
+  border-radius: 15px;
   color: var(--text-secondary);
-  font-size: 13px;
+  font-size: 12.5px;
   font-weight: 500;
   cursor: pointer;
   position: relative;
@@ -161,7 +170,7 @@
   position: absolute;
   inset: 0;
   background: rgba(0, 0, 0, 0.48);
-  border-radius: 16px;
+  border-radius: 15px;
   box-shadow: inset 0 0.5px 1px rgba(255, 255, 255, 0.1), 0 2px 8px rgba(0, 0, 0, 0.35);
   border: 0.5px solid rgba(255, 255, 255, 0.08);
   z-index: 1;
@@ -171,6 +180,7 @@
 .inbox-filter-btn-text {
   position: relative;
   z-index: 2;
+  font-size: 12.5px;
 }
 
 .inbox-filter-btn.active {
@@ -181,9 +191,9 @@
 .tab-counter-badge {
   position: relative;
   z-index: 2;
-  font-size: 11px;
-  font-weight: 600;
-  padding: 1px 6px;
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 1px 5px;
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.08);
   color: var(--text-secondary);
@@ -199,6 +209,7 @@
 .reminder-date-group {
   margin-bottom: 20px;
 }
+
 
 .date-group-header {
   display: flex;
@@ -228,6 +239,14 @@
   gap: 8px;
 }
 
+@media (min-width: 768px) {
+  .date-group-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+    gap: 12px;
+  }
+}
+
 /* ============================================
    REMINDER ROW CARD (Liquid Glass)
    ============================================ */
@@ -235,29 +254,29 @@
 .reminder-row-card {
   display: flex;
   align-items: center;
-  gap: 14px;
-  padding: 14px 16px;
-  background: var(--bg-card);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border: 0.5px solid var(--border-subtle);
-  border-radius: var(--radius-lg);
+  gap: 12px;
+  padding: 13px 15px;
+  background: rgba(26, 26, 32, 0.72);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 0.5px solid rgba(255, 255, 255, 0.09);
+  border-radius: 18px;
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   position: relative;
   overflow: hidden;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25), inset 0 0.5px 0 rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.28), inset 0 0.5px 0 rgba(255, 255, 255, 0.12);
 }
 
 .reminder-row-card:active {
   transform: scale(0.985);
-  background: var(--bg-card-hover);
-  border-color: var(--border-medium);
+  background: rgba(34, 34, 42, 0.85);
+  border-color: rgba(255, 255, 255, 0.18);
 }
 
 .reminder-row-card.is-done {
-  opacity: 0.5;
-  background: rgba(16, 16, 20, 0.5);
+  opacity: 0.45;
+  background: rgba(16, 16, 20, 0.45);
 }
 
 .reminder-row-card.is-done .reminder-row-title {
@@ -272,6 +291,58 @@
 .reminder-row-card.is-in-progress {
   border-left: 3px solid #ffcc00;
 }
+
+.reminder-row-card.is-high-priority {
+  border-left: 3.5px solid #ff3b30;
+  box-shadow: 0 4px 22px rgba(255, 59, 48, 0.12), inset 0 0.5px 0 rgba(255, 255, 255, 0.12);
+}
+
+/* Observer Badge (when user is creator observing friend's task) */
+.observer-status-badge-wrap {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.observer-badge {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1.5px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.observer-badge.done {
+  background: rgba(52, 199, 89, 0.16);
+  border-color: #34c759;
+  color: #34c759;
+}
+
+.observer-badge.in-progress {
+  background: rgba(255, 204, 0, 0.16);
+  border-color: #ffcc00;
+  color: #ffcc00;
+}
+
+.observer-pulse-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ffcc00;
+  animation: pulseDot 1.5s infinite;
+}
+
+.observer-badge.pending {
+  color: var(--text-tertiary);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
 
 /* Completion Checkbox */
 .status-circle-btn {
@@ -310,7 +381,35 @@
   align-items: center;
   justify-content: center;
   color: #000000;
-  box-shadow: 0 2px 8px rgba(52, 199, 89, 0.3);
+  box-shadow: 0 0 16px rgba(52, 199, 89, 0.55), 0 2px 8px rgba(52, 199, 89, 0.35);
+  animation: checkPopIn 0.38s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes checkPopIn {
+  0% {
+    transform: scale(0.3) rotate(-25deg);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.2) rotate(4deg);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+  }
+}
+
+.check-svg-path {
+  stroke-dasharray: 24;
+  stroke-dashoffset: 24;
+  animation: checkDraw 0.26s 0.08s ease-out forwards;
+}
+
+@keyframes checkDraw {
+  to {
+    stroke-dashoffset: 0;
+  }
 }
 
 .status-circle-btn.in-progress .status-in-progress-ring {
@@ -318,6 +417,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: transform 0.2s ease;
 }
 
 @keyframes spinRing {
@@ -334,7 +434,7 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 6px;
   min-width: 0;
 }
 
@@ -342,114 +442,158 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 6px;
-}
-
-.time-badge-wrap {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.reminder-time-text {
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--accent-color);
-  font-variant-numeric: tabular-nums;
-}
-
-.overdue-chip {
-  font-size: 10px;
-  font-weight: 700;
-  color: var(--danger);
-  background: var(--danger-light);
-  padding: 1px 6px;
-  border-radius: 6px;
-  text-transform: uppercase;
-  letter-spacing: 0.4px;
-}
-
-.in-progress-chip {
-  font-size: 10px;
-  font-weight: 700;
-  color: #ffcc00;
-  background: rgba(255, 204, 0, 0.12);
-  padding: 1px 6px;
-  border-radius: 6px;
-  text-transform: uppercase;
-  letter-spacing: 0.4px;
-}
-
-.priority-tag-pill {
-  font-size: 10px;
-  font-weight: 700;
-  padding: 1px 6px;
-  border-radius: 6px;
-  text-transform: uppercase;
-  letter-spacing: 0.4px;
-}
-
-.priority-tag-pill.high { background: var(--danger-light); color: var(--danger); }
-.priority-tag-pill.medium { background: rgba(255, 204, 0, 0.12); color: #ffcc00; }
-.priority-tag-pill.low { background: rgba(142, 142, 147, 0.12); color: #8e8e93; }
-
-.priority-tag-pill.mono-high { background: rgba(255, 255, 255, 0.15); color: #ffffff; }
-.priority-tag-pill.mono-medium { background: rgba(255, 255, 255, 0.1); color: rgba(255, 255, 255, 0.7); }
-.priority-tag-pill.mono-low { background: rgba(255, 255, 255, 0.05); color: rgba(255, 255, 255, 0.4); }
-
-.category-tag {
-  font-size: 10px;
-  font-weight: 600;
-  color: var(--text-tertiary);
-  background: rgba(255, 255, 255, 0.05);
-  padding: 1px 6px;
-  border-radius: 6px;
+  gap: 8px;
 }
 
 .reminder-row-title {
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--text-primary);
+  font-size: 15.5px;
+  font-weight: 650;
+  color: #ffffff;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   line-height: 1.3;
+  letter-spacing: -0.2px;
 }
 
+/* Prominent Priority Badges */
+.card-priority-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 8px;
+  font-size: 11.5px;
+  font-weight: 750;
+  letter-spacing: 0.2px;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.card-priority-badge.high {
+  background: rgba(255, 59, 48, 0.16);
+  color: #ff453a;
+  border: 1px solid rgba(255, 59, 48, 0.35);
+  box-shadow: 0 0 10px rgba(255, 59, 48, 0.12);
+}
+
+.card-priority-badge.medium {
+  background: rgba(255, 204, 0, 0.14);
+  color: #ffcc00;
+  border: 1px solid rgba(255, 204, 0, 0.3);
+}
+
+.card-priority-badge.low {
+  background: rgba(52, 199, 89, 0.14);
+  color: #34c759;
+  border: 1px solid rgba(52, 199, 89, 0.3);
+}
+
+.card-priority-badge.mono-high {
+  background: rgba(255, 255, 255, 0.18);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.card-priority-badge.mono-medium {
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.card-priority-badge.mono-low {
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.prio-dot {
+  font-size: 9px;
+  line-height: 1;
+  display: inline-block;
+}
+
+
+/* Bottom Meta Pills */
 .reminder-row-bottom {
   display: flex;
   align-items: center;
-  gap: 8px;
-}
-
-.reminder-row-subtext {
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--text-tertiary);
-}
-
-.repeat-tag {
-  display: flex;
-  align-items: center;
-  gap: 3px;
-  font-size: 11px;
-  color: var(--text-tertiary);
-}
-
-.repeat-tag svg {
-  stroke: var(--text-tertiary);
-}
-
-/* ============================================
-   LARGER TACTILE ACTION TOOLBAR
-   ============================================ */
-
-.reminder-actions-toolbar {
-  display: flex;
-  align-items: center;
   gap: 6px;
-  flex-shrink: 0;
+  flex-wrap: wrap;
 }
+
+.reminder-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 7px;
+  font-size: 11.5px;
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-secondary);
+  border: 0.5px solid rgba(255, 255, 255, 0.07);
+}
+
+.reminder-pill.time-pill {
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+}
+
+.pill-time-val {
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  font-variant-numeric: tabular-nums;
+}
+
+.reminder-pill.overdue-pill {
+  background: rgba(255, 59, 48, 0.16);
+  color: #ff453a;
+  border-color: rgba(255, 59, 48, 0.3);
+  font-weight: 700;
+}
+
+.reminder-pill.in-progress-pill {
+  background: rgba(255, 204, 0, 0.15);
+  color: #ffcc00;
+  border-color: rgba(255, 204, 0, 0.3);
+  font-weight: 700;
+}
+
+.in-progress-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #ffcc00;
+  animation: pulseDot 1.5s infinite;
+}
+
+.reminder-pill.subtext-pill {
+  color: var(--text-tertiary);
+}
+
+.reminder-pill.repeat-pill {
+  color: var(--accent-color);
+  background: rgba(204, 255, 0, 0.08);
+  border-color: rgba(204, 255, 0, 0.2);
+}
+
+/* Right Chevron Indicator */
+.card-open-chevron {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.22);
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+  padding-left: 2px;
+}
+
+.reminder-row-card:hover .card-open-chevron {
+  color: rgba(255, 255, 255, 0.55);
+  transform: translateX(2px);
+}
+
 
 .card-tool-btn {
   width: 36px;
@@ -573,3 +717,124 @@
   height: 100%;
   object-fit: cover;
 }
+
+/* ============================================
+   GROUP COLLABORATIVE REMINDERS
+   ============================================ */
+
+.group-tag-pill {
+  font-size: 11px;
+  font-weight: 700;
+  color: #a078ff;
+  background: rgba(160, 120, 255, 0.12);
+  border: 0.5px solid rgba(160, 120, 255, 0.25);
+  border-radius: 8px;
+  padding: 2px 7px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.is-group-card {
+  border-left: 2.5px solid #a078ff !important;
+}
+
+.card-group-section {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin: 6px 0 4px;
+  padding: 8px 10px;
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: 12px;
+  border: 0.5px solid rgba(255, 255, 255, 0.05);
+}
+
+.card-group-progress-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.card-group-progress-track {
+  flex: 1;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.card-group-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #3390ec, #00c853);
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+.card-group-progress-text {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary, rgba(255, 255, 255, 0.6));
+  white-space: nowrap;
+}
+
+.card-group-participants-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.participant-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2.5px 7px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.05);
+  border: 0.5px solid rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+  transition: all 0.2s ease;
+}
+
+.participant-chip.is-me {
+  border-color: rgba(51, 144, 236, 0.35);
+}
+
+.participant-chip.done {
+  background: rgba(0, 200, 83, 0.12);
+  border-color: rgba(0, 200, 83, 0.3);
+  color: #69f0ae;
+}
+
+.participant-chip.in_progress {
+  background: rgba(255, 171, 0, 0.12);
+  border-color: rgba(255, 171, 0, 0.3);
+  color: #ffd740;
+}
+
+.participant-chip.todo {
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.participant-chip .p-dot {
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.participant-chip .p-name {
+  max-width: 90px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.participant-chip .p-status {
+  font-size: 9.5px;
+  opacity: 0.8;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+

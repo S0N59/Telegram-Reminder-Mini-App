@@ -1,6 +1,7 @@
 // API storage for reminders - uses backend instead of localStorage
 import type { Reminder } from '../types/reminder';
 import { config } from '../config';
+import { telegramApiHeaders } from './api';
 
 const API_URL = config.backendUrl;
 
@@ -9,9 +10,9 @@ export const saveReminderAPI = async (reminder: Reminder): Promise<Reminder> => 
   try {
     const response = await fetch(`${API_URL}/api/reminders`, {
       method: 'POST',
-      headers: {
+      headers: telegramApiHeaders({
         'Content-Type': 'application/json',
-      },
+      }),
       body: JSON.stringify({
         id: reminder.id,
         text: reminder.text,
@@ -27,6 +28,7 @@ export const saveReminderAPI = async (reminder: Reminder): Promise<Reminder> => 
         assignedTo: reminder.assignedTo,
         assignedToChatId: reminder.assignedToChatId,
         creatorName: reminder.creatorName,
+        groupId: reminder.groupId,
       }),
     });
 
@@ -47,9 +49,9 @@ export const saveReminderAPI = async (reminder: Reminder): Promise<Reminder> => 
 export const getRemindersAPI = async (userId: number): Promise<Reminder[]> => {
   const response = await fetch(`${API_URL}/api/reminders?userId=${userId}`, {
     method: 'GET',
-    headers: {
+    headers: telegramApiHeaders({
       'Content-Type': 'application/json',
-    },
+    }),
   });
 
   if (!response.ok) {
@@ -57,16 +59,20 @@ export const getRemindersAPI = async (userId: number): Promise<Reminder[]> => {
     throw new Error(errorData.error || `API Error: ${response.status}`);
   }
 
-  return await response.json();
+  const data = await response.json();
+  // Filter out any malformed records missing required fields
+  if (!Array.isArray(data)) return [];
+  return data.filter((r: any) => r && r.id && r.date && r.time && r.text);
 };
+
 
 export const deleteReminderAPI = async (id: string): Promise<void> => {
   try {
     const response = await fetch(`${API_URL}/api/reminders?id=${id}`, {
       method: 'DELETE',
-      headers: {
+      headers: telegramApiHeaders({
         'Content-Type': 'application/json',
-      },
+      }),
     });
 
     if (!response.ok) {
@@ -83,9 +89,9 @@ export const updateReminderAPI = async (id: string, updates: Partial<Reminder>):
   try {
     const response = await fetch(`${API_URL}/api/reminders?id=${id}`, {
       method: 'PUT',
-      headers: {
+      headers: telegramApiHeaders({
         'Content-Type': 'application/json',
-      },
+      }),
       body: JSON.stringify(updates),
     });
 
@@ -148,23 +154,54 @@ export interface BotContact {
   lastName: string | null;
 }
 
+// In-memory + localStorage contact caching for instant 0ms response
+const memoryContactsCache = new Map<number, BotContact[]>();
+
+export const getCachedContacts = (userId: number): BotContact[] => {
+  if (memoryContactsCache.has(userId)) {
+    return memoryContactsCache.get(userId) || [];
+  }
+  try {
+    const raw = localStorage.getItem(`remigram_contacts_${userId}`);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        memoryContactsCache.set(userId, parsed);
+        return parsed;
+      }
+    }
+  } catch {
+    // Ignore storage parse errors
+  }
+  return [];
+};
+
 export const fetchContactsAPI = async (userId: number): Promise<BotContact[]> => {
   try {
     const response = await fetch(`${API_URL}/api/contacts?userId=${userId}`, {
       method: 'GET',
-      headers: {
+      headers: telegramApiHeaders({
         'Content-Type': 'application/json',
-      },
+      }),
     });
 
     if (!response.ok) {
       throw new Error('Failed to fetch contacts');
     }
 
-    return await response.json();
+    const data: BotContact[] = await response.json();
+    if (Array.isArray(data)) {
+      memoryContactsCache.set(userId, data);
+      try {
+        localStorage.setItem(`remigram_contacts_${userId}`, JSON.stringify(data));
+      } catch {
+        // Ignore quota errors
+      }
+    }
+    return data;
   } catch (error) {
     console.error('Error fetching contacts:', error);
-    return [];
+    return getCachedContacts(userId);
   }
 };
 
@@ -172,9 +209,9 @@ export const addContactAPI = async (userId: number, targetUsername: string): Pro
   try {
     const response = await fetch(`${API_URL}/api/contacts`, {
       method: 'POST',
-      headers: {
+      headers: telegramApiHeaders({
         'Content-Type': 'application/json',
-      },
+      }),
       body: JSON.stringify({
         userId,
         targetUsername: targetUsername.replace(/^@/, '').trim()
